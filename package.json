@@ -1,0 +1,40 @@
+{
+  "name": "@ttoss/pepe-cli",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "build": "tsc",
+    "prepare": "npm run test && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ttoss/pepe.git"
+  },
+  "keywords": [],
+  "author": {
+    "email": "arantespp@gmail.com",
+    "name": "Pedro Arantes",
+    "url": "https://twitter.com/arantespp"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ttoss/pepe/issues"
+  },
+  "homepage": "https://github.com/ttoss/pepe#readme",
+  "dependencies": {
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "@types/yargs": "^15.0.5",
+    "typescript": "^3.9.5"
+  },
+  "bin": {
+    "pepe": "./bin/pepe"
+  },
+  "files": [
+    "bin/",
+    "dist/"
+  ]
+}
