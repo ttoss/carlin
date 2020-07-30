@@ -24,25 +24,28 @@
   },
   "homepage": "https://github.com/ttoss/pepe#readme",
   "dependencies": {
+    "@storybook/addon-docs": "^5.3.19",
+    "@storybook/preset-create-react-app": "^3.1.4",
+    "@storybook/preset-typescript": "^3.0.0",
     "@storybook/react": "^5.3.19",
-    "aws-sdk": "^2.691.0",
+    "aws-sdk": "^2.723.0",
     "change-case": "^4.1.1",
-    "faker": "^4.1.0",
     "js-yaml": "^3.14.0",
     "npmlog": "^4.1.2",
-    "simple-git": "^2.5.0",
-    "yargs": "^15.3.1"
+    "simple-git": "^2.15.0",
+    "yargs": "^15.4.1"
   },
   "devDependencies": {
     "@types/faker": "^4.1.12",
-    "@types/jest": "^26.0.0",
-    "@types/js-yaml": "^3.12.4",
-    "@types/node": "^14.0.11",
+    "@types/jest": "^26.0.7",
+    "@types/js-yaml": "^3.12.5",
+    "@types/node": "^14.0.27",
     "@types/npmlog": "^4.1.2",
     "@types/yargs": "^15.0.5",
-    "jest": "^26.0.1",
+    "faker": "^4.1.0",
+    "jest": "^26.1.0",
     "ts-jest": "^26.1.4",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.7"
   },
   "bin": {
     "pepe": "./bin/pepe"

@@ -1,13 +1,10 @@
-import AWS from 'aws-sdk';
 import fs from 'fs';
-// import log from 'npmlog';
 import yargs from 'yargs';
 
 import { readObjectFile } from './utils';
 
 import { deployCommand } from './deploy/command';
-
-// const logPrefix = 'bootstrap';
+import { storybookCommand } from './storybook/command';
 
 const configHandler = (path: string) => {
   /**
@@ -47,6 +44,7 @@ yargs
     },
   })
   .command(deployCommand)
+  .command(storybookCommand)
   .help();
 
 export default yargs;
