@@ -4,6 +4,7 @@ import yargs from 'yargs';
 import { readObjectFile } from './utils';
 
 import { deployCommand } from './deploy/command';
+import { monorepoCommand } from './monorepo/command';
 import { storybookCommand } from './storybook/command';
 
 const configHandler = (path: string) => {
@@ -44,6 +45,7 @@ yargs
     },
   })
   .command(deployCommand)
+  .command(monorepoCommand)
   .command(storybookCommand)
   .help();
 
