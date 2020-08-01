@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest",
+    "prebuild": "rm -r dist",
     "build": "tsc",
     "prepare": "npm run test && npm run build"
   },
