@@ -35,6 +35,9 @@ const configHandler = (path: string) => {
 
 yargs
   .pkgConf('pepe')
+  .option('a', {
+    alias: ['aa', 'aaa'],
+  })
   .config('config', configHandler)
   .options({
     config: {

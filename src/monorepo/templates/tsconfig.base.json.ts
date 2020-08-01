@@ -8,7 +8,7 @@ export default `
     // "lib": [],                             /* Specify library files to be included in the compilation. */
     "allowJs": false /* Allow javascript files to be compiled. */,
     // "checkJs": true,                       /* Report errors in .js files. */
-    "jsx": "react" /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */,
+    // "jsx": "react" /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */,
     "declaration": true /* Generates corresponding '.d.ts' file. */,
     // "declarationMap": true /* Generates a sourcemap for each corresponding '.d.ts' file. */,
     // "sourceMap": true /* Generates corresponding '.map' file. */,
@@ -34,8 +34,8 @@ export default `
     "alwaysStrict": true /* Parse in strict mode and emit "use strict" for each source file. */,
 
     /* Additional Checks */
-    // "noUnusedLocals": true /* Report errors on unused locals. */,
-    // "noUnusedParameters": true /* Report errors on unused parameters. */,
+    "noUnusedLocals": true /* Report errors on unused locals. */,
+    "noUnusedParameters": true /* Report errors on unused parameters. */,
     "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
     "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
 

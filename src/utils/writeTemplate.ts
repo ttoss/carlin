@@ -2,7 +2,7 @@ import fs from 'fs';
 import log from 'npmlog';
 import path from 'path';
 
-const logPrefix = 'template';
+const logPrefix = 'writeTemplate';
 
 export type TemplateParams = {};
 

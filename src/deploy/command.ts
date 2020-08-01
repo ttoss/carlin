@@ -124,5 +124,5 @@ export const deployCommand: CommandModule<
       .middleware(({ region }) => {
         AWS.config.update({ region });
       }),
-  handler: deploy,
+  handler: () => null,
 };

@@ -6,3 +6,4 @@ export * from './getCurrentBranch';
 export * from './getProjectName';
 export * from './packageJson';
 export * from './readObjectFile';
+export * from './writeTemplate';

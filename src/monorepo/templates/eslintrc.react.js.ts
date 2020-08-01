@@ -1,7 +1,9 @@
 export default `
+const path = require('path');
+
 module.exports = {
   plugins: ['react-hooks', 'relay', 'jest-dom'],
-  extends: ['airbnb', 'react-app', './eslintrc.base'],
+  extends: ['airbnb', 'react-app', path.resolve(__dirname, 'eslintrc.base.js')],
   rules: {
     'no-console': 'error',
     'react/jsx-props-no-spreading': 'off',
@@ -22,5 +24,4 @@ module.exports = {
     'relay/unused-fields': 'warn',
   },
 };
-
 `;
