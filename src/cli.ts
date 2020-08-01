@@ -1,55 +1,37 @@
-import fs from 'fs';
+import findUp from 'find-up';
 import yargs from 'yargs';
 
 import { readObjectFile } from './utils';
 
 import { deployCommand } from './deploy/command';
 import { monorepoCommand } from './monorepo/command';
-import { storybookCommand } from './storybook/command';
 
-const configHandler = (path: string) => {
-  /**
-   * If path does not ends with /pepe, then is not default and the user is
-   * using a custom path.
-   */
-  if (!path.endsWith('/pepe')) {
-    return readObjectFile({ path });
-  }
-
-  const allowedExtensions = ['js', 'yml', 'yaml', 'json'];
-
-  const pathWhichExists = allowedExtensions.reduce<string>((acc, extension) => {
-    const newPath = `${path}.${extension}`;
-    if (fs.existsSync(newPath)) {
-      return newPath;
-    }
-    return acc;
-  }, '');
-
-  if (pathWhichExists) {
-    return readObjectFile({ path: pathWhichExists });
-  }
-
-  return {};
+const getConfig = () => {
+  const path = findUp.sync(
+    ['js', 'yml', 'yaml', 'json'].map((ext) => `pepe.${ext}`)
+  );
+  return path ? readObjectFile({ path }) : {};
 };
 
 yargs
+  .env('PEPE')
   .pkgConf('pepe')
-  .option('a', {
-    alias: ['aa', 'aaa'],
-  })
-  .config('config', configHandler)
+  .config(getConfig())
+  .config('config', (path: string) => readObjectFile({ path }))
   .options({
     config: {
       alias: 'c',
-      default: 'pepe',
       require: false,
       type: 'string',
     },
   })
+  .command({
+    command: 'print-args',
+    describe: false,
+    handler: console.log,
+  })
   .command(deployCommand)
   .command(monorepoCommand)
-  .command(storybookCommand)
   .help();
 
 export default yargs;

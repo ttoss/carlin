@@ -7,14 +7,17 @@ const logPrefix = 'writeTemplate';
 export type TemplateParams = {};
 
 const getContent = async ({
-  name,
+  templateName,
+  templateDir,
   templateParams,
 }: {
-  name: string;
+  templateName: string;
+  templateDir: string;
   templateParams: TemplateParams;
 }): Promise<string> => {
-  const contentGenerator = (await import(path.resolve(__dirname, name)))
-    .default;
+  const contentGenerator = (
+    await import(path.resolve(templateDir, templateName))
+  ).default;
   if (typeof contentGenerator === 'function') {
     return contentGenerator(templateParams).trim();
   }
@@ -22,33 +25,39 @@ const getContent = async ({
 };
 
 export const writeTemplate = async ({
-  dir,
-  template,
+  templateDir,
+  templateName,
+  writeDir = '.',
   templateParams,
 }: {
-  dir?: string;
-  template: string;
+  templateName: string;
+  templateDir: string;
+  writeDir?: string;
   templateParams: TemplateParams;
 }) => {
   try {
-    const content = await getContent({ name: template, templateParams });
-    const contentPath = path.resolve(
+    const content = await getContent({
+      templateDir,
+      templateName,
+      templateParams,
+    });
+    const fullWriteDir = path.resolve(
       process.cwd(),
-      dir || '.',
-      template.replace('dot-', '.')
+      writeDir,
+      templateName.replace('dot-', '.')
     );
     /**
      * Create if it does not exist.
      */
-    if (dir) {
-      const dirFullPath = path.resolve(process.cwd(), dir);
+    if (writeDir) {
+      const dirFullPath = path.resolve(process.cwd(), writeDir);
       if (!fs.existsSync(dirFullPath)) {
         fs.mkdirSync(dirFullPath);
       }
     }
-    return await fs.promises.writeFile(contentPath, content);
+    return await fs.promises.writeFile(fullWriteDir, content);
   } catch (error) {
-    log.error(logPrefix, `Cannot write template ${template}.`);
+    log.error(logPrefix, `Cannot write template ${templateName}.`);
     log.error(logPrefix, 'Error message: %j', error.message);
   }
 };

@@ -7,45 +7,44 @@ import { exec, writeTemplate, TemplateParams } from '../utils';
 const logPrefix = 'monorepo';
 
 const writeFiles = async () => {
-  const getFilesArr = (defaultTemplateParams: TemplateParams) => {
+  const getFilesArr = (defaultTemplateParams: TemplateParams = {}) => {
     const files: Array<{
-      template: string;
-      dir?: string;
+      templateName: string;
+      writeDir: string;
       templateParams?: Partial<TemplateParams>;
     }> = [
-      { template: 'fileMock.js', dir: '__mocks__' },
-      { template: 'styleMock.js', dir: '__mocks__' },
-      { template: 'dot-eslintignore', dir: '.' },
-      { template: 'dot-eslintrc.js', dir: '.' },
-      { template: 'dot-gitignore.js', dir: '.' },
-      { template: 'dot-huskyrc.js', dir: '.' },
-      { template: 'dot-prettierrc.js', dir: '.' },
-      { template: 'dot-stylelintrc.js', dir: '.' },
-      { template: 'commitlint.config.js', dir: 'config' },
-      { template: 'eslintrc.base.js', dir: 'config' },
-      { template: 'eslintrc.react.js', dir: 'config' },
-      { template: 'husky.config.js', dir: 'config' },
-      { template: 'jest.config.base.js', dir: 'config' },
-      { template: 'lerna.json', dir: '.' },
-      { template: 'lint-staged.config.js', dir: 'config' },
-      { template: 'prettier.config.js', dir: 'config' },
-      { template: 'stylelint.config.js', dir: 'config' },
-      { template: 'tsconfig.base.json', dir: 'config' },
-      { template: 'tsconfig.react.json', dir: 'config' },
+      { templateName: 'fileMock.js', writeDir: '__mocks__' },
+      { templateName: 'styleMock.js', writeDir: '__mocks__' },
+      { templateName: 'dot-eslintignore', writeDir: '.' },
+      { templateName: 'dot-eslintrc.js', writeDir: '.' },
+      { templateName: 'dot-gitignore.js', writeDir: '.' },
+      { templateName: 'dot-huskyrc.js', writeDir: '.' },
+      { templateName: 'dot-prettierrc.js', writeDir: '.' },
+      { templateName: 'dot-stylelintrc.js', writeDir: '.' },
+      { templateName: 'commitlint.config.js', writeDir: 'config' },
+      { templateName: 'eslintrc.base.js', writeDir: 'config' },
+      { templateName: 'eslintrc.react.js', writeDir: 'config' },
+      { templateName: 'husky.config.js', writeDir: 'config' },
+      { templateName: 'jest.config.base.js', writeDir: 'config' },
+      { templateName: 'lerna.json', writeDir: '.' },
+      { templateName: 'lint-staged.config.js', writeDir: 'config' },
+      { templateName: 'prettier.config.js', writeDir: 'config' },
+      { templateName: 'stylelint.config.js', writeDir: 'config' },
+      { templateName: 'tsconfig.base.json', writeDir: 'config' },
+      { templateName: 'tsconfig.react.json', writeDir: 'config' },
     ];
 
-    return files.map(({ template, dir, templateParams }) => ({
-      dir,
-      template: path.resolve(__dirname, 'templates', template),
+    return files.map(({ templateName, writeDir, templateParams }) => ({
+      templateName,
+      writeDir,
+      templateDir: path.resolve(__dirname, 'templates'),
       templateParams: { ...defaultTemplateParams, ...templateParams },
     }));
   };
 
   try {
     log.info(logPrefix, 'Writing files...');
-    await Promise.all(
-      getFilesArr({ monorepoName: 'n' }).map((file) => writeTemplate(file))
-    );
+    await Promise.all(getFilesArr().map((file) => writeTemplate(file)));
   } catch (error) {
     log.error(logPrefix, 'Cannot write files.');
     log.error(logPrefix, 'Error message: %j', error.message);
