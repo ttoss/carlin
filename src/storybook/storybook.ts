@@ -38,16 +38,6 @@ const config = (stories: string[]) => {
   };
 };
 
-const updateTsConfigFileSync = () => {
-  const tsConfigPath = path.resolve(process.cwd(), 'tsconfig.json');
-  if (!fs.existsSync(tsConfigPath)) {
-    return;
-  }
-  const tsConfig = JSON.parse(fs.readFileSync(tsConfigPath).toString());
-  if (tsConfig?.compilerOptions) tsConfig.compilerOptions.noEmit = false;
-  fs.writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2));
-};
-
 const createConfigDir = ({
   stories: storiesFolders,
 }: {

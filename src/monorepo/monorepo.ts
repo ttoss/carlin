@@ -95,6 +95,7 @@ const installDependencies = () => {
   } catch (error) {
     log.error(logPrefix, 'Cannot install dependencies.');
     log.error(logPrefix, 'Error message: %j', error.message);
+    return;
   }
 };
 

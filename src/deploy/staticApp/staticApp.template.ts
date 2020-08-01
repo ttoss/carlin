@@ -9,9 +9,9 @@ const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
 
 export const getStaticAppTemplate = ({
-  acmArnExportedName,
+  // acmArnExportedName,
   environment,
-  staticAppAliases,
+  // staticAppAliases,
   staticAppEdge,
 }: {
   acmArnExportedName?: string;

@@ -19,5 +19,6 @@ export const deployPepeBase = async () => {
   } catch (err) {
     log.error(logPrefix, 'Cannot deploy pepe base.');
     log.error(logPrefix, 'Error message: %j', err.message);
+    return;
   }
 };
