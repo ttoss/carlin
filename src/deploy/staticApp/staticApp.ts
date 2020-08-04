@@ -2,10 +2,8 @@
 import { CloudFormation, CloudFront } from 'aws-sdk';
 import log from 'npmlog';
 
-import { getEnvironment } from '../../utils';
-
 import { cloudFormation, deploy } from '../cloudFormation';
-import { uploadDirectoryToS3 } from '../s3';
+import { uploadDirectoryToS3, emptyS3Directory } from '../s3';
 import { getStackName } from '../stackName';
 
 import { getStaticAppTemplate } from './staticApp.template';
@@ -28,16 +26,14 @@ const getStaticAppBucket = async ({ stackName }: { stackName: string }) => {
 };
 
 export const uploadBuiltAppToS3 = async ({
-  staticAppBuildFolder,
-  staticAppBucket,
+  buildFolder: directory,
+  bucket,
 }: {
-  staticAppBuildFolder: string;
-  staticAppBucket: string;
+  buildFolder: string;
+  bucket: string;
 }) => {
-  await uploadDirectoryToS3({
-    bucket: staticAppBucket,
-    directory: staticAppBuildFolder,
-  });
+  await emptyS3Directory({ bucket, directory });
+  await uploadDirectoryToS3({ bucket, directory });
 };
 
 export const invalidateCloudFront = async ({
@@ -94,59 +90,38 @@ export const invalidateCloudFront = async ({
 };
 
 export const deployStaticApp = async ({
-  skipAssets,
-  staticAppBuildFolder,
-  staticAppAliases,
-  acmArnExportedName,
-  staticAppEdge,
-  stackName: preDefinedStackName,
+  buildFolder,
+  cloudfront,
+  edge,
 }: {
-  skipAssets: boolean;
-  staticAppBuildFolder: string;
-  staticAppAliases?: string[];
-  acmArnExportedName?: string;
-  staticAppEdge: boolean;
-  stackName?: string;
+  buildFolder: string;
+  cloudfront: boolean;
+  edge: boolean;
 }) => {
-  log.info(logPrefix, `Staring static app deploy`);
-
-  if (staticAppEdge) {
-    log.info(logPrefix, `Static app Edge.`);
-  }
-
+  log.info(logPrefix, `Starting static app deploy...`);
   try {
-    const [environment, stackName] = await Promise.all([
-      getEnvironment(),
-      getStackName({ preDefinedStackName }),
-    ]);
+    const stackName = await getStackName();
 
     log.info(logPrefix, `stackName: ${stackName}`);
 
     const params = { StackName: stackName };
 
-    const template = getStaticAppTemplate({
-      acmArnExportedName,
-      environment,
-      staticAppAliases,
-      staticAppEdge,
-    });
+    const template = getStaticAppTemplate({ cloudfront, edge });
 
     const { Outputs } = await deploy({ params, template });
 
-    if (!skipAssets) {
-      const staticAppBucket = await getStaticAppBucket({ stackName });
+    const bucket = await getStaticAppBucket({ stackName });
 
-      if (!staticAppBucket) {
-        throw new Error(`Cannot find bucket at ${stackName}`);
-      }
-
-      await uploadBuiltAppToS3({ staticAppBuildFolder, staticAppBucket });
-
-      await invalidateCloudFront({ outputs: Outputs });
+    if (!bucket) {
+      throw new Error(`Cannot find bucket at ${stackName}`);
     }
+
+    await uploadBuiltAppToS3({ buildFolder, bucket });
+
+    await invalidateCloudFront({ outputs: Outputs });
   } catch (err) {
     log.error(logPrefix, 'An error occurred. Cannot deploy static app');
     log.error(logPrefix, 'Error message: %j', err.message);
-    throw err;
+    process.exit();
   }
 };

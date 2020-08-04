@@ -17,7 +17,7 @@ const writeFiles = async () => {
       { templateName: 'styleMock.js', writeDir: '__mocks__' },
       { templateName: 'dot-eslintignore', writeDir: '.' },
       { templateName: 'dot-eslintrc.js', writeDir: '.' },
-      { templateName: 'dot-gitignore.js', writeDir: '.' },
+      { templateName: 'dot-gitignore', writeDir: '.' },
       { templateName: 'dot-huskyrc.js', writeDir: '.' },
       { templateName: 'dot-prettierrc.js', writeDir: '.' },
       { templateName: 'dot-stylelintrc.js', writeDir: '.' },

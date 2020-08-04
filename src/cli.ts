@@ -1,7 +1,7 @@
 import findUp from 'find-up';
 import yargs from 'yargs';
 
-import { readObjectFile } from './utils';
+import { setEnvironment, readObjectFile } from './utils';
 
 import { deployCommand } from './deploy/command';
 import { monorepoCommand } from './monorepo/command';
@@ -24,11 +24,31 @@ yargs
       require: false,
       type: 'string',
     },
+    environment: {
+      alias: ['e', 'env'],
+      type: 'string',
+    },
+    environments: {
+      alias: 'envs',
+      hidden: true,
+    },
   })
+  .middleware((argv) => {
+    const { environment } = argv;
+    const environments: any = argv.environments;
+    if (environment) {
+      setEnvironment(environment);
+      if (environments && environments[environment]) {
+        Object.entries(environments[environment]).forEach(([key, value]) => {
+          argv[key] = value;
+        });
+      }
+    }
+  }, true)
   .command({
     command: 'print-args',
     describe: false,
-    handler: console.log,
+    handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
   })
   .command(deployCommand)
   .command(monorepoCommand)

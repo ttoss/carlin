@@ -3,139 +3,17 @@ import log from 'npmlog';
 
 import {
   CloudFormationTemplate,
-  getCurrentBranch,
   getEnvironment,
-  getPackageName,
-  getPackageVersion,
-  getProjectName,
   readCloudFormationTemplate,
 } from '../utils';
 
+import { addDefaults } from './addDefaults.cloudFormation';
 import { emptyS3Directory } from './s3';
 import { getAssetStackName, getStackName } from './stackName';
 
 const logPrefix = 'cloudformation';
 log.addLevel('event', 10000, { fg: 'yellow' });
 log.addLevel('output', 10000, { fg: 'blue' });
-
-type CloudFormationParams =
-  | AWS.CloudFormation.CreateStackInput
-  | AWS.CloudFormation.UpdateStackInput;
-
-export const addDefaultsParametersAndTagsToParams = async (
-  params: CloudFormationParams
-): Promise<CloudFormationParams> => {
-  const [
-    branchName,
-    environment,
-    packageName,
-    packageVersion,
-    projectName,
-  ] = await Promise.all([
-    getCurrentBranch(),
-    getEnvironment(),
-    getPackageName(),
-    getPackageVersion(),
-    getProjectName(),
-  ]);
-
-  return {
-    ...params,
-    Parameters: [
-      ...(params.Parameters || []),
-      { ParameterKey: 'Environment', ParameterValue: environment },
-      { ParameterKey: 'Project', ParameterValue: projectName },
-    ],
-    Tags: [
-      ...(params.Tags || []),
-      { Key: 'Branch', Value: branchName },
-      { Key: 'Environment', Value: environment },
-      { Key: 'Package', Value: packageName },
-      { Key: 'Project', Value: projectName },
-      { Key: 'Version', Value: packageVersion },
-    ],
-  };
-};
-
-const addDefaultParametersToTemplate = async (
-  template: CloudFormationTemplate
-): Promise<CloudFormationTemplate> => {
-  const [environment, projectName] = await Promise.all([
-    getEnvironment(),
-    getProjectName(),
-  ]);
-
-  const newTemplate = {
-    ...template,
-    Parameters: {
-      Environment: { Default: environment, Type: 'String' },
-      Project: { Default: projectName, Type: 'String' },
-      ...template.Parameters,
-    },
-  };
-
-  return newTemplate;
-};
-
-const addLogGroupToResources = (
-  template: CloudFormationTemplate
-): CloudFormationTemplate => {
-  const retentionInDays = 30;
-  const { Resources } = template;
-
-  const resourcesEntries = Object.entries(Resources);
-
-  resourcesEntries.forEach(([key, resource]) => {
-    if (resource.Type === 'AWS::Lambda::Function') {
-      const logGroup = resourcesEntries.find(([, resource2]) => {
-        const logGroupNameStr = JSON.stringify(
-          resource2.Properties?.LogGroupName?.['Fn::Join'] || ''
-        );
-        return logGroupNameStr.includes(key);
-      });
-
-      if (!logGroup) {
-        log.info(logPrefix, `Adding log group to Lambda resource: ${key}.`);
-
-        Resources[`${key}LogsLogGroup`] = {
-          Type: 'AWS::Logs::LogGroup',
-          DeletionPolicy: 'Delete',
-          Properties: {
-            LogGroupName: { 'Fn::Join': ['/', ['/aws/lambda', { Ref: key }]] },
-            RetentionInDays: retentionInDays,
-          },
-        };
-      }
-    }
-  });
-
-  return template;
-};
-
-const addEnvironmentsToLambdaResources = (
-  template: CloudFormationTemplate
-): CloudFormationTemplate => {
-  const environment = getEnvironment();
-
-  const { Resources } = template;
-
-  const resourcesEntries = Object.entries(Resources);
-
-  resourcesEntries.forEach(([, resource]) => {
-    if (resource.Type === 'AWS::Lambda::Function') {
-      const { Properties } = resource;
-      if (!Properties.Environment) {
-        Properties.Environment = {};
-      }
-      if (!Properties.Environment.Variables) {
-        Properties.Environment.Variables = {};
-      }
-      Properties.Environment.Variables.ENVIRONMENT = environment;
-    }
-  });
-
-  return template;
-};
 
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html
 const TEMPLATE_BODY_MAX_SIZE = 51200;
@@ -157,7 +35,6 @@ const uploadTemplateToPepeBucket = async ({
   stackName: string;
   template: CloudFormationTemplate;
 }) => {
-  console.log({ stackName, template });
   console.log('uploadTemplateToPepeBucket needs to be implemented.');
   throw new Error();
   // const key = getPepeBucketTemplateKey({ stackName });
@@ -176,7 +53,9 @@ export const doesStackExist = async ({ stackName }: { stackName: string }) => {
   log.info(logPrefix, `Checking if stack already exists...`);
 
   try {
-    await cloudFormation().describeStacks({ StackName: stackName }).promise();
+    await cloudFormation()
+      .describeStacks({ StackName: stackName })
+      .promise();
     log.info(logPrefix, 'Stack already exists');
     return true;
   } catch (err) {
@@ -265,7 +144,9 @@ export const printStackOutputsAfterDeploy = async ({
 
 export const deleteStack = async ({ stackName }: { stackName: string }) => {
   log.info(logPrefix, 'Deleting stack...');
-  await cloudFormation().deleteStack({ StackName: stackName }).promise();
+  await cloudFormation()
+    .deleteStack({ StackName: stackName })
+    .promise();
   try {
     await cloudFormation()
       .waitFor('stackDeleteComplete', { StackName: stackName })
@@ -285,7 +166,9 @@ export const createStack = async ({
 }) => {
   const { StackName: stackName } = params;
   log.info(logPrefix, `Creating stack...`);
-  await cloudFormation().createStack(params).promise();
+  await cloudFormation()
+    .createStack(params)
+    .promise();
   try {
     await cloudFormation()
       .waitFor('stackCreateComplete', { StackName: stackName })
@@ -307,7 +190,9 @@ export const updateStack = async ({
   const { StackName: stackName } = params;
   log.info(logPrefix, `Updating stack...`);
   try {
-    await cloudFormation().updateStack(params).promise();
+    await cloudFormation()
+      .updateStack(params)
+      .promise();
     await cloudFormation()
       .waitFor('stackUpdateComplete', { StackName: stackName })
       .promise();
@@ -347,55 +232,49 @@ export const enableTerminationProtection = async ({
 };
 
 export const deploy = async ({
-  params,
-  template,
+  terminationProtection = false,
+  ...paramsAndTemplate
 }: {
+  terminationProtection?: boolean;
   params:
-    | AWS.CloudFormation.CreateChangeSetInput
+    | AWS.CloudFormation.CreateStackInput
     | AWS.CloudFormation.UpdateStackInput;
   template: CloudFormationTemplate;
 }) => {
-  const environment = await getEnvironment();
+  const { params, template } = await addDefaults(paramsAndTemplate);
 
   const stackName = params.StackName;
 
-  let newTemplate = template;
-  newTemplate = await addDefaultParametersToTemplate(newTemplate);
-  newTemplate = addLogGroupToResources(newTemplate);
-  newTemplate = addEnvironmentsToLambdaResources(newTemplate);
+  delete params.TemplateBody;
+  delete params.TemplateURL;
 
-  const newParams = await addDefaultsParametersAndTagsToParams(params);
-
-  delete newParams.TemplateBody;
-  delete newParams.TemplateURL;
-
-  if (isTemplateBodyGreaterThanMaxSize(newTemplate)) {
+  if (isTemplateBodyGreaterThanMaxSize(template)) {
     const { url } = await uploadTemplateToPepeBucket({
       stackName,
-      template: newTemplate,
+      template,
     });
 
-    newParams.TemplateURL = url;
+    params.TemplateURL = url;
   } else {
-    newParams.TemplateBody = JSON.stringify(newTemplate);
+    params.TemplateBody = JSON.stringify(template);
   }
 
   /**
    * CAPABILITY_AUTO_EXPAND allows serverless transform.
    */
-  newParams.Capabilities = [
+  params.Capabilities = [
     'CAPABILITY_AUTO_EXPAND',
     'CAPABILITY_IAM',
     'CAPABILITY_NAMED_IAM',
   ];
 
   if (await doesStackExist({ stackName })) {
-    await updateStack({ params: newParams });
+    await updateStack({ params });
   } else {
-    await createStack({ params: newParams });
+    await createStack({ params });
   }
 
-  if (environment !== 'Testing') {
+  if (terminationProtection) {
     await enableTerminationProtection({ stackName });
   }
 
@@ -415,20 +294,20 @@ export const deployCloudFormation = async ({
   // assets,
   // skipAssets,
   // parameters,
-  stackName: preDefinedStackName,
+
   template,
   templatePath,
 }: {
   assets?: AssetsInput;
   skipAssets?: boolean;
   parameters?: Array<{ key: string; value: string }>;
-  stackName?: string;
+
   templatePath?: string;
   template?: CloudFormationTemplate;
 }) => {
   log.info(logPrefix, 'Starting CloudFormation deploy...');
 
-  const stackName = await getStackName({ preDefinedStackName });
+  const stackName = await getStackName();
 
   log.info(logPrefix, `StackName: ${stackName}`);
 
@@ -443,8 +322,6 @@ export const deployCloudFormation = async ({
 
     throw new Error('"template" or "templatePath" must be defined');
   })();
-
-  console.log(cloudFormationTemplate);
 
   // await cloudFormation()
   //   .validateTemplate({ TemplateBody: JSON.stringify(cloudFormationTemplate) })
@@ -519,10 +396,7 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
   const buckets: string[] = [];
 
   await (async function getBuckets({ nextToken }: { nextToken?: string }) {
-    const {
-      NextToken,
-      StackResourceSummaries,
-    } = await cloudFormation()
+    const { NextToken, StackResourceSummaries } = await cloudFormation()
       .listStackResources({ StackName: stackName, NextToken: nextToken })
       .promise();
 
@@ -543,12 +417,12 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
 };
 
 const destroy = async ({ stackName }: { stackName: string }) => {
-  const environment = await getEnvironment();
+  const environment = getEnvironment();
 
-  if (environment !== 'Testing') {
+  if (environment) {
     log.info(
       logPrefix,
-      `Cannot destroy stack whose environment (${environment}) is not Testing`
+      `Cannot destroy stack when environment (${environment}) is defined.`
     );
     return;
   }
@@ -570,28 +444,23 @@ const destroy = async ({ stackName }: { stackName: string }) => {
   await deleteStack({ stackName });
 };
 
-export const destroyCloudFormation = async ({
-  stackName: preDefinedStackName,
-}: {
-  stackName?: string;
-}) => {
-  log.info(logPrefix, 'Starting CloudFormation DESTROY...');
+export const destroyCloudFormation = async () => {
+  try {
+    log.info(logPrefix, 'Starting CloudFormation DESTROY...');
 
-  const stackName = await (async () => {
-    if (preDefinedStackName) {
-      return preDefinedStackName;
-    }
+    const stackName = await getStackName();
 
-    return getStackName({ preDefinedStackName });
-  })();
+    log.info(logPrefix, `stackName: ${stackName}`);
 
-  log.info(logPrefix, `preDefinedStackName: ${preDefinedStackName}`);
-  log.info(logPrefix, `stackName: ${stackName}`);
+    const assetsStackName = getAssetStackName(stackName);
 
-  const assetsStackName = getAssetStackName(stackName);
-
-  return Promise.all([
-    destroy({ stackName }),
-    destroy({ stackName: assetsStackName }),
-  ]);
+    return Promise.all([
+      destroy({ stackName }),
+      destroy({ stackName: assetsStackName }),
+    ]);
+  } catch (err) {
+    log.error(logPrefix, 'Cannot destroy cloudformation stack.');
+    log.error(logPrefix, 'Error message: %j', err.message);
+    process.exit();
+  }
 };

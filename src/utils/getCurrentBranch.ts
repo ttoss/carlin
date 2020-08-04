@@ -1,4 +1,4 @@
-import git from 'simple-git/promise';
+import git from 'simple-git';
 
 export const getCurrentBranch = () =>
   git()

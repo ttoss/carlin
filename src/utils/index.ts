@@ -1,5 +1,5 @@
 export * from './cloudFormationTemplate';
-export * from './environments';
+export * from './environment';
 export * from './exec';
 export * from './getAwsAccountId';
 export * from './getCurrentBranch';

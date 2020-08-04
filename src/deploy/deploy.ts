@@ -1,6 +1,7 @@
 import log from 'npmlog';
+import yargs from 'yargs';
 
-import { Environment, getAwsAccountId, getEnvironment } from '../utils';
+import { getAwsAccountId, getEnvironment } from '../utils';
 
 import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
 // import { runE2E } from '../runE2E';
@@ -26,6 +27,12 @@ const checkAwsAccountId = async ({
     getAwsAccountId(),
     getEnvironment(),
   ]);
+
+  if (true) {
+    console.log(yargs().argv);
+    console.log(process.env);
+    process.exit();
+  }
 
   /**
    * Cancel deployment if target AWS account is sandbox and environment
@@ -56,7 +63,7 @@ export const deploy = async (args: {
   // lambdaSingleFile: boolean;
   // lambdaLayer: boolean;
   // parameters: Array<{ key: string; value: string }>;
-  skipEnvironments: Environment[];
+  // skipEnvironments: ;
   skipAssets: boolean;
   stackName?: string;
   staticApp: boolean;
@@ -67,56 +74,60 @@ export const deploy = async (args: {
   templatePath: string;
 }) => {
   try {
-    const environment = await getEnvironment();
+    const environment = getEnvironment();
 
-    const {
-      sandboxAwsAccountId,
-      destroy,
-      // e2e,
-      skipEnvironments,
-      // skipAssets,
-      // lambda,
-      // lambdaLayer,
-      staticApp,
-    } = args;
+    console.log({ environment });
 
-    if (skipEnvironments.includes(environment)) {
-      log.info('deploy', `Environment ${environment} should be skipped.`);
-      return;
-    }
+    process.exit();
 
-    await checkAwsAccountId({ sandboxAwsAccountId });
+    // const {
+    //   sandboxAwsAccountId,
+    //   destroy,
+    //   // e2e,
+    //   // skipEnvironments,
+    //   // skipAssets,
+    //   // lambda,
+    //   // lambdaLayer,
+    //   staticApp,
+    // } = args;
 
-    if (destroy) {
-      await destroyCloudFormation(args);
-      return;
-    }
+    // // if (skipEnvironments.includes(environment)) {
+    // //   log.info('deploy', `Environment ${environment} should be skipped.`);
+    // //   return;
+    // // }
 
-    const whichDeploy = (() => {
-      if (staticApp) {
-        return deployStaticApp;
-      }
+    // await checkAwsAccountId({ sandboxAwsAccountId });
 
-      // /**
-      //  * If skipAssets, then deployCloudFormation is called instead methods
-      //  * which deploy assets.
-      //  */
-      // if (lambdaLayer && !skipAssets) {
-      //   return deployLambdaLayer;
-      // }
-
-      // if (lambda) {
-      //   return deployLambda;
-      // }
-
-      return deployCloudFormation;
-    })();
-
-    await whichDeploy(args);
-
-    // if (e2e) {
-    //   await runE2E();
+    // if (destroy) {
+    //   await destroyCloudFormation(args);
+    //   return;
     // }
+
+    // const whichDeploy = (() => {
+    //   if (staticApp) {
+    //     return deployStaticApp;
+    //   }
+
+    //   // /**
+    //   //  * If skipAssets, then deployCloudFormation is called instead methods
+    //   //  * which deploy assets.
+    //   //  */
+    //   // if (lambdaLayer && !skipAssets) {
+    //   //   return deployLambdaLayer;
+    //   // }
+
+    //   // if (lambda) {
+    //   //   return deployLambda;
+    //   // }
+
+    //   return deployCloudFormation;
+    // })();
+
+    // // await whichDeploy(args);
+
+    // // if (e2e) {
+    // //   await runE2E();
+    // // }
   } catch (error) {
     log.error('deploy', `Cannot deploy: ${error.message}`);
   }

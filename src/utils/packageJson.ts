@@ -23,8 +23,8 @@ const getPackageJsonProperty = ({
   }
 };
 
-export const getPackageName = () =>
+export const getPackageName = (): string =>
   getPackageJsonProperty({ env: 'PACKAGE_NAME', property: 'name' });
 
-export const getPackageVersion = () =>
+export const getPackageVersion = (): string =>
   getPackageJsonProperty({ env: 'PACKAGE_VERSION', property: 'version' });
