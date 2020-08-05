@@ -12,6 +12,16 @@ export const deployStaticAppCommand: CommandModule<
   describe: 'Static app deploy.',
   builder: (yargs) =>
     yargs.options({
+      acmArn: {
+        type: 'string',
+      },
+      acmArnExportedName: {
+        type: 'string',
+      },
+      aliases: {
+        describe: 'CloudFront aliases.',
+        type: 'array',
+      },
       buildFolder: {
         default: 'build',
         required: false,
@@ -29,7 +39,6 @@ export const deployStaticAppCommand: CommandModule<
       },
     }),
   handler: ({ destroy, ...rest }) => {
-    console.log({ ...rest });
     if (destroy) {
       destroyCloudFormation();
     } else {

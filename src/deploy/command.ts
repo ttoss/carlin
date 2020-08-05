@@ -4,7 +4,7 @@ import { CommandModule } from 'yargs';
 
 import { AWS_DEFAULT_REGION } from '../config';
 
-import { getEnvironment } from '../utils';
+import { getAwsAccountId, getEnvironment } from '../utils';
 
 // import { uploadDirectoryToS3 } from './s3';
 
@@ -15,6 +15,20 @@ import { deploy } from './deploy';
 import { setPreDefinedStackName } from './stackName';
 
 const logPrefix = 'deploy';
+
+const checkAwsAccountId = async (awsAccountId: string) => {
+  try {
+    const currentAwsAccountId = await getAwsAccountId();
+    if (String(awsAccountId) !== String(currentAwsAccountId)) {
+      throw new Error(
+        `AWS account id does not match. Current is "${currentAwsAccountId}" but the defined in configuration files is "${awsAccountId}".`
+      );
+    }
+  } catch (err) {
+    log.error(logPrefix, err.message);
+    process.exit();
+  }
+};
 
 export const deployCommand: CommandModule<
   any,
@@ -86,6 +100,25 @@ export const deployCommand: CommandModule<
         AWS.config.region = region;
         if (stackName) setPreDefinedStackName(stackName);
       })
+      /**
+       * Check AWS account id.
+       */
+      .middleware(
+        async ({
+          environments,
+          environment,
+          awsAccountId: defaultAwsAccountId,
+        }) => {
+          const envAwsAccountId: string | undefined = (() => {
+            return environments && environment && environments[environment]
+              ? environments[environment].awsAccountId
+              : undefined;
+          })();
+          if (defaultAwsAccountId || envAwsAccountId) {
+            await checkAwsAccountId(defaultAwsAccountId || envAwsAccountId);
+          }
+        }
+      )
       .command(deployStaticAppCommand)
       .command(deployPepeBaseCommand);
 

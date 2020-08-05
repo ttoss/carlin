@@ -241,8 +241,14 @@ const getCloudFrontEdgeLambdas = () => {
 };
 
 const getCloudFrontTemplate = ({
+  acmArn,
+  acmArnExportedName,
+  aliases,
   edge = false,
 }: {
+  acmArn?: string;
+  acmArnExportedName?: string;
+  aliases?: string | string[];
   edge?: boolean;
 }): CloudFormationTemplate => {
   let template = { ...getBaseTemplate() };
@@ -334,6 +340,23 @@ const getCloudFrontTemplate = ({
     },
   };
 
+  if (acmArn || acmArnExportedName) {
+    /**
+     * Add ACM to CloudFront template.
+     */
+    cloudFrontResources.CloudFrontDistribution.Properties.DistributionConfig = {
+      ...cloudFrontResources.CloudFrontDistribution.Properties
+        .DistributionConfig,
+      Aliases: aliases || { Ref: 'AWS::NoValue' },
+      ViewerCertificate: {
+        AcmCertificateArn: acmArn || {
+          'Fn::ImportValue': acmArnExportedName,
+        },
+        SslSupportMethod: 'sni-only',
+      },
+    };
+  }
+
   if (edge) {
     cloudFrontResources = {
       ...cloudFrontResources,
@@ -396,14 +419,21 @@ const getCloudFrontTemplate = ({
 };
 
 export const getStaticAppTemplate = ({
+  acmArn,
+  acmArnExportedName,
+  aliases,
   cloudfront,
   edge,
 }: {
+  acmArn?: string;
+  acmArnExportedName?: string;
+  aliases?: string | string[];
+
   cloudfront: boolean;
   edge: boolean;
 }): CloudFormationTemplate => {
   if (cloudfront) {
-    return getCloudFrontTemplate({ edge });
+    return getCloudFrontTemplate({ acmArn, acmArnExportedName, aliases, edge });
   }
   return getBaseTemplate();
 };
