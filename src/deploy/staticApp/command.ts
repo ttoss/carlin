@@ -6,7 +6,13 @@ import { deployStaticApp } from './staticApp';
 
 export const deployStaticAppCommand: CommandModule<
   { destroy: boolean },
-  { buildFolder: string; cloudfront: boolean; destroy: boolean; edge: boolean }
+  {
+    buildFolder: string;
+    cloudfront: boolean;
+    destroy?: boolean;
+    edge: boolean;
+    hostedZoneName?: string;
+  }
 > = {
   command: 'static-app',
   describe: 'Static app deploy.',
@@ -24,7 +30,6 @@ export const deployStaticAppCommand: CommandModule<
       },
       buildFolder: {
         default: 'build',
-        required: false,
         type: 'string',
       },
       cloudfront: {
@@ -36,6 +41,10 @@ export const deployStaticAppCommand: CommandModule<
         default: false,
         require: false,
         type: 'boolean',
+      },
+      hostedZoneName: {
+        required: false,
+        type: 'string',
       },
     }),
   handler: ({ destroy, ...rest }) => {

@@ -96,13 +96,15 @@ export const deployStaticApp = async ({
   buildFolder,
   cloudfront,
   edge,
+  hostedZoneName,
 }: {
   acmArn?: string;
   acmArnExportedName?: string;
-  aliases?: string | string[];
+  aliases?: string[];
   buildFolder: string;
   cloudfront: boolean;
   edge: boolean;
+  hostedZoneName?: string;
 }) => {
   log.info(logPrefix, `Starting static app deploy...`);
   try {
@@ -118,6 +120,7 @@ export const deployStaticApp = async ({
       aliases,
       cloudfront,
       edge,
+      hostedZoneName,
     });
 
     const { Outputs } = await deploy({ params, template });

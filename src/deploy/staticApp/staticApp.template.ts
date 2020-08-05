@@ -1,4 +1,4 @@
-import { CloudFormationTemplate, Resource } from '../../utils';
+import { CloudFormationTemplate, Resource, Output } from '../../utils';
 
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
@@ -245,11 +245,13 @@ const getCloudFrontTemplate = ({
   acmArnExportedName,
   aliases,
   edge = false,
+  hostedZoneName,
 }: {
   acmArn?: string;
   acmArnExportedName?: string;
-  aliases?: string | string[];
+  aliases?: string[];
   edge?: boolean;
+  hostedZoneName?: string;
 }): CloudFormationTemplate => {
   let template = { ...getBaseTemplate() };
 
@@ -388,13 +390,63 @@ const getCloudFrontTemplate = ({
     ];
   }
 
+  /**
+   * Add aliases to Route 53 records.
+   */
+  if (hostedZoneName && aliases) {
+    const recordSets = aliases.map((alias) => ({
+      Name: alias,
+      ResourceRecords: [
+        {
+          'Fn::GetAtt': `${CLOUDFRONT_DISTRIBUTION_LOGICAL_ID}.DomainName`,
+        },
+      ],
+      // 12 hours.
+      TTL: `${60 * 60 * 12}`,
+      Type: 'CNAME',
+    }));
+
+    const route53RecordSetGroupResources: { [key: string]: Resource } = {
+      Route53RecordSetGroup: {
+        Type: 'AWS::Route53::RecordSetGroup',
+        DependsOn: [CLOUDFRONT_DISTRIBUTION_LOGICAL_ID],
+        Properties: {
+          // https://forums.aws.amazon.com/thread.jspa?threadID=103919
+          HostedZoneName: `${hostedZoneName}${
+            hostedZoneName.endsWith('.') ? '' : '.'
+          }`,
+          RecordSets: recordSets,
+        },
+      },
+    };
+
+    template.Resources = {
+      ...template.Resources,
+      ...route53RecordSetGroupResources,
+    };
+  }
+
   template.Resources = { ...template.Resources, ...cloudFrontResources };
+
+  /**
+   * Add aliases output to template.
+   */
+  const aliasesOutput = (aliases || []).reduce<{ [key: string]: Output }>(
+    (acc, alias, index) => ({
+      ...acc,
+      [`Alias${index}URL`]: {
+        Value: `https://${alias}`,
+      },
+    }),
+    {}
+  );
 
   /**
    * Add CloudFront Distribution ID and CloudFront URL to template.
    */
   template.Outputs = {
     ...template.Outputs,
+    ...aliasesOutput,
     CloudFrontURL: {
       Value: {
         'Fn::Join': [
@@ -424,16 +476,23 @@ export const getStaticAppTemplate = ({
   aliases,
   cloudfront,
   edge,
+  hostedZoneName,
 }: {
   acmArn?: string;
   acmArnExportedName?: string;
-  aliases?: string | string[];
-
+  aliases?: string[];
   cloudfront: boolean;
   edge: boolean;
+  hostedZoneName?: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
-    return getCloudFrontTemplate({ acmArn, acmArnExportedName, aliases, edge });
+    return getCloudFrontTemplate({
+      acmArn,
+      acmArnExportedName,
+      aliases,
+      edge,
+      hostedZoneName,
+    });
   }
   return getBaseTemplate();
 };
