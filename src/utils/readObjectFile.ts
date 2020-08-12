@@ -1,13 +1,10 @@
 import fs from 'fs';
-import yaml from 'js-yaml';
+
+import { readCloudFormationTemplate } from './cloudFormationTemplate';
 
 export const readYaml = ({ path }: { path: string }) => {
-  try {
-    const file = fs.readFileSync(path, 'utf8');
-    return yaml.safeLoad(file);
-  } catch {
-    return {};
-  }
+  const template = fs.readFileSync(path, 'utf8');
+  return readCloudFormationTemplate({ template });
 };
 
 export const readObjectFile = ({ path }: { path: string }) => {

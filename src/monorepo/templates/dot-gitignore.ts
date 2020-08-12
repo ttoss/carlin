@@ -110,4 +110,5 @@ dist/
 node_modules/
 .cache/
 tmp_*
+storybook-static/
 `;

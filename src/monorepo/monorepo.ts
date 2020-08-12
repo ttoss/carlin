@@ -45,6 +45,10 @@ const writeFiles = async () => {
   try {
     log.info(logPrefix, 'Writing files...');
     await Promise.all(getFilesArr().map((file) => writeTemplate(file)));
+    /**
+     * Create "packages" folder.
+     */
+    await fs.promises.mkdir('packages');
   } catch (error) {
     log.error(logPrefix, 'Cannot write files.');
     log.error(logPrefix, 'Error message: %j', error.message);
@@ -82,6 +86,7 @@ const installDependencies = () => {
         'lerna',
         'lint-staged',
         'npm-check-updates',
+        'pepe-cli',
         'prettier',
         'stylelint',
         'stylelint-config-prettier',

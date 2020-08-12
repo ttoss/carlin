@@ -1,6 +1,6 @@
 {
   "name": "pepe-cli",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -25,16 +25,24 @@
   },
   "homepage": "https://github.com/ttoss/pepe#readme",
   "dependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
+    "@rollup/plugin-typescript": "^5.0.2",
+    "adm-zip": "^0.4.16",
     "aws-sdk": "^2.723.0",
+    "builtin-modules": "^3.1.0",
     "change-case": "^4.1.1",
     "deepmerge": "^4.2.2",
     "find-up": "^4.1.0",
     "js-yaml": "^3.14.0",
     "npmlog": "^4.1.2",
+    "rollup": "^2.23.1",
     "simple-git": "^2.15.0",
     "yargs": "^15.4.1"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.4.33",
     "@types/faker": "^4.1.12",
     "@types/jest": "^26.0.7",
     "@types/js-yaml": "^3.12.5",

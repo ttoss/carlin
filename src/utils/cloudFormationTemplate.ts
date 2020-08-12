@@ -2,8 +2,6 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
 
-import { readObjectFile } from './readObjectFile';
-
 interface Parameter {
   AllowedValues?: string[];
   Default?: string | number;
@@ -149,7 +147,9 @@ const getPepeTypes = (): TagAndType[] => [
     options: {
       kind: 'scalar',
       construct: (filePath: string) => {
-        return fs.readFileSync(path.resolve(filePath)).toString();
+        return fs
+          .readFileSync(path.resolve(process.cwd(), filePath))
+          .toString();
       },
     },
   },
@@ -166,11 +166,10 @@ export const dumpCloudFormationTemplate = (
 ) => yaml.safeDump(cloudFormationTemplate, { schema: getSchema() });
 
 export const readCloudFormationTemplate = ({
-  templatePath,
+  template,
 }: {
-  templatePath: string;
+  template: string;
 }): CloudFormationTemplate => {
-  const template = readObjectFile({ path: templatePath });
   const schema = getSchema(getPepeTypes());
   const parsed = yaml.safeLoad(template, { schema });
   if (!parsed || typeof parsed === 'string') {

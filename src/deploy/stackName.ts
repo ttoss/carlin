@@ -45,13 +45,3 @@ export const getStackName = async () => {
 
   return limitStackName(name);
 };
-
-export const getAssetStackName = (stackName: string) => {
-  const postfix = '-Assets';
-  return limitStackName(
-    `${stackName.substring(
-      0,
-      STACK_NAME_MAX_LENGTH - postfix.length
-    )}${postfix}`
-  );
-};

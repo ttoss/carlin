@@ -26,7 +26,7 @@ const addDefaultsParametersAndTagsToParams = async (
 ): Promise<CloudFormationParams> => {
   const [
     branchName,
-    environment = 'NONE',
+    environment = 'NoEnv',
     packageName,
     packageVersion,
     projectName,
