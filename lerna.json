@@ -1,0 +1,14 @@
+{
+  "ignoreChanges": ["**/*.md", "**/package.json"],
+  "command": {
+    "publish": {
+      "allowBranch": "master",
+      "conventionalCommits": true,
+      "message": "chore: publish new version"
+    }
+  },
+  "npmClient": "yarn",
+  "useWorkspaces": true,
+  "version": "0.1.0",
+  "stream": true
+}

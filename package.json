@@ -1,13 +1,13 @@
 {
-  "name": "pepe-cli",
+  "name": "pepe-cli-monorepo",
   "version": "0.1.0",
   "description": "",
-  "main": "dist/index.js",
   "scripts": {
-    "test": "jest",
-    "prebuild": "rm -rf dist",
-    "build": "tsc",
-    "prepare": "npm run test && npm run build"
+    "list-packages": "lerna ls",
+    "list-updates": "npx ncu && lerna exec -- npx ncu",
+    "update-all": "npx ncu -u && lerna exec -- npx ncu -u",
+    "reinstall": "yarn run remove-all-node-modules && yarn",
+    "remove-all-node-modules": "npx lerna exec -- rm -rf node_modules && rm -rf node_modules && rm -f yarn.lock"
   },
   "repository": {
     "type": "git",
@@ -20,45 +20,44 @@
     "url": "https://twitter.com/arantespp"
   },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ttoss/pepe/issues"
-  },
-  "homepage": "https://github.com/ttoss/pepe#readme",
-  "dependencies": {
-    "@rollup/plugin-commonjs": "^14.0.0",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^8.4.0",
-    "@rollup/plugin-typescript": "^5.0.2",
-    "adm-zip": "^0.4.16",
-    "aws-sdk": "^2.723.0",
-    "builtin-modules": "^3.1.0",
-    "change-case": "^4.1.1",
-    "deepmerge": "^4.2.2",
-    "find-up": "^4.1.0",
-    "js-yaml": "^3.14.0",
-    "npmlog": "^4.1.2",
-    "rollup": "^2.23.1",
-    "simple-git": "^2.15.0",
-    "yargs": "^15.4.1"
-  },
   "devDependencies": {
-    "@types/adm-zip": "^0.4.33",
-    "@types/faker": "^4.1.12",
-    "@types/jest": "^26.0.7",
-    "@types/js-yaml": "^3.12.5",
-    "@types/node": "^14.0.27",
-    "@types/npmlog": "^4.1.2",
-    "@types/yargs": "^15.0.5",
+    "@commitlint/cli": "^9.1.1",
+    "@commitlint/config-conventional": "^9.1.1",
+    "@typescript-eslint/eslint-plugin": "^3.9.0",
+    "@typescript-eslint/parser": "^3.9.0",
+    "eslint": "^7.6.0",
+    "eslint-config-airbnb": "^18.2.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-config-react-app": "^5.2.1",
+    "eslint-plugin-flowtype": "^5.2.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jest": "^23.20.0",
+    "eslint-plugin-jest-dom": "^3.1.7",
+    "eslint-plugin-jsx-a11y": "^6.3.1",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-react": "^7.20.6",
+    "eslint-plugin-react-hooks": "^4.0.8",
+    "eslint-plugin-relay": "^1.8.1",
     "faker": "^4.1.0",
-    "jest": "^26.1.0",
-    "ts-jest": "^26.1.4",
+    "husky": "^4.2.5",
+    "imagemin-lint-staged": "^0.4.0",
+    "jest": "^26.4.0",
+    "jest-emotion": "^10.0.32",
+    "lerna": "^3.22.1",
+    "lint-staged": "^10.2.11",
+    "npm-check-updates": "^7.1.0",
+    "pepe-cli": "^0.1.0",
+    "prettier": "^2.0.5",
+    "stylelint": "^13.6.1",
+    "stylelint-config-prettier": "^8.0.2",
+    "stylelint-prettier": "^1.1.2",
+    "ts-jest": "^26.2.0",
+    "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   },
-  "bin": {
-    "pepe": "./bin/pepe"
-  },
-  "files": [
-    "bin/",
-    "dist/"
+  "private": true,
+  "workspaces": [
+    "packages/**/*"
   ]
 }

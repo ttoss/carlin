@@ -1,0 +1,64 @@
+{
+  "name": "pepe-cli",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "prebuild": "rm -rf dist",
+    "build": "tsc",
+    "prepare": "npm run test && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ttoss/pepe.git"
+  },
+  "keywords": [],
+  "author": {
+    "email": "arantespp@gmail.com",
+    "name": "Pedro Arantes",
+    "url": "https://twitter.com/arantespp"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ttoss/pepe/issues"
+  },
+  "homepage": "https://github.com/ttoss/pepe#readme",
+  "dependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
+    "@rollup/plugin-typescript": "^5.0.2",
+    "adm-zip": "^0.4.16",
+    "aws-sdk": "^2.723.0",
+    "builtin-modules": "^3.1.0",
+    "change-case": "^4.1.1",
+    "deepmerge": "^4.2.2",
+    "find-up": "^4.1.0",
+    "js-yaml": "^3.14.0",
+    "npmlog": "^4.1.2",
+    "rollup": "^2.23.1",
+    "simple-git": "^2.15.0",
+    "yargs": "^15.4.1"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.4.33",
+    "@types/faker": "^4.1.12",
+    "@types/jest": "^26.0.7",
+    "@types/js-yaml": "^3.12.5",
+    "@types/node": "^14.0.27",
+    "@types/npmlog": "^4.1.2",
+    "@types/yargs": "^15.0.5",
+    "faker": "^4.1.0",
+    "jest": "^26.1.0",
+    "ts-jest": "^26.1.4",
+    "typescript": "^3.9.7"
+  },
+  "bin": {
+    "pepe": "./bin/pepe"
+  },
+  "files": [
+    "bin/",
+    "dist/"
+  ]
+}
