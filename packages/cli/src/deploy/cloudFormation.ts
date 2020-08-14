@@ -333,13 +333,14 @@ export const deployCloudFormation = async ({
         stackName,
       });
       if (response) {
-        const { bucket, key } = response;
+        const { bucket, key, versionId } = response;
         /**
          * Add Parameters to CloudFormation template.
          */
         cloudFormationTemplate.Parameters = {
           LambdaS3Bucket: { Type: 'String' },
           LambdaS3Key: { Type: 'String' },
+          LambdaS3ObjectVersion: { Type: 'String' },
           ...cloudFormationTemplate.Parameters,
         };
         /**
@@ -353,6 +354,10 @@ export const deployCloudFormation = async ({
           {
             ParameterKey: 'LambdaS3Key',
             ParameterValue: key,
+          },
+          {
+            ParameterKey: 'LambdaS3ObjectVersion',
+            ParameterValue: versionId,
           },
         );
       }

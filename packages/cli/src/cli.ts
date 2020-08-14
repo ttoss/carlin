@@ -24,7 +24,11 @@ const getConfig = () => {
     }
   } while (findUpPath);
   const configs = paths.map((p) => readObjectFile({ path: p }));
-  const finalConfig = deepmerge.all(configs);
+  /**
+   * Using configs.reverser() to get the most far config first. This way the
+   * nearest configs will replace others.
+   */
+  const finalConfig = deepmerge.all(configs.reverse());
   return finalConfig;
 };
 

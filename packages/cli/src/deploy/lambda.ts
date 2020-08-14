@@ -53,7 +53,7 @@ const updateCodeToS3 = async ({
   stackName: string;
 }) => {
   const zip = new AdmZip();
-  zip.addFile('lambda.js', Buffer.from(code));
+  zip.addFile('index.js', Buffer.from(code));
   zip.writeZip('dist/lambda.zip');
   const pepeBucketName = await getPepeBucketName();
   return uploadFileToS3({
@@ -78,6 +78,6 @@ export const deployLambdaCode = async ({
   }
   log.info(logPrefix, 'Deploy Lambda code.');
   const code = await buildLambdaSingleFile({ lambdaExternals, lambdaInput });
-  const { bucket, key } = await updateCodeToS3({ code, stackName });
-  return { bucket, key };
+  const { bucket, key, versionId } = await updateCodeToS3({ code, stackName });
+  return { bucket, key, versionId };
 };

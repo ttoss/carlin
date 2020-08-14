@@ -48,6 +48,7 @@ export const deployCommand: CommandModule<
           type: 'boolean',
         },
         lambdaExternals: {
+          alias: ['lambda-externals'],
           default: [],
           describe: 'Lambda external packages.',
           type: 'array',

@@ -26,7 +26,18 @@ export const template: CloudFormationTemplate = {
               Prefix: { Ref: 'TemplatesFolder' },
               Status: 'Enabled',
             },
+            {
+              NoncurrentVersionExpirationInDays: 3,
+              Status: 'Enabled',
+            },
           ],
+        },
+        /**
+         * This is necessary because if we update Lambda code without change
+         * CloudFormation template, the Lambda will not be updated.
+         */
+        VersioningConfiguration: {
+          Status: 'Enabled',
         },
       },
     },

@@ -86,6 +86,10 @@ const addLogGroupToResources = (
 
   resourcesEntries.forEach(([key, resource]) => {
     if (resource.Type === 'AWS::Lambda::Function') {
+      /**
+       * Check if exist a resource on template whose LogGroupName
+       * Properties includes the Lambda logical id.
+       */
       const logGroup = resourcesEntries.find(([, resource2]) => {
         const logGroupNameStr = JSON.stringify(
           resource2.Properties?.LogGroupName?.['Fn::Join'] || '',
