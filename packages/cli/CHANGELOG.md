@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.1](https://github.com/ttoss/pepe/compare/v0.3.0...v0.3.1) (2020-08-14)
+
+### Bug Fixes
+
+- deploy script ([293c6fd](https://github.com/ttoss/pepe/commit/293c6fd83d7a7da37a54ac2b2486c73e6944e494))
+
 # [0.3.0](https://github.com/ttoss/pepe/compare/v0.2.0...v0.3.0) (2020-08-14)
 
 ### Features
