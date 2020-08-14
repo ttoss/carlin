@@ -7,7 +7,10 @@
     "list-updates": "npx ncu && lerna exec -- npx ncu",
     "update-all": "npx ncu -u && lerna exec -- npx ncu -u",
     "reinstall": "yarn run remove-all-node-modules && yarn",
-    "remove-all-node-modules": "npx lerna exec -- rm -rf node_modules && rm -rf node_modules && rm -f yarn.lock"
+    "remove-all-node-modules": "npx lerna exec -- rm -rf node_modules && rm -rf node_modules && rm -f yarn.lock",
+    "deploy-packages": "lerna run publish --scope pepe-cli && lerna run deploy --scope pepe-cli-website",
+    "deploy:patch": "lerna version patch && deploy-packages",
+    "deploy:minor": "lerna version minor && deploy-packages"
   },
   "repository": {
     "type": "git",
