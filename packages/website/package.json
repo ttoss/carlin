@@ -1,6 +1,7 @@
 {
   "name": "pepe-cli-website",
   "version": "0.3.3",
+  "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
