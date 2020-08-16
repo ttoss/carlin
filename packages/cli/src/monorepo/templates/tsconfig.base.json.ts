@@ -1,4 +1,8 @@
-export default `
+export const templateName = 'tsconfig.base.json';
+
+export const dir = 'config';
+
+export const content = `
 {
   "compilerOptions": {
     /* Basic Options */

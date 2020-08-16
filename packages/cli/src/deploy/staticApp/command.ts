@@ -5,37 +5,27 @@ import { destroyCloudFormation } from '../cloudFormation';
 
 import { deployStaticApp } from './staticApp';
 
-export const deployStaticAppCommand: CommandModule<
-  { destroy: boolean },
-  {
-    buildFolder: string;
-    cloudfront: boolean;
-    destroy?: boolean;
-    edge: boolean;
-    hostedZoneName?: string;
-  }
-> = {
+export const deployStaticAppCommand: CommandModule = {
   command: 'static-app',
   describe: 'Static app deploy.',
   builder: (yargs) =>
     yargs
       .options({
-        acmArn: {
-          aliases: ['acm-arn'],
+        'acm-arn': {
           conflicts: 'acmArnExportedName',
+          group: 'aaa',
           type: 'string',
         },
-        acmArnExportedName: {
-          aliases: ['acm-arn-exported-name'],
+        'acm-arn-exported-name': {
           conflicts: 'acmArn',
+          group: 'aaa',
           type: 'string',
         },
         aliases: {
           describe: 'CloudFront aliases.',
           type: 'array',
         },
-        buildFolder: {
-          aliases: ['build-folder'],
+        'build-folder': {
           default: 'build',
           type: 'string',
         },
@@ -49,17 +39,18 @@ export const deployStaticAppCommand: CommandModule<
           require: false,
           type: 'boolean',
         },
-        hostedZoneName: {
-          aliases: ['hosted-zone-name'],
+        'hosted-zone-name': {
           required: false,
           type: 'string',
         },
       })
       .middleware((argv) => {
-        const { acmArn, acmArnExportedName, aliases, edge } = argv;
+        const { acmArn, aliases, edge } = argv;
         if (acmArn || acmArn || aliases || edge) {
           argv.cloudfront = true;
         }
+      })
+      .check(({ aliases, acmArnExportedName, acmArn }) => {
         if (aliases && !(acmArn || acmArnExportedName)) {
           throw new Error(
             '"alias" is defined but "acm-arn" or "acm-arn-exported-name" is not.',
@@ -70,7 +61,7 @@ export const deployStaticAppCommand: CommandModule<
     if (destroy) {
       destroyCloudFormation();
     } else {
-      deployStaticApp(rest);
+      deployStaticApp(rest as any);
     }
   },
 };

@@ -1,0 +1,13 @@
+{
+  "extends": "../../config/tsconfig.react.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "react",
+    "lib": ["DOM"],
+    "incremental": false,
+    "noEmit": true,
+    "noImplicitAny": false
+  },
+  "include": ["src/"]
+}

@@ -1,4 +1,8 @@
-export default `
+export const templateName = '.gitignore';
+
+export const dir = '.';
+
+export const content = `
 # Logs
 logs
 *.log

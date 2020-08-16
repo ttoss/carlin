@@ -1,4 +1,8 @@
-export default `
+export const templateName = '.eslintrc.react.js';
+
+export const dir = 'config';
+
+export const content = `
 const path = require('path');
 
 module.exports = {

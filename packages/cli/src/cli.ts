@@ -33,6 +33,7 @@ const getConfig = () => {
 };
 
 yargs
+  .scriptName('pepe')
   .env('PEPE')
   .pkgConf('pepe')
   .config(getConfig())
@@ -54,6 +55,9 @@ yargs
       hidden: true,
     },
   })
+  /**
+   * Create final options with environment and environments.
+   */
   .middleware((argv) => {
     const { environment, environments } = argv;
     if (environment) {

@@ -1,4 +1,8 @@
-export default `
+export const templateName = 'jest.config.base.js';
+
+export const dir = 'config';
+
+export const content = `
 module.exports = (rootDir, type) => {
   const base = {
     collectCoverage: true,

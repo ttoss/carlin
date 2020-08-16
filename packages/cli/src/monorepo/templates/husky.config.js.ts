@@ -1,4 +1,8 @@
-export default `
+export const templateName = 'husky.config.js';
+
+export const dir = 'config';
+
+export const content = `
 module.exports = {
   hooks: {
     'commit-msg':

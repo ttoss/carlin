@@ -1,4 +1,8 @@
-export default `
+export const templateName = '.eslintrc.base.js';
+
+export const dir = 'config';
+
+export const content = `
 module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: {

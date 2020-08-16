@@ -1,4 +1,8 @@
-export default `
+export const templateName = 'commitlint.config.js';
+
+export const dir = '.';
+
+export const content = `
 const fs = require('fs');
 
 /**

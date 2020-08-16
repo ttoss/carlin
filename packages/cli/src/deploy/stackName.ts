@@ -33,7 +33,7 @@ export const getStackName = async () => {
     }
 
     if (environment) {
-      return `${pascalCase(packageName)}-${pascalCase(environment)}`;
+      return `${pascalCase(packageName)}-${environment}`;
     }
 
     if (currentBranch) {

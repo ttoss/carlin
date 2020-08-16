@@ -1,4 +1,8 @@
-export default `
+export const templateName = 'lerna.json';
+
+export const dir = '.';
+
+export const content = `
 {
   "ignoreChanges": ["**/*.md", "**/package.json"],
   "command": {

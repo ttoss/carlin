@@ -1,4 +1,8 @@
-export default `
+export const templateName = 'lint-staged.config.js';
+
+export const dir = 'config';
+
+export const content = `
 module.exports = {
   '*.{js,jsx,ts,tsx}': 'eslint --fix',
   '*.{md,mdx,html,json,yml,yaml}': 'prettier --write',
