@@ -33,6 +33,7 @@ const getConfig = () => {
 };
 
 yargs
+  .help()
   .scriptName('pepe')
   .env('PEPE')
   .pkgConf('pepe')
@@ -79,6 +80,6 @@ yargs
   })
   .command(deployCommand)
   .command(monorepoCommand)
-  .help();
+  .strict();
 
 export default yargs;

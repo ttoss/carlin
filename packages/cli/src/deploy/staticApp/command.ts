@@ -13,16 +13,19 @@ export const deployStaticAppCommand: CommandModule = {
       .options({
         'acm-arn': {
           conflicts: 'acmArnExportedName',
-          group: 'aaa',
+          describe:
+            'The ARN of the certificate that will be associated to CloudFront.',
           type: 'string',
         },
         'acm-arn-exported-name': {
           conflicts: 'acmArn',
-          group: 'aaa',
+          describe:
+            'The exported name of the ARN value of the ACM if it was created via CloudFormation.',
           type: 'string',
         },
         aliases: {
-          describe: 'CloudFront aliases.',
+          describe:
+            'The aliases that will be associated with the CloudFront. https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html',
           type: 'array',
         },
         'build-folder': {
@@ -31,16 +34,22 @@ export const deployStaticAppCommand: CommandModule = {
         },
         cloudfront: {
           default: false,
+          describe:
+            'A CloudFront resource is created along with S3 if this option is `true`. The CloudFront is configured to be used with a single page application (SPA) because it index only the `index.html` file.',
           require: false,
           type: 'boolean',
         },
         edge: {
           default: false,
+          describe:
+            'This option enables Lambda@Edge. This is used with apps that is built with Nextjs or Gatsby.',
           require: false,
           type: 'boolean',
         },
         'hosted-zone-name': {
           required: false,
+          describe:
+            'Is the name of a Route 53 hosted zone. It `true`, Pepe creates the subdomains defined on `--aliases` option.',
           type: 'string',
         },
       })

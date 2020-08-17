@@ -102,7 +102,7 @@ const getCloudFrontEdgeLambdas = () => {
             },
           ],
         },
-        Path: '/custom-iam/project-role/',
+        Path: '/pepe/',
         Policies: [
           {
             PolicyName: 'LambdaEdgeIAMRolePolicyName',

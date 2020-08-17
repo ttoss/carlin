@@ -37,8 +37,8 @@ export const deployCommand: CommandModule<
     templatePath: string;
   }
 > = {
-  command: 'deploy',
-  describe: 'Deploy cloud resources',
+  command: 'deploy [specific]',
+  describe: 'Deploy cloud resources.',
   builder: (yargs) => {
     yargs
       .options({
@@ -47,13 +47,12 @@ export const deployCommand: CommandModule<
           description: 'Destroy the deployment.',
           type: 'boolean',
         },
-        lambdaExternals: {
-          alias: ['lambda-externals'],
+        'lambda-externals': {
           default: [],
           describe: 'Lambda external packages.',
           type: 'array',
         },
-        lambdaInput: {
+        'lambda-input': {
           default: 'src/lambda.ts',
           describe: 'Lambda input file.',
           type: 'string',
@@ -70,11 +69,11 @@ export const deployCommand: CommandModule<
           describe: 'AWS region',
           type: 'string',
         },
-        stackName: {
+        'stack-name': {
           describe: 'CloudFormation Stack name.',
           type: 'string',
         },
-        templatePath: {
+        'template-path': {
           alias: 't',
           default: 'src/cloudformation.yml',
           type: 'string',
