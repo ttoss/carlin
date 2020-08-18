@@ -6,8 +6,11 @@ import { commands } from '../api/commands';
 
 const Layout: React.FC = ({ children }) => {
   return (
-    <div>
+    <div style={{ display: 'flex' }}>
       <aside style={{ display: 'flex', flexDirection: 'column' }}>
+        <span>
+          <strong>API</strong>
+        </span>
         {commands.map((command) => (
           <Link
             key={command}

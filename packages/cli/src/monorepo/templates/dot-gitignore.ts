@@ -115,4 +115,5 @@ node_modules/
 .cache/
 tmp_*
 storybook-static/
+package-lock.json
 `;

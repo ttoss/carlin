@@ -2,7 +2,7 @@ import { constantCase } from 'change-case';
 import deepmerge from 'deepmerge';
 import findUp from 'find-up';
 import path from 'path';
-import yargs from 'yargs';
+import * as yargs from 'yargs';
 
 import { NAME } from './config';
 
@@ -18,6 +18,7 @@ const getConfig = () => {
   const paths = [];
   let currentPath = process.cwd();
   let findUpPath: string | undefined;
+
   do {
     findUpPath = findUp.sync(names, { cwd: currentPath });
     if (findUpPath) {
@@ -25,52 +26,55 @@ const getConfig = () => {
       paths.push(findUpPath);
     }
   } while (findUpPath);
+
   const configs = paths.map((p) => readObjectFile({ path: p }));
+
   /**
    * Using configs.reverser() to get the most far config first. This way the
    * nearest configs will replace others.
    */
-  let finalConfig: any = deepmerge.all(configs.reverse());
-
-  const { environment } = yargs.argv;
-  const { environments } = finalConfig;
-
-  /**
-   * Create final options with environment and environments.
-   */
-  if (environment && environments && environments[environment as string]) {
-    finalConfig = deepmerge.all([
-      finalConfig,
-      environments[environment as string],
-    ]);
-  }
+  const finalConfig: any = deepmerge.all(configs.reverse());
 
   return finalConfig;
 };
 
 yargs
-  .help()
   .scriptName(NAME)
+  .help()
   .env(constantCase(NAME))
   .options({
     config: {
       alias: 'c',
+      describe: 'Path to JavaScript, JSON or YAML file.',
       require: false,
       type: 'string',
     },
     environment: {
       alias: ['e', 'env'],
+      coerce: (environment) => {
+        if (environment) {
+          setEnvironment(environment);
+        }
+        return environment;
+      },
       type: 'string',
     },
     environments: {
       type: 'string',
     },
   })
-  .middleware(({ environment }) => {
-    if (environment) {
-      setEnvironment(environment);
+  .middleware((argv) => {
+    const { environment, environments } = argv as any;
+    /**
+     * Create final options with environment and environments.
+     */
+    if (environment && environments && environments[environment as string]) {
+      Object.entries(environments[environment]).forEach(([key, value]) => {
+        // eslint-disable-next-line no-param-reassign
+        argv[key] = value;
+      });
     }
-  }, true)
+  })
   .pkgConf(NAME)
   .config(getConfig())
   .config('config', (configPath: string) =>
