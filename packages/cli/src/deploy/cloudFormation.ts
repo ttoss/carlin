@@ -25,11 +25,11 @@ const isTemplateBodyGreaterThanMaxSize = (
   Buffer.byteLength(JSON.stringify(template), 'utf8') >= TEMPLATE_BODY_MAX_SIZE;
 
 /**
- * Update CloudFormation template to Pepe
- * @param input.stackName: CloudFormation stack name
- * @param input.template: CloudFormation template
+ * Update CloudFormation template to base stack bucket.
+ * @param input.stackName: CloudFormation stack name.
+ * @param input.template: CloudFormation template.
  */
-const uploadTemplateToPepeBucket = async ({
+const uploadTemplateToBaseStackBucket = async ({
   stackName,
   template,
 }: {
@@ -37,7 +37,7 @@ const uploadTemplateToPepeBucket = async ({
   template: CloudFormationTemplate;
 }) => {
   console.info({ stackName, template });
-  console.log('uploadTemplateToPepeBucket needs to be implemented.');
+  console.log('uploadTemplateToBaseStackBucket needs to be implemented.');
   throw new Error();
   // const key = getPepeBucketTemplateKey({ stackName });
   // return uploadFileToS3({
@@ -243,7 +243,7 @@ export const deploy = async ({
   delete params.TemplateURL;
 
   if (isTemplateBodyGreaterThanMaxSize(template)) {
-    const { url } = await uploadTemplateToPepeBucket({
+    const { url } = await uploadTemplateToBaseStackBucket({
       stackName,
       template,
     });

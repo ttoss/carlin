@@ -1,17 +1,16 @@
 {
-  "name": "pepe-cli",
+  "name": "carlin",
   "version": "0.3.3",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest",
-    "prebuild": "rm -rf dist",
     "build": "tsc",
-    "prepare": "npm run test && npm run build"
+    "prepare": "npm run test && rm -rf dist && npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ttoss/pepe.git"
+    "url": "git+https://github.com/ttoss/carlin.git"
   },
   "keywords": [],
   "author": {
@@ -21,9 +20,9 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ttoss/pepe/issues"
+    "url": "https://github.com/ttoss/carlin/issues"
   },
-  "homepage": "https://github.com/ttoss/pepe#readme",
+  "homepage": "https://github.com/ttoss/carlin#readme",
   "dependencies": {
     "@rollup/plugin-commonjs": "^14.0.0",
     "@rollup/plugin-json": "^4.1.0",
@@ -55,7 +54,7 @@
     "typescript": "^3.9.7"
   },
   "bin": {
-    "pepe": "./bin/pepe"
+    "carlin": "./bin/carlin"
   },
   "files": [
     "bin/",

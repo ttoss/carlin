@@ -1,11 +1,4 @@
-import cli from 'pepe-cli/dist/cli';
-
-export const commands = [
-  'monorepo',
-  'deploy',
-  'deploy pepe-base',
-  'deploy static-app',
-];
+import cli from 'carlin/dist/cli';
 
 export const getHelpText = async (cmd: string): Promise<string> =>
   new Promise((resolve) => {

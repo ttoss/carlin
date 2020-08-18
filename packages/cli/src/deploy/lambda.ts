@@ -10,7 +10,7 @@ import typescript from '@rollup/plugin-typescript';
 
 import { uploadFileToS3 } from './s3';
 
-import { getPepeBucketName } from './pepeBase/getPepeBucketName';
+import { getBaseStackBucketName } from './baseStack/getBaseStackBucketName';
 
 const logPrefix = 'lambda';
 
@@ -55,9 +55,9 @@ const updateCodeToS3 = async ({
   const zip = new AdmZip();
   zip.addFile('index.js', Buffer.from(code));
   zip.writeZip('dist/lambda.zip');
-  const pepeBucketName = await getPepeBucketName();
+  const bucketName = await getBaseStackBucketName();
   return uploadFileToS3({
-    bucket: pepeBucketName,
+    bucket: bucketName,
     contentType: 'application/zip' as any,
     key: `lambdas/${stackName}/lambda.zip`,
     file: zip.toBuffer(),

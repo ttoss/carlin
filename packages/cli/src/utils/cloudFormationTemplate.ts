@@ -141,9 +141,9 @@ const cloudFormationTypes: TagAndType[] = [
   },
 ];
 
-const getPepeTypes = (): TagAndType[] => [
+const getTypes = (): TagAndType[] => [
   {
-    tag: '!PepeSubString',
+    tag: `!SubString`,
     options: {
       kind: 'scalar',
       construct: (filePath: string) => {
@@ -170,7 +170,7 @@ export const readCloudFormationTemplate = ({
 }: {
   template: string;
 }): CloudFormationTemplate => {
-  const schema = getSchema(getPepeTypes());
+  const schema = getSchema(getTypes());
   const parsed = yaml.safeLoad(template, { schema });
   if (!parsed || typeof parsed === 'string') {
     throw new Error('Cannot parse CloudFormation template.');

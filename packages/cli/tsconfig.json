@@ -3,7 +3,7 @@
   "compilerOptions": {
     "incremental": false, // Do not create tsconfig.tsbuildinfo
     "outDir": "dist",
-    "esModuleInterop": true
+    "noEmit": false
   },
   "include": ["src"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]

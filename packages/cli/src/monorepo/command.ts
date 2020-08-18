@@ -15,8 +15,7 @@ export const monorepoCommand: CommandModule<
       type: 'string',
     });
     yargs.options({
-      skipInstall: {
-        aliases: ['skip-install'],
+      'skip-install': {
         required: false,
         type: 'boolean',
       },

@@ -1,4 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
+import { NAME } from '../../config';
 import { CloudFormationTemplate, Resource, Output } from '../../utils';
 
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
@@ -102,7 +103,7 @@ const getCloudFrontEdgeLambdas = () => {
             },
           ],
         },
-        Path: '/pepe/',
+        Path: `/${NAME}/`,
         Policies: [
           {
             PolicyName: 'LambdaEdgeIAMRolePolicyName',

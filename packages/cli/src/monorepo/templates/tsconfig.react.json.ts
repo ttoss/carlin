@@ -8,9 +8,7 @@ export const content = `
   "compilerOptions": {
     "target": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "react",
-    "noEmit": true,
-    "incremental": false
+    "jsx": "react"
   }
 }
 `;

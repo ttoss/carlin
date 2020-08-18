@@ -14,6 +14,7 @@ export const packagesWillBeInstalled = [
   '@commitlint/config-conventional',
   '@typescript-eslint/eslint-plugin',
   '@typescript-eslint/parser',
+  'carlin',
   'eslint',
   'eslint-config-airbnb',
   'eslint-config-airbnb-base',
@@ -35,7 +36,6 @@ export const packagesWillBeInstalled = [
   'lerna',
   'lint-staged',
   'npm-check-updates',
-  'pepe-cli',
   'prettier',
   'stylelint',
   'stylelint-config-prettier',
@@ -49,13 +49,16 @@ export const packageJsonProperties = {
   name: '<name>',
   private: true,
   scripts: {
+    version: 'lerna version',
+    test: 'lerna run test',
+    build: 'lerna run build',
+    deploy: 'lerna run deploy',
     'list-packages': 'lerna ls',
     'list-updates': 'npx ncu && lerna exec -- npx ncu',
     reinstall: 'yarn run remove-all-node-modules && yarn',
     'remove-all-node-modules':
       'npx lerna exec -- rm -rf node_modules && rm -rf node_modules && rm -f yarn.lock',
     'update-all': 'npx ncu -u && lerna exec -- npx ncu -u',
-    version: 'lerna version',
   },
   workspaces: ['packages/**/*'],
 };

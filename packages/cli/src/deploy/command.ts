@@ -5,8 +5,8 @@ import { CommandModule } from 'yargs';
 import { AWS_DEFAULT_REGION } from '../config';
 import { getAwsAccountId } from '../utils';
 
+import { deployBaseStackCommand } from './baseStack/command';
 import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
-import { deployPepeBaseCommand } from './pepeBase/command';
 import { deployStaticAppCommand } from './staticApp/command';
 import { setPreDefinedStackName } from './stackName';
 
@@ -102,8 +102,8 @@ export const deployCommand: CommandModule<
           }
         },
       )
-      .command(deployStaticAppCommand)
-      .command(deployPepeBaseCommand);
+      .command(deployBaseStackCommand)
+      .command(deployStaticAppCommand);
 
     return yargs;
   },

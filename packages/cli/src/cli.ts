@@ -1,18 +1,20 @@
+import { constantCase } from 'change-case';
 import deepmerge from 'deepmerge';
 import findUp from 'find-up';
 import path from 'path';
 import yargs from 'yargs';
 
-import { setEnvironment, readObjectFile } from './utils';
+import { NAME } from './config';
 
 import { deployCommand } from './deploy/command';
 import { monorepoCommand } from './monorepo/command';
+import { setEnvironment, readObjectFile } from './utils';
 
 /**
- * Get all pepe configs from directories.
+ * Get all carlin configs from directories.
  */
 const getConfig = () => {
-  const names = ['js', 'yml', 'yaml', 'json'].map((ext) => `pepe.${ext}`);
+  const names = ['js', 'yml', 'yaml', 'json'].map((ext) => `${NAME}.${ext}`);
   const paths = [];
   let currentPath = process.cwd();
   let findUpPath: string | undefined;
@@ -28,19 +30,28 @@ const getConfig = () => {
    * Using configs.reverser() to get the most far config first. This way the
    * nearest configs will replace others.
    */
-  const finalConfig = deepmerge.all(configs.reverse());
+  let finalConfig: any = deepmerge.all(configs.reverse());
+
+  const { environment } = yargs.argv;
+  const { environments } = finalConfig;
+
+  /**
+   * Create final options with environment and environments.
+   */
+  if (environment && environments && environments[environment as string]) {
+    finalConfig = deepmerge.all([
+      finalConfig,
+      environments[environment as string],
+    ]);
+  }
+
   return finalConfig;
 };
 
 yargs
   .help()
-  .scriptName('pepe')
-  .env('PEPE')
-  .pkgConf('pepe')
-  .config(getConfig())
-  .config('config', (configPath: string) =>
-    readObjectFile({ path: configPath }),
-  )
+  .scriptName(NAME)
+  .env(constantCase(NAME))
   .options({
     config: {
       alias: 'c',
@@ -52,34 +63,25 @@ yargs
       type: 'string',
     },
     environments: {
-      alias: 'envs',
-      hidden: true,
+      type: 'string',
     },
   })
-  /**
-   * Create final options with environment and environments.
-   */
-  .middleware((argv) => {
-    const { environment, environments } = argv;
+  .middleware(({ environment }) => {
     if (environment) {
       setEnvironment(environment);
-      if ((environments as any)?.[environment]) {
-        Object.entries((environments as any)[environment]).forEach(
-          ([key, value]) => {
-            // eslint-disable-next-line no-param-reassign
-            argv[key] = value;
-          },
-        );
-      }
     }
   }, true)
+  .pkgConf(NAME)
+  .config(getConfig())
+  .config('config', (configPath: string) =>
+    readObjectFile({ path: configPath }),
+  )
   .command({
     command: 'print-args',
     describe: false,
     handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
   })
   .command(deployCommand)
-  .command(monorepoCommand)
-  .strict();
+  .command(monorepoCommand);
 
 export default yargs;

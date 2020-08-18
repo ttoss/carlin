@@ -1,6 +1,8 @@
 /* eslint-disable no-param-reassign */
 import { CommandModule } from 'yargs';
 
+import { NAME } from '../../config';
+
 import { destroyCloudFormation } from '../cloudFormation';
 
 import { deployStaticApp } from './staticApp';
@@ -42,14 +44,13 @@ export const deployStaticAppCommand: CommandModule = {
         edge: {
           default: false,
           describe:
-            'This option enables Lambda@Edge. This is used with apps that is built with Nextjs or Gatsby.',
+            'This option enables Lambda@Edge. This is used with apps that is built with Next.js or Gatsby.',
           require: false,
           type: 'boolean',
         },
         'hosted-zone-name': {
           required: false,
-          describe:
-            'Is the name of a Route 53 hosted zone. It `true`, Pepe creates the subdomains defined on `--aliases` option.',
+          describe: `Is the name of a Route 53 hosted zone. It \`true\`, ${NAME} creates the subdomains defined on \`--aliases\` option.`,
           type: 'string',
         },
       })
@@ -60,10 +61,13 @@ export const deployStaticAppCommand: CommandModule = {
         }
       })
       .check(({ aliases, acmArnExportedName, acmArn }) => {
+        console.log({ aliases, acmArn, acmArnExportedName });
         if (aliases && !(acmArn || acmArnExportedName)) {
           throw new Error(
             '"alias" is defined but "acm-arn" or "acm-arn-exported-name" is not.',
           );
+        } else {
+          return true;
         }
       }),
   handler: ({ destroy, ...rest }) => {

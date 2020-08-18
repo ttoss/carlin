@@ -1,6 +1,7 @@
 {
-  "name": "pepe-cli-monorepo",
+  "name": "carlin-monorepo",
   "version": "0.1.0",
+  "private": true,
   "description": "",
   "scripts": {
     "list-packages": "lerna ls",
@@ -8,11 +9,11 @@
     "update-all": "npx ncu -u && lerna exec -- npx ncu -u",
     "reinstall": "yarn run remove-all-node-modules && yarn",
     "remove-all-node-modules": "npx lerna exec -- rm -rf node_modules && rm -rf node_modules && rm -f yarn.lock",
-    "publish": "lerna publish && lerna run deploy --scope pepe-cli-website"
+    "publish": "lerna publish && lerna run deploy --scope carlin-website"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ttoss/pepe.git"
+    "url": "git+https://github.com/ttoss/carlin.git"
   },
   "keywords": [],
   "author": {
@@ -48,7 +49,6 @@
     "lerna": "^3.22.1",
     "lint-staged": "^10.2.11",
     "npm-check-updates": "^7.1.0",
-    "pepe-cli": "^0.1.0",
     "prettier": "^2.0.5",
     "stylelint": "^13.6.1",
     "stylelint-config-prettier": "^8.0.2",
@@ -57,7 +57,6 @@
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   },
-  "private": true,
   "workspaces": [
     "packages/**/*"
   ]
