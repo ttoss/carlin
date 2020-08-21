@@ -3,10 +3,9 @@
   "version": "0.4.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "deploy": "echo deploy"
+    "build": "next build && next export",
+    "start": "next dev",
+    "deploy": "node ../cli/dist/index.js deploy static-app --edge --build-folder out"
   },
   "dependencies": {
     "@mdx-js/loader": "^1.6.16",

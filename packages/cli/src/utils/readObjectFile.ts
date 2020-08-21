@@ -2,12 +2,11 @@
 /* eslint-disable global-require */
 /* eslint-disable @typescript-eslint/no-var-requires */
 import fs from 'fs';
-
-import { readCloudFormationTemplate } from './cloudFormationTemplate';
+import yaml from 'js-yaml';
 
 export const readYaml = ({ path }: { path: string }) => {
-  const template = fs.readFileSync(path, 'utf8');
-  return readCloudFormationTemplate({ template });
+  const template = fs.readFileSync(path, 'utf8') || JSON.stringify({});
+  return yaml.safeLoad(template);
 };
 
 export const readObjectFile = ({ path }: { path: string }) => {

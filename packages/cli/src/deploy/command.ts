@@ -42,6 +42,10 @@ export const deployCommand: CommandModule<
   builder: (yargs) => {
     yargs
       .options({
+        'aws-account-id': {
+          description: 'AWS account id associated with the deployment.',
+          type: 'string',
+        },
         destroy: {
           default: false,
           description: 'Destroy the deployment.',

@@ -166,11 +166,12 @@ export const dumpCloudFormationTemplate = (
 ) => yaml.safeDump(cloudFormationTemplate, { schema: getSchema() });
 
 export const readCloudFormationTemplate = ({
-  template,
+  templatePath,
 }: {
-  template: string;
+  templatePath: string;
 }): CloudFormationTemplate => {
   const schema = getSchema(getTypes());
+  const template = fs.readFileSync(templatePath).toString();
   const parsed = yaml.safeLoad(template, { schema });
   if (!parsed || typeof parsed === 'string') {
     throw new Error('Cannot parse CloudFormation template.');

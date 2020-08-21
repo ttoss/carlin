@@ -22,22 +22,34 @@ export const buildLambdaSingleFile = async ({
   lambdaInput: string;
 }) => {
   log.info(logPrefix, 'Building Lambda single file...');
-  const bundle = await rollup.rollup({
-    external: ['aws-sdk', ...builtins, ...lambdaExternals],
-    input: lambdaInput,
-    plugins: [
-      resolve({
-        preferBuiltins: true,
-      }),
-      json(),
-      typescript({
-        target: 'es2017',
-      }),
-      commonjs({
-        include: /\**node_modules\**/,
-      }),
-    ],
-  });
+
+  const bundle = await (async () => {
+    try {
+      return await rollup.rollup({
+        external: ['aws-sdk', ...builtins, ...lambdaExternals],
+        input: lambdaInput,
+        plugins: [
+          resolve({
+            preferBuiltins: true,
+          }),
+          json(),
+          typescript({
+            declaration: false,
+            target: 'es2017',
+          }),
+          commonjs({
+            include: /\**node_modules\**/,
+          }),
+        ],
+      });
+    } catch (err) {
+      log.error(
+        logPrefix,
+        'Rollup cannot build. Check this issue: https://github.com/rollup/plugins/issues/287#issuecomment-611368317',
+      );
+      throw err;
+    }
+  })();
   const { output } = await bundle.generate({
     exports: 'named',
     format: 'cjs',
@@ -54,6 +66,9 @@ const updateCodeToS3 = async ({
 }) => {
   const zip = new AdmZip();
   zip.addFile('index.js', Buffer.from(code));
+  if (!fs.existsSync('dist')) {
+    fs.mkdirSync('dist');
+  }
   zip.writeZip('dist/lambda.zip');
   const bucketName = await getBaseStackBucketName();
   return uploadFileToS3({

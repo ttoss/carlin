@@ -4,7 +4,7 @@ import log from 'npmlog';
 import {
   CloudFormationTemplate,
   getEnvironment,
-  readObjectFile,
+  readCloudFormationTemplate,
 } from '../utils';
 
 import { addDefaults } from './addDefaults.cloudFormation';
@@ -303,7 +303,7 @@ export const deployCloudFormation = async ({
       }
 
       if (templatePath) {
-        return readObjectFile({ path: templatePath });
+        return readCloudFormationTemplate({ templatePath });
       }
 
       throw new Error('"template" or "templatePath" must be defined');

@@ -61,7 +61,6 @@ export const deployStaticAppCommand: CommandModule = {
         }
       })
       .check(({ aliases, acmArnExportedName, acmArn }) => {
-        console.log({ aliases, acmArn, acmArnExportedName });
         if (aliases && !(acmArn || acmArnExportedName)) {
           throw new Error(
             '"alias" is defined but "acm-arn" or "acm-arn-exported-name" is not.',

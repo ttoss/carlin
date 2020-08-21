@@ -40,7 +40,6 @@ const getConfig = () => {
 
 yargs
   .scriptName(NAME)
-  .help()
   .env(constantCase(NAME))
   .options({
     config: {
@@ -86,6 +85,7 @@ yargs
     handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
   })
   .command(deployCommand)
-  .command(monorepoCommand);
+  .command(monorepoCommand)
+  .help();
 
 export default yargs;
