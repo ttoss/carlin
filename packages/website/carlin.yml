@@ -1,3 +1,4 @@
 buildFolder: out
-edge: true
+cloudfront: true
+spa: true
 stackName: CarlinWebsite

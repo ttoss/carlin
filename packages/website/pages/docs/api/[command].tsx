@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import { GetStaticPaths, GetStaticProps } from 'next';
-import querystring from 'querystring';
 
 import { commands } from '../../../api/commands';
 import { getHelpText } from '../../../api/getHelpText';
@@ -9,9 +8,7 @@ import CodeBlock from '../../../components/CodeBlock';
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
-    paths: commands.map((command) => ({
-      params: { command: querystring.escape(command) },
-    })),
+    paths: commands.map((command) => ({ params: { command } })),
     fallback: false,
   };
 };

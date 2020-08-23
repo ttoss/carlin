@@ -1,5 +1,8 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-await-in-loop */
 import { S3 } from 'aws-sdk';
 import fs from 'fs';
+import glob from 'glob';
 import log from 'npmlog';
 import path from 'path';
 
@@ -26,7 +29,9 @@ type ContentType =
 
 type ContentEncoding = 'utf8' | 'base64' | 'binary';
 
-export const getContentMetadata = (file: string) => {
+export const getContentMetadata = (
+  file: string,
+): { encoding: ContentEncoding; type: ContentType } => {
   const contentMetadata: {
     [key: string]: { encoding: ContentEncoding; type: ContentType };
   } = {
@@ -52,7 +57,8 @@ export const getContentMetadata = (file: string) => {
   const extension = file.split('.').pop();
 
   if (!extension || !contentMetadata[extension]) {
-    throw new Error(`Content metadata for file ${file} does not exist.`);
+    log.warn(logPrefix, `Content metadata for file ${file} does not exist.`);
+    return { type: 'text/plain', encoding: 'utf8' };
   }
 
   return contentMetadata[extension];
@@ -85,7 +91,7 @@ export const uploadFileToS3 = async ({
     throw new Error('file or filePath must be defined');
   }
 
-  log.info(logPrefix, `Uploading files to ${bucket}/${key}`);
+  log.info(logPrefix, `Uploading file to ${bucket}/${key}...`);
 
   const params: S3.PutObjectRequest = {
     Bucket: bucket,
@@ -124,63 +130,31 @@ export const uploadDirectoryToS3 = async ({
 }) => {
   log.info(
     logPrefix,
-    `Uploading ${directory} files to ${bucket}/${bucketKey}...`,
+    `Uploading directory ${directory} to ${bucket}/${bucketKey}...`,
   );
+
   /**
-   * Iterates over a folder and upload files if item is file or call it again
-   * if is folder.
+   * Get all files and directories inside ${directory}.
    */
-  const uploadDirFilesToS3 = async (currentDir: string) => {
-    const itemPath = (item: string) => path.resolve(currentDir, item);
-    const isDir = (item: string) => fs.lstatSync(itemPath(item)).isDirectory();
-    const dir = await fs.promises.readdir(currentDir);
+  const allFilesAndDirectories = await new Promise<string[]>(
+    (resolve, reject) => {
+      glob(`${directory}/**/*`, (err, matches) => {
+        return err ? reject(err) : resolve(matches);
+      });
+    },
+  );
 
-    await dir.reduce<Promise<S3.ManagedUpload.SendData | void>>(
-      async (acc, item) => {
-        try {
-          if (isDir(item)) {
-            await uploadDirFilesToS3(itemPath(item));
-            return acc;
-          }
+  const allFiles = allFilesAndDirectories.filter((item) =>
+    fs.lstatSync(item).isFile(),
+  );
 
-          const { type, encoding } = getContentMetadata(item);
-
-          const file = await fs.promises.readFile(itemPath(item), encoding);
-
-          const key = path.relative(
-            directory,
-            path.resolve(bucketKey, currentDir, item),
-          );
-
-          const params = {
-            Bucket: bucket,
-            ContentType: type,
-            ContentEncoding: encoding,
-            Key: key,
-            Body: Buffer.from(file, encoding),
-          };
-
-          log.info(logPrefix, `Uploading ${params.Key}...`);
-
-          await s3.upload(params).promise();
-
-          log.info(logPrefix, `Upload of ${params.Key} finished.`);
-
-          return acc;
-        } catch (err) {
-          log.error(logPrefix, item, err.message);
-          return process.exit(1);
-        }
-      },
-      Promise.resolve(),
-    );
-  };
-
-  try {
-    await uploadDirFilesToS3(directory);
-  } catch (err) {
-    log.error(logPrefix, 'Error on uploadDirectoryToS3');
-    throw err;
+  for (const [index, file] of allFiles.entries()) {
+    log.info(logPrefix, `Upload ${index + 1}/${allFiles.length}`);
+    await uploadFileToS3({
+      bucket,
+      key: path.relative(directory, file),
+      filePath: file,
+    });
   }
 };
 
@@ -204,37 +178,47 @@ export const emptyS3Directory = async ({
       /**
        * Get object versions
        */
-      const objects = await Contents.reduce<Promise<S3.ObjectIdentifierList>>(
-        async (promiseAcc, { Key }): Promise<S3.ObjectIdentifierList> => {
-          const acc = await promiseAcc;
-
-          if (!Key) {
-            return acc;
-          }
-
+      const objectsPromises = Contents.filter(({ Key }) => !!Key).map(
+        async ({ Key }) => {
           const { Versions = [] } = await s3
             .listObjectVersions({
               Bucket: bucket,
               Prefix: Key,
             })
             .promise();
-
-          return Promise.resolve([
-            ...acc,
-            ...Versions.map(({ VersionId }) => ({ Key, VersionId })),
-          ]);
+          return {
+            Key: Key as string,
+            Versions: Versions.map(({ VersionId }) => VersionId || undefined),
+          };
         },
-        Promise.resolve([]),
       );
+
+      const objects = await Promise.all(objectsPromises);
+
+      const objectsWithVersionsIds = objects.reduce<
+        Array<{
+          Key: string;
+          VersionId?: string;
+        }>
+      >((acc, { Key, Versions }) => {
+        const objectWithVersionsIds = Versions.map((VersionId) => ({
+          Key,
+          VersionId,
+        }));
+        return [...acc, ...objectWithVersionsIds];
+      }, []);
 
       await s3
         .deleteObjects({
           Bucket: bucket,
-          Delete: { Objects: objects },
+          Delete: { Objects: objectsWithVersionsIds },
         })
         .promise();
     }
 
+    /**
+     * Truncated is files that exists but weren't listed from S3 API.
+     */
     if (IsTruncated) {
       await emptyS3Directory({ bucket, directory });
     }

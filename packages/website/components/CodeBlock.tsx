@@ -30,11 +30,7 @@ const CodeBlock = ({ children, className = 'sh' }: any) => {
           }}
         >
           {tokens.map((line, i) => (
-            <div
-              key={i}
-              {...getLineProps({ line, key: i })}
-              style={{ paddingTop: '5px' }}
-            >
+            <div key={i} {...getLineProps({ line, key: i })} className="pt-1">
               {line.map((token, key) => (
                 <span key={key} {...getTokenProps({ token, key })} />
               ))}

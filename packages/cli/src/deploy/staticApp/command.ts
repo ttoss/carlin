@@ -41,10 +41,11 @@ export const deployStaticAppCommand: CommandModule = {
           require: false,
           type: 'boolean',
         },
-        edge: {
+        spa: {
+          alias: ['single-page-application'],
           default: false,
           describe:
-            'This option enables Lambda@Edge. This is used with apps that is built with Next.js or Gatsby.',
+            'This option enables CloudFront to serve a single page application (SPA).',
           require: false,
           type: 'boolean',
         },
@@ -55,8 +56,8 @@ export const deployStaticAppCommand: CommandModule = {
         },
       })
       .middleware((argv) => {
-        const { acmArn, aliases, edge } = argv;
-        if (acmArn || acmArn || aliases || edge) {
+        const { acmArn, acmArnExportedName, aliases, spa } = argv;
+        if (acmArn || acmArnExportedName || aliases || spa) {
           argv.cloudfront = true;
         }
       })

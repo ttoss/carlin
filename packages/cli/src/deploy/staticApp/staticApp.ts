@@ -32,7 +32,7 @@ export const uploadBuiltAppToS3 = async ({
   buildFolder: string;
   bucket: string;
 }) => {
-  await emptyS3Directory({ bucket, directory });
+  await emptyS3Directory({ bucket });
   await uploadDirectoryToS3({ bucket, directory });
 };
 
@@ -95,7 +95,7 @@ export const deployStaticApp = async ({
   aliases,
   buildFolder,
   cloudfront,
-  edge,
+  spa,
   hostedZoneName,
 }: {
   acmArn?: string;
@@ -103,7 +103,7 @@ export const deployStaticApp = async ({
   aliases?: string[];
   buildFolder: string;
   cloudfront: boolean;
-  edge: boolean;
+  spa: boolean;
   hostedZoneName?: string;
 }) => {
   log.info(logPrefix, `Starting static app deploy...`);
@@ -119,7 +119,7 @@ export const deployStaticApp = async ({
       acmArnExportedName,
       aliases,
       cloudfront,
-      edge,
+      spa,
       hostedZoneName,
     });
 
@@ -133,7 +133,9 @@ export const deployStaticApp = async ({
 
     await uploadBuiltAppToS3({ buildFolder, bucket });
 
-    await invalidateCloudFront({ outputs: Outputs });
+    if (spa) {
+      await invalidateCloudFront({ outputs: Outputs });
+    }
   } catch (err) {
     log.error(logPrefix, 'An error occurred. Cannot deploy static app');
     log.error(logPrefix, 'Error message: %j', err.message);

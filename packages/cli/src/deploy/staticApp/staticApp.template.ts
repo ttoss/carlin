@@ -1,4 +1,10 @@
 /* eslint-disable no-template-curly-in-string */
+
+/**
+ * Some implementation idea was taken from here:
+ * https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f
+ */
+
 import { NAME } from '../../config';
 import { CloudFormationTemplate, Resource, Output } from '../../utils';
 
@@ -13,15 +19,91 @@ const CLOUDFRONT_DISTRIBUTION_LOGICAL_ID = 'CloudFrontDistribution';
 
 const LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID = 'LambdaEdgeIAMRole';
 
+const PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID = 'PublishLambdaVersionRole';
+
+const PUBLISH_LAMBDA_VERSION_LOGICAL_ID = 'PublishLambdaVersion';
+
+const PUBLISH_LAMBDA_VERSION_ZIP_FILE = `
+const {Lambda} = require('aws-sdk')
+const {send, SUCCESS, FAILED} = require('cfn-response')
+const lambda = new Lambda()
+exports.handler = (event, context) => {
+  const {RequestType, ResourceProperties: {FunctionName}} = event
+  if (RequestType == 'Delete') return send(event, context, SUCCESS)
+  lambda.publishVersion({FunctionName}, (err, {FunctionArn}) => {
+    err
+      ? send(event, context, FAILED, err)
+      : send(event, context, SUCCESS, {FunctionArn})
+  })
+}
+`.trim();
+
 const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
 
 const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
   'LambdaEdgeVersionOriginRequest';
 
+const LAMBDA_EDGE_ORIGIN_REQUEST_ZIP_FILE = `
+exports.handler = (event, context, callback) => {
+  const request = event.Records[0].cf.request;
+  const uri = request.uri;
+
+  if (uri.endsWith('/')) {
+    request.uri += 'index.html';
+  } else if (!uri.includes('.')) {
+    request.uri += '.html';
+  }
+
+  callback(null, request);
+};
+`.trim();
+
 const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
 
 const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
+
+const getLambdaEdgeOriginResponseZipFile = ({ spa }: { spa: boolean }) =>
+  `
+exports.handler = (event, context, callback) => {
+  const request = event.Records[0].cf.request;
+  const response = event.Records[0].cf.response;
+  const headers = response.headers; 
+  
+  headers['cache-control'] = [
+    {
+      key: 'Cache-Control',
+      value: '${
+        spa
+          ? 'public, max-age=31536000, immutable'
+          : "request.uri.includes('/static/') ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate'"
+      }'
+    }
+  ];
+
+  /**
+   * https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/
+   */
+  headers['strict-transport-security'] = [
+    {
+      key: 'Strict-Transport-Security',
+      value: 'max-age=63072000; includeSubdomains; preload'
+    }
+  ];
+  headers['content-security-policy'] = [
+    {
+      key: 'Content-Security-Policy',
+      value: "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'"
+    }
+  ];
+  headers['x-content-type-options'] = [{key: 'X-Content-Type-Options', value: 'nosniff'}];
+  headers['x-frame-options'] = [{key: 'X-Frame-Options', value: 'DENY'}];
+  headers['x-xss-protection'] = [{key: 'X-XSS-Protection', value: '1; mode=block'}];
+  headers['referrer-policy'] = [{key: 'Referrer-Policy', value: 'same-origin'}];
+  
+  callback(null, response);
+};
+`.trim();
 
 const getBaseTemplate = (): CloudFormationTemplate => {
   return {
@@ -84,8 +166,53 @@ const getBaseTemplate = (): CloudFormationTemplate => {
   };
 };
 
-const getCloudFrontEdgeLambdas = () => {
-  const lambdaEdgeResources: { [key: string]: Resource } = {
+const getCloudFrontEdgeLambdas = ({ spa }: { spa: boolean }) => {
+  let lambdaEdgeResources: { [key: string]: Resource } = {
+    [PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID]: {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: ['lambda.amazonaws.com'],
+              },
+              Action: ['sts:AssumeRole'],
+            },
+          ],
+        },
+        Path: `/${NAME}/`,
+        Policies: [
+          {
+            PolicyName: `${PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID}Policy`,
+            PolicyDocument: {
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: 'lambda:PublishVersion',
+                  Resource: '*',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    [PUBLISH_LAMBDA_VERSION_LOGICAL_ID]: {
+      Type: 'AWS::Lambda::Function',
+      Properties: {
+        Code: { ZipFile: PUBLISH_LAMBDA_VERSION_ZIP_FILE },
+        Description:
+          'Custom resource for getting latest version of a lambda, as required by CloudFront.',
+        Handler: 'index.handler',
+        MemorySize: 128,
+        Role: { 'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID}.Arn` },
+        Runtime: 'nodejs12.x',
+      },
+    },
     [LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID]: {
       Type: 'AWS::IAM::Role',
       Description: 'Lambda Edge IAM Role',
@@ -103,6 +230,9 @@ const getCloudFrontEdgeLambdas = () => {
             },
           ],
         },
+        ManagedPolicyArns: [
+          'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+        ],
         Path: `/${NAME}/`,
         Policies: [
           {
@@ -121,106 +251,10 @@ const getCloudFrontEdgeLambdas = () => {
         ],
       },
     },
-    [LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]: {
-      Type: 'AWS::Lambda::Function',
-      Properties: {
-        Code: {
-          ZipFile: `
-                exports.handler = (event, context, callback) => {
-                  const request = event.Records[0].cf.request;
-                  const uri = request.uri;
-
-                  if (uri.endsWith('/')) {
-                    request.uri += 'index.html';
-                  } else if (!uri.includes('.')) {
-                    request.uri += '/index.html';
-                  }
-
-                  callback(null, request);
-                };
-              `,
-        },
-        Description: 'Lambda@Edge function serving as origin request.',
-        Handler: 'index.handler',
-        MemorySize: 128,
-        Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
-        Runtime: 'nodejs12.x',
-        Timeout: 5,
-      },
-    },
-    [LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID]: {
-      Type: 'AWS::Lambda::Version',
-      Properties: {
-        FunctionName: {
-          'Fn::GetAtt': `${LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID}.Arn`,
-        },
-      },
-    },
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
-        Code: {
-          ZipFile: `
-                exports.handler = (event, context, callback) => {
-                  const request = event.Records[0].cf.request;
-                  const response = event.Records[0].cf.response;
-                  const headers = response.headers;
-
-                  if (request.uri.startsWith('/static/')) {
-                    headers['cache-control'] = [
-                      {
-                        key: 'Cache-Control',
-                        value: 'public, max-age=31536000, immutable'
-                      }
-                    ];
-                  } else {
-                    headers['cache-control'] = [
-                      {
-                        key: 'Cache-Control',
-                        value: 'public, max-age=0, must-revalidate'
-                      }
-                    ];
-                  }
-
-                  // [
-                  //   {
-                  //     key: 'Strict-Transport-Security',
-                  //     value: 'max-age=31536000'
-                  //   },
-                  //   {
-                  //     key: 'X-Content-Type-Options',
-                  //     value: 'nosniff'
-                  //   },
-                  //   {
-                  //     key: 'X-Permitted-Cross-Domain-Policies',
-                  //     value: 'none'
-                  //   },
-                  //   {
-                  //     key: 'Referrer-Policy',
-                  //     value: 'no-referrer'
-                  //   },
-                  //   {
-                  //     key: 'X-Frame-Options',
-                  //     value: 'deny'
-                  //   },
-                  //   {
-                  //     key: 'X-XSS-Protection',
-                  //     value: '1; mode=block'
-                  //   },
-                  //   {
-                  //     key: 'Content-Security-Policy',
-                  //     value:
-                  //       "default-src 'none' ; script-src 'self' 'unsafe-inline'; " +
-                  //       "style-src 'self' 'unsafe-inline' ; img-src 'self' data:; " +
-                  //       "font-src 'self' ; manifest-src 'self' ; " +
-                  //       'upgrade-insecure-requests; block-all-mixed-content;'
-                  //   }
-                  // ].forEach(h => (headers[h.key.toLowerCase()] = [h]));
-
-                  callback(null, response);
-                };
-              `,
-        },
+        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ spa }) },
         Description: 'Lambda@Edge function serving as origin response.',
         Handler: 'index.handler',
         MemorySize: 128,
@@ -230,14 +264,52 @@ const getCloudFrontEdgeLambdas = () => {
       },
     },
     [LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID]: {
-      Type: 'AWS::Lambda::Version',
+      Type: 'Custom::LatestLambdaVersion',
       Properties: {
         FunctionName: {
-          'Fn::GetAtt': `${LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID}.Arn`,
+          Ref: LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID,
+        },
+        Nonce: `${Date.now()}`,
+        ServiceToken: {
+          'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
         },
       },
     },
   };
+
+  /**
+   * If not SPA, then add Lambda@Edge origin request, which handle the received
+   * URI and convert to final files to be retrieved from AWS S3.
+   */
+  if (!spa) {
+    lambdaEdgeResources = {
+      ...lambdaEdgeResources,
+      [LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]: {
+        Type: 'AWS::Lambda::Function',
+        Properties: {
+          Code: { ZipFile: LAMBDA_EDGE_ORIGIN_REQUEST_ZIP_FILE },
+          Description: 'Lambda@Edge function serving as origin request.',
+          Handler: 'index.handler',
+          MemorySize: 128,
+          Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
+          Runtime: 'nodejs12.x',
+          Timeout: 5,
+        },
+      },
+      [LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID]: {
+        Type: 'Custom::LatestLambdaVersion',
+        Properties: {
+          FunctionName: {
+            Ref: LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
+          },
+          Nonce: `${Date.now()}`,
+          ServiceToken: {
+            'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
+          },
+        },
+      },
+    };
+  }
 
   return lambdaEdgeResources;
 };
@@ -246,18 +318,19 @@ const getCloudFrontTemplate = ({
   acmArn,
   acmArnExportedName,
   aliases,
-  edge = false,
+  spa = false,
   hostedZoneName,
 }: {
   acmArn?: string;
   acmArnExportedName?: string;
   aliases?: string[];
-  edge?: boolean;
+  spa?: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
   const template = { ...getBaseTemplate() };
 
-  let cloudFrontResources: { [key: string]: Resource } = {
+  const cloudFrontResources: { [key: string]: Resource } = {
+    ...getCloudFrontEdgeLambdas({ spa }),
     [CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID]: {
       Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity',
       Properties: {
@@ -282,32 +355,53 @@ const getCloudFrontTemplate = ({
             ],
           },
           CustomErrorResponses: [403, 404].map((errorCode) => {
-            if (edge) {
+            if (spa) {
               return {
-                ErrorCachingMinTTL: 0,
+                ErrorCachingMinTTL: 60 * 60 * 24,
                 ErrorCode: errorCode,
-                ResponseCode: 404,
-                ResponsePagePath: '/404.html',
+                ResponseCode: 200,
+                ResponsePagePath: '/index.html',
               };
             }
 
             return {
-              ErrorCachingMinTTL: 60 * 60 * 24,
+              ErrorCachingMinTTL: 0,
               ErrorCode: errorCode,
-              ResponseCode: 200,
-              ResponsePagePath: '/index.html',
+              ResponseCode: 404,
+              ResponsePagePath: '/404.html',
             };
           }),
           DefaultCacheBehavior: {
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
             Compress: true,
+            /**
+             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesDefaultTTL
+             */
             DefaultTTL: 60 * 60 * 24 * 365, // one year
             ForwardedValues: {
-              QueryString: false,
-              Cookies: {
-                Forward: 'none',
-              },
+              QueryString: true,
             },
+            LambdaFunctionAssociations: [
+              /**
+               * If SPA, do not add origin-request.
+               */
+              ...(spa
+                ? []
+                : [
+                    {
+                      EventType: 'origin-request',
+                      LambdaFunctionARN: {
+                        'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID}.FunctionArn`,
+                      },
+                    },
+                  ]),
+              {
+                EventType: 'origin-response',
+                LambdaFunctionARN: {
+                  'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID}.FunctionArn`,
+                },
+              },
+            ],
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
           },
@@ -336,9 +430,6 @@ const getCloudFrontTemplate = ({
               },
             },
           ],
-          PriceClass: 'PriceClass_100',
-          // "Restrictions" : Restrictions,
-          // "WebACLId" : String
         },
       },
     },
@@ -361,37 +452,6 @@ const getCloudFrontTemplate = ({
     };
   }
 
-  if (edge) {
-    cloudFrontResources = {
-      ...cloudFrontResources,
-      ...getCloudFrontEdgeLambdas(),
-    };
-
-    cloudFrontResources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].DependsOn = [
-      LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
-      LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID,
-      LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID,
-      LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID,
-    ];
-
-    cloudFrontResources[
-      CLOUDFRONT_DISTRIBUTION_LOGICAL_ID
-    ].Properties.DistributionConfig.DefaultCacheBehavior.LambdaFunctionAssociations = [
-      {
-        EventType: 'origin-request',
-        LambdaFunctionARN: {
-          Ref: LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID,
-        },
-      },
-      {
-        EventType: 'origin-response',
-        LambdaFunctionARN: {
-          Ref: LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID,
-        },
-      },
-    ];
-  }
-
   /**
    * Add aliases to Route 53 records.
    */
@@ -403,8 +463,7 @@ const getCloudFrontTemplate = ({
           'Fn::GetAtt': `${CLOUDFRONT_DISTRIBUTION_LOGICAL_ID}.DomainName`,
         },
       ],
-      // 12 hours.
-      TTL: `${60 * 60 * 12}`,
+      TTL: `${60 * 60 * 12}`, // 12 hours.
       Type: 'CNAME',
     }));
 
@@ -477,14 +536,14 @@ export const getStaticAppTemplate = ({
   acmArnExportedName,
   aliases,
   cloudfront,
-  edge,
+  spa,
   hostedZoneName,
 }: {
   acmArn?: string;
   acmArnExportedName?: string;
   aliases?: string[];
   cloudfront: boolean;
-  edge: boolean;
+  spa: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
@@ -492,7 +551,7 @@ export const getStaticAppTemplate = ({
       acmArn,
       acmArnExportedName,
       aliases,
-      edge,
+      spa,
       hostedZoneName,
     });
   }

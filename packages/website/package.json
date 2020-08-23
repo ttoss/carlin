@@ -3,9 +3,10 @@
   "version": "0.4.0",
   "private": true,
   "scripts": {
-    "build": "next build && next export",
+    "build": "rm -rf .next && next build && next export",
     "start": "next dev",
-    "deploy": "node ../cli/dist/index.js deploy static-app --edge --build-folder out"
+    "dev": "next dev",
+    "deploy": "node ../cli/dist/index.js deploy static-app"
   },
   "dependencies": {
     "@mdx-js/loader": "^1.6.16",
@@ -16,7 +17,8 @@
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "remark-emoji": "^2.1.0",
-    "remark-images": "^2.0.0"
+    "remark-images": "^2.0.0",
+    "tailwindcss": "^1.7.3"
   },
   "devDependencies": {
     "@types/react": "^16.9.46",
