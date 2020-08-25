@@ -1,8 +1,18 @@
-import { getStaticAppTemplate } from 'carlin/dist/deploy/staticApp/staticApp.template';
 import { dumpCloudFormationTemplate } from 'carlin/dist/utils';
+import { CloudFormationTemplate } from 'carlin/dist/utils/cloudFormationTemplate';
 
-export const getStaticAppTemplateYaml = (
-  args: Parameters<typeof getStaticAppTemplate>[0],
-) => {
-  return dumpCloudFormationTemplate(getStaticAppTemplate(args));
+export { getStaticAppTemplate } from 'carlin/dist/deploy/staticApp/staticApp.template';
+
+export type JsonYamlTemplates = {
+  templateJson: any;
+  templateYaml: string;
+};
+
+export const getJsonYamlTemplates = (
+  templateJson: CloudFormationTemplate,
+): JsonYamlTemplates => {
+  return {
+    templateJson,
+    templateYaml: dumpCloudFormationTemplate(templateJson),
+  };
 };

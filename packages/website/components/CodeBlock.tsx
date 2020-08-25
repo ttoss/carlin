@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
+import * as React from 'react';
 
 import Highlight, { defaultProps } from 'prism-react-renderer';
 import dracula from 'prism-react-renderer/themes/dracula';
@@ -21,16 +21,9 @@ const CodeBlock = ({ children, className = 'sh' }: any) => {
         getLineProps,
         getTokenProps,
       }) => (
-        <pre
-          className={highlightClassName}
-          style={{
-            ...style,
-            padding: '20px',
-            overflow: 'auto',
-          }}
-        >
+        <pre className={highlightClassName} style={style}>
           {tokens.map((line, i) => (
-            <div key={i} {...getLineProps({ line, key: i })} className="pt-1">
+            <div key={i} {...getLineProps({ line, key: i })}>
               {line.map((token, key) => (
                 <span key={key} {...getTokenProps({ token, key })} />
               ))}

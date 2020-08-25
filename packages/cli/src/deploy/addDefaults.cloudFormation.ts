@@ -115,30 +115,30 @@ const addLogGroupToResources = (
   return template;
 };
 
-const addEnvironmentsToLambdaResources = (
-  template: CloudFormationTemplate,
-): CloudFormationTemplate => {
-  const environment = getEnvironment();
+// const addEnvironmentsToLambdaResources = (
+//   template: CloudFormationTemplate,
+// ): CloudFormationTemplate => {
+//   const environment = getEnvironment();
 
-  const { Resources } = template;
+//   const { Resources } = template;
 
-  const resourcesEntries = Object.entries(Resources);
+//   const resourcesEntries = Object.entries(Resources);
 
-  resourcesEntries.forEach(([, resource]) => {
-    if (resource.Type === 'AWS::Lambda::Function') {
-      const { Properties } = resource;
-      if (!Properties.Environment) {
-        Properties.Environment = {};
-      }
-      if (!Properties.Environment.Variables) {
-        Properties.Environment.Variables = {};
-      }
-      Properties.Environment.Variables.ENVIRONMENT = environment;
-    }
-  });
+//   resourcesEntries.forEach(([, resource]) => {
+//     if (resource.Type === 'AWS::Lambda::Function') {
+//       const { Properties } = resource;
+//       if (!Properties.Environment) {
+//         Properties.Environment = {};
+//       }
+//       if (!Properties.Environment.Variables) {
+//         Properties.Environment.Variables = {};
+//       }
+//       Properties.Environment.Variables.ENVIRONMENT = environment;
+//     }
+//   });
 
-  return template;
-};
+//   return template;
+// };
 
 export const addDefaults = async ({
   params,
@@ -147,7 +147,7 @@ export const addDefaults = async ({
   const newTemplate = await [
     addDefaultParametersToTemplate,
     addLogGroupToResources,
-    addEnvironmentsToLambdaResources,
+    // addEnvironmentsToLambdaResources,
   ].reduce(async (acc, addFn) => addFn(await acc), Promise.resolve(template));
   return {
     params: await addDefaultsParametersAndTagsToParams(params),

@@ -1,4 +1,3 @@
 buildFolder: out
 cloudfront: true
-spa: true
 stackName: CarlinWebsite

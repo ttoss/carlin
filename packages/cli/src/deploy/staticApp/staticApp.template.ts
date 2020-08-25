@@ -73,11 +73,11 @@ exports.handler = (event, context, callback) => {
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
-      value: '${
+      value: ${
         spa
-          ? 'public, max-age=31536000, immutable'
+          ? "'public, max-age=31536000, immutable'"
           : "request.uri.includes('/static/') ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate'"
-      }'
+      }
     }
   ];
 

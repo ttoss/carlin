@@ -9,7 +9,15 @@ const Layout: React.FC = ({ children }) => {
     <>
       <header className="bg-blue-500 p-5">Carlin</header>
       <div className="flex bg-gray-200">
-        <aside style={{ display: 'flex', flexDirection: 'column' }}>
+        <aside className="flex flex-col content-center w-2/12">
+          <span>
+            <strong>Usage</strong>
+          </span>
+          <Link href="/docs/usage/deploy-static-app">
+            <span className="text-blue-500 hover:text-blue-800 cursor-pointer">
+              deploy static-app
+            </span>
+          </Link>
           <span>
             <strong>API</strong>
           </span>
@@ -25,7 +33,7 @@ const Layout: React.FC = ({ children }) => {
             </Link>
           ))}
         </aside>
-        <main>{children}</main>
+        <main className="prose w-full max-w-none">{children}</main>
       </div>
     </>
   );

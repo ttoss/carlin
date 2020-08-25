@@ -16,11 +16,11 @@ const components: Components = {
 const App = ({ Component, pageProps }: AppProps) => {
   return (
     <>
-      <MDXProvider components={components}>
-        <Layout>
+      <Layout>
+        <MDXProvider components={components}>
           <Component {...pageProps} />
-        </Layout>
-      </MDXProvider>
+        </MDXProvider>
+      </Layout>
     </>
   );
 };

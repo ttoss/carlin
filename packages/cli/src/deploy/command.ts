@@ -6,9 +6,13 @@ import { AWS_DEFAULT_REGION } from '../config';
 import { getAwsAccountId } from '../utils';
 
 import { deployBaseStackCommand } from './baseStack/command';
-import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
+import {
+  deployCloudFormation,
+  destroyCloudFormation,
+  printStackOutputsAfterDeploy,
+} from './cloudFormation';
 import { deployStaticAppCommand } from './staticApp/command';
-import { setPreDefinedStackName } from './stackName';
+import { getStackName, setPreDefinedStackName } from './stackName';
 
 const logPrefix = 'deploy';
 
@@ -24,6 +28,19 @@ const checkAwsAccountId = async (awsAccountId: string) => {
     log.error(logPrefix, err.message);
     process.exit();
   }
+};
+
+const describeDeployCommand: CommandModule = {
+  command: 'describe',
+  describe: 'Print the outputs of the deployment.',
+  handler: async ({ stackName }) => {
+    try {
+      const newStackName = (stackName as string) || (await getStackName());
+      await printStackOutputsAfterDeploy({ stackName: newStackName });
+    } catch (err) {
+      log.info(logPrefix, 'Cannot describe stack. Message: %s', err.message);
+    }
+  },
 };
 
 export const deployCommand: CommandModule<
@@ -106,6 +123,7 @@ export const deployCommand: CommandModule<
           }
         },
       )
+      .command(describeDeployCommand)
       .command(deployBaseStackCommand)
       .command(deployStaticAppCommand);
 
