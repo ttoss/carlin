@@ -1,37 +1,15 @@
-/* eslint-disable react/no-array-index-key */
-import * as React from 'react';
+/** @jsx jsx */
+import Prism from '@theme-ui/prism';
+import { jsx } from 'theme-ui';
 
-import Highlight, { defaultProps } from 'prism-react-renderer';
-import dracula from 'prism-react-renderer/themes/dracula';
-
-const CodeBlock = ({ children, className = 'sh' }: any) => {
-  const language = (className || 'sh').replace(/language-/, '');
-
+const CodeBlock: React.FC<{ className?: string }> = ({
+  children,
+  className = 'sh',
+}) => {
   return (
-    <Highlight
-      {...defaultProps}
-      theme={dracula}
-      code={children.trim()}
-      language={language}
-    >
-      {({
-        className: highlightClassName,
-        style,
-        tokens,
-        getLineProps,
-        getTokenProps,
-      }) => (
-        <pre className={highlightClassName} style={style}>
-          {tokens.map((line, i) => (
-            <div key={i} {...getLineProps({ line, key: i })}>
-              {line.map((token, key) => (
-                <span key={key} {...getTokenProps({ token, key })} />
-              ))}
-            </div>
-          ))}
-        </pre>
-      )}
-    </Highlight>
+    <Prism sx={{ overflowX: 'auto' }} className={className}>
+      {children}
+    </Prism>
   );
 };
 

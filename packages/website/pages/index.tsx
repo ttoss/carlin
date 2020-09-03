@@ -13,7 +13,7 @@ export const getStaticProps: GetStaticProps = async () => {
 };
 
 const Index = ({ a }: any) => {
-  return <span>{a}</span>;
+  return <span className="bg-blue-800">{a}</span>;
 };
 
 export default Index;

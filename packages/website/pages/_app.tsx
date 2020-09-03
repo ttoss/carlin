@@ -1,27 +1,32 @@
-import * as React from 'react';
-
-import { MDXProvider, Components } from '@mdx-js/react';
 import type { AppProps } from 'next/app';
+import { ThemeProvider } from 'theme-ui';
 
 import CodeBlock from '../components/CodeBlock';
 import Layout from '../components/Layout';
 
-import '../main.css';
+import 'typeface-asap';
+import 'typeface-overpass';
+import 'typeface-overpass-mono';
 
-const components: Components = {
-  pre: (props) => <div {...props} />,
-  code: (props) => <CodeBlock {...props} />,
+import theme from '../theme';
+
+const components = {
+  pre: ({ children }: any) => <>{children}</>,
+  code: CodeBlock,
 };
+
+/**
+ * ThemeProvides does not recognize "components" as props.
+ */
+const ThemeProviderAny = ThemeProvider as any;
 
 const App = ({ Component, pageProps }: AppProps) => {
   return (
-    <>
+    <ThemeProviderAny theme={theme} components={components}>
       <Layout>
-        <MDXProvider components={components}>
-          <Component {...pageProps} />
-        </MDXProvider>
+        <Component {...pageProps} />
       </Layout>
-    </>
+    </ThemeProviderAny>
   );
 };
 

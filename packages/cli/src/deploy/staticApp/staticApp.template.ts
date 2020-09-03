@@ -90,12 +90,19 @@ exports.handler = (event, context, callback) => {
       value: 'max-age=63072000; includeSubdomains; preload'
     }
   ];
-  headers['content-security-policy'] = [
-    {
-      key: 'Content-Security-Policy',
-      value: "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'"
-    }
-  ];
+  // headers['content-security-policy'] = [
+  //   {
+  //     key: 'Content-Security-Policy',
+  //     value: [
+  //       "default-src 'self'",
+  //       "img-src 'self'",
+  //       "script-src 'self'",
+  //       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  //       "font-src 'self' https://fonts.gstatic.com",
+  //       "object-src 'none'",
+  //     ].join('; '),
+  //   },
+  // ];
   headers['x-content-type-options'] = [{key: 'X-Content-Type-Options', value: 'nosniff'}];
   headers['x-frame-options'] = [{key: 'X-Frame-Options', value: 'DENY'}];
   headers['x-xss-protection'] = [{key: 'X-XSS-Protection', value: '1; mode=block'}];

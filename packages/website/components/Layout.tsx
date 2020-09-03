@@ -1,22 +1,35 @@
-import * as React from 'react';
-
+/** @jsx jsx */
 import Link from 'next/link';
+import { Container, Styled, jsx } from 'theme-ui';
 
 import { commands } from '../api/commands';
 
 const Layout: React.FC = ({ children }) => {
   return (
     <>
-      <header className="bg-blue-500 p-5">Carlin</header>
-      <div className="flex bg-gray-200">
-        <aside className="flex flex-col content-center w-2/12">
+      <header sx={{ padding: 2 }}>Carlin</header>
+      <div sx={{ display: 'flex', padding: 4 }}>
+        <aside
+          sx={{
+            paddingX: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            alignContent: 'center',
+            minWidth: ['fit-content'],
+            width: ['fit-content'],
+          }}
+        >
+          <span>
+            <strong>Getting Started</strong>
+          </span>
+          <Link href="/docs/getting-started">
+            <Styled.a>Getting Stated</Styled.a>
+          </Link>
           <span>
             <strong>Usage</strong>
           </span>
           <Link href="/docs/usage/deploy-static-app">
-            <span className="text-blue-500 hover:text-blue-800 cursor-pointer">
-              deploy static-app
-            </span>
+            <Styled.a>deploy static-app</Styled.a>
           </Link>
           <span>
             <strong>API</strong>
@@ -33,7 +46,9 @@ const Layout: React.FC = ({ children }) => {
             </Link>
           ))}
         </aside>
-        <main className="prose w-full max-w-none">{children}</main>
+        <Container as="main" sx={{ maxWidth: '48em' }}>
+          {children}
+        </Container>
       </div>
     </>
   );

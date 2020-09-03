@@ -8,7 +8,10 @@ import CodeBlock from '../../../components/CodeBlock';
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
-    paths: commands.map((command) => ({ params: { command } })),
+    paths: [
+      ...commands,
+      ...commands.map((command) => command.replace(/ /g, '%20')),
+    ].map((command) => ({ params: { command } })),
     fallback: false,
   };
 };
@@ -18,7 +21,7 @@ type Props = {
 };
 
 export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
-  const command = (params?.command as string) || '';
+  const command = (params?.command as string).replace(/%20/g, ' ') || '';
   const helpText = await getHelpText(command);
   return { props: { helpText } };
 };

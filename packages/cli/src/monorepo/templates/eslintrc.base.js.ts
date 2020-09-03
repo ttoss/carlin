@@ -1,4 +1,4 @@
-export const templateName = '.eslintrc.base.js';
+export const templateName = 'eslintrc.base.js';
 
 export const dir = 'config';
 
