@@ -63,12 +63,28 @@ const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
 const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
 
-const getLambdaEdgeOriginResponseZipFile = ({ spa }: { spa: boolean }) =>
+/**
+ * Matches strings that:
+ *  - contains substring '/static/'
+ */
+export const originCacheExpression = '/static/';
+
+/**
+ * - Cache the files whose URL matches the regex expression @see {@link originCacheExpression}.
+ *
+ * - Add some headers to improve security
+ * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
+ *
+ * @param param.spa tells if the static app is a SPA.
+ */
+export const getLambdaEdgeOriginResponseZipFile = ({ spa }: { spa: boolean }) =>
   `
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
-  const headers = response.headers; 
+  const headers = response.headers;
+
+  const cacheRegex = new RegExp('${originCacheExpression}');
   
   headers['cache-control'] = [
     {
@@ -76,14 +92,11 @@ exports.handler = (event, context, callback) => {
       value: ${
         spa
           ? "'public, max-age=31536000, immutable'"
-          : "request.uri.includes('/static/') ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate'"
+          : "cacheRegex.test(request.uri) ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate'"
       }
     }
   ];
 
-  /**
-   * https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/
-   */
   headers['strict-transport-security'] = [
     {
       key: 'Strict-Transport-Security',

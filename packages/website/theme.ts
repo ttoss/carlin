@@ -4,7 +4,8 @@ import { merge } from 'theme-ui';
 import prismTheme from '@theme-ui/prism/presets/night-owl.json';
 
 const theme = {
-  space: [0, 4, 8, 16, 32, 64, 128, 256, 512],
+  borderStyles: ['solid'],
+  borderWidths: ['2px'],
   colors: {
     text: '#000',
     background: '#fff',
@@ -18,6 +19,7 @@ const theme = {
     body: "'Asap'",
     monospace: "'Overpass Mono'",
   },
+  space: [0, 4, 8, 16, 32, 64, 128, 256, 512],
   styles: {
     code: { fontFamily: 'monospace' },
     pre: {
@@ -30,7 +32,6 @@ const theme = {
 const typography = toTheme({
   // baseFontSize: '16px',
   scaleRatio: 2,
-
   // blockMarginBottom: 2.8,
 });
 
