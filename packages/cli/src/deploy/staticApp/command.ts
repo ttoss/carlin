@@ -37,7 +37,7 @@ export const deployStaticAppCommand: CommandModule = {
         cloudfront: {
           default: false,
           describe:
-            'A CloudFront resource is created along with S3 if this option is `true`. The CloudFront is configured to be used with a single page application (SPA) because it index only the `index.html` file.',
+            'A CloudFront resource is created along with S3 if this option is `true`.',
           require: false,
           type: 'boolean',
         },
@@ -51,7 +51,7 @@ export const deployStaticAppCommand: CommandModule = {
         },
         'hosted-zone-name': {
           required: false,
-          describe: `Is the name of a Route 53 hosted zone. It \`true\`, ${NAME} creates the subdomains defined on \`--aliases\` option.`,
+          describe: `Is the name of a Route 53 hosted zone. If this value is provided, ${NAME} creates the subdomains defined on \`--aliases\` option. E.g. if you have a hosted zone named "sub.domain.com", the value provided may be "sub.domain.com".`,
           type: 'string',
         },
       })

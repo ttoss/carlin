@@ -1,6 +1,8 @@
 /** @jsx jsx */
 import { jsx } from 'theme-ui';
 
+import MaxWidth from './MaxWidth';
+
 const Header = () => {
   return (
     <header
@@ -9,7 +11,9 @@ const Header = () => {
         backgroundColor: 'black',
       }}
     >
-      Carlin
+      <MaxWidth>
+        <span sx={{ color: 'white', fontSize: 5 }}>Carlin</span>
+      </MaxWidth>
     </header>
   );
 };

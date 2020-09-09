@@ -6,6 +6,7 @@ import { commands } from '../api/commands';
 
 import Footer from './Footer';
 import Header from './Header';
+import MaxWidth from './MaxWidth';
 
 const padding = [4];
 
@@ -49,7 +50,7 @@ const Aside = () => {
   return (
     <aside
       sx={{
-        padding,
+        paddingRight: padding,
         display: 'flex',
         flexDirection: 'column',
         alignContent: 'center',
@@ -87,12 +88,14 @@ const Layout: React.FC = ({ children }) => {
   return (
     <>
       <Header />
-      <div sx={{ display: 'flex' }}>
-        <Aside />
-        <Container as="main" sx={{ maxWidth: '60em', padding }}>
-          {children}
-        </Container>
-      </div>
+      <MaxWidth>
+        <div sx={{ display: 'flex', paddingY: padding }}>
+          <Aside />
+          <Container as="main" sx={{ paddingLeft: padding }}>
+            {children}
+          </Container>
+        </div>
+      </MaxWidth>
       <Footer />
     </>
   );
