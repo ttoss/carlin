@@ -1,6 +1,6 @@
 export const templateName = 'commitlint.config.js';
 
-export const dir = '.';
+export const dir = 'config';
 
 export const content = `
 const fs = require('fs');

@@ -12,6 +12,7 @@ const s3 = new S3({ apiVersion: '2006-03-01' });
 
 type ContentType =
   | 'application/manifest+json'
+  | 'application/octet-stream'
   | 'text/css'
   | 'text/html'
   | 'text/javascript'
@@ -25,43 +26,98 @@ type ContentType =
   | 'image/svg+xml'
   | 'text/plain'
   | 'text/yaml'
-  | 'text/yaml';
-
-type ContentEncoding = 'utf8' | 'base64' | 'binary';
+  | 'font/woff'
+  | 'font/woff2';
 
 export const getContentMetadata = (
   file: string,
-): { encoding: ContentEncoding; type: ContentType } => {
-  const contentMetadata: {
-    [key: string]: { encoding: ContentEncoding; type: ContentType };
-  } = {
-    css: { type: 'text/css', encoding: 'utf8' },
-    html: { type: 'text/html', encoding: 'utf8' },
-    ico: { type: 'image/vnd.microsoft.icon', encoding: 'binary' },
-    jpeg: { type: 'image/jpeg', encoding: 'binary' },
-    jpg: { type: 'image/jpeg', encoding: 'binary' },
-    js: { type: 'application/javascript', encoding: 'utf8' },
-    json: { type: 'application/json', encoding: 'utf8' },
-    LICENSE: { type: 'text/plain', encoding: 'utf8' },
-    map: { type: 'binary/octet-stream', encoding: 'utf8' },
-    mjs: { type: 'text/javascript', encoding: 'utf8' },
-    png: { type: 'image/png', encoding: 'binary' },
-    svg: { type: 'image/svg+xml', encoding: 'binary' },
-    txt: { type: 'text/plain', encoding: 'utf8' },
-    webmanifest: { type: 'application/manifest+json', encoding: 'utf8' },
-    webp: { type: 'image/webp', encoding: 'binary' },
-    yaml: { type: 'text/yaml', encoding: 'utf8' },
-    yml: { type: 'text/yaml', encoding: 'utf8' },
-  };
+): {
+  ContentDisposition?: string;
+  ContentEncoding?: BufferEncoding;
+  ContentType?: ContentType;
+} => {
+  // const filename = file.split('/').pop();
 
   const extension = file.split('.').pop();
 
-  if (!extension || !contentMetadata[extension]) {
-    log.warn(logPrefix, `Content metadata for file ${file} does not exist.`);
-    return { type: 'text/plain', encoding: 'utf8' };
+  switch (extension) {
+    case 'css':
+      return {
+        ContentType: 'text/css',
+        ContentEncoding: 'utf8',
+      };
+    case 'html':
+      return {
+        ContentType: 'text/html',
+        ContentEncoding: 'utf8',
+      };
+    case 'ico':
+      return {
+        ContentType: 'image/vnd.microsoft.icon',
+        ContentEncoding: 'binary',
+      };
+    case 'jpeg':
+    case 'jpg':
+      return {
+        ContentType: 'image/jpeg',
+        ContentEncoding: 'binary',
+      };
+    case 'mjs':
+    case 'js':
+      return {
+        ContentType: 'application/javascript',
+        ContentEncoding: 'utf8',
+      };
+    case 'json':
+      return {
+        ContentType: 'application/json',
+        ContentEncoding: 'utf8',
+      };
+    case 'LICENSE':
+    case 'txt':
+      return {
+        ContentType: 'text/plain',
+        ContentEncoding: 'utf8',
+      };
+    case 'map':
+      return {
+        ContentType: 'binary/octet-stream',
+        ContentEncoding: 'utf8',
+      };
+    case 'png':
+      return {
+        ContentType: 'image/png',
+        ContentEncoding: 'binary',
+      };
+    case 'svg':
+      return {
+        ContentType: 'image/svg+xml',
+        ContentEncoding: 'binary',
+      };
+    case 'webmanifest':
+      return {
+        ContentType: 'application/manifest+json',
+        ContentEncoding: 'utf8',
+      };
+    case 'webp':
+      return {
+        ContentType: 'image/webp',
+        ContentEncoding: 'binary',
+      };
+    case 'woff':
+    case 'woff2':
+      return {};
+    case 'yml':
+    case 'yaml':
+      return {
+        ContentType: 'text/yaml',
+        ContentEncoding: 'utf8',
+      };
+    default: {
+      log.warn(logPrefix, `Content metadata for file ${file} does not exist.`);
+      return {};
+    }
   }
-
-  return contentMetadata[extension];
 };
 
 export const getBucketKeyUrl = ({
@@ -82,7 +138,7 @@ export const uploadFileToS3 = async ({
   key,
 }: {
   bucket: string;
-  contentType?: ContentType;
+  contentType?: string;
   file?: Buffer;
   filePath?: string;
   key: string;
@@ -93,7 +149,7 @@ export const uploadFileToS3 = async ({
 
   log.info(logPrefix, `Uploading file to ${bucket}/${key}...`);
 
-  const params: S3.PutObjectRequest = {
+  let params: S3.PutObjectRequest = {
     Bucket: bucket,
     Key: key,
   };
@@ -102,10 +158,11 @@ export const uploadFileToS3 = async ({
     params.ContentType = contentType;
     params.Body = file;
   } else if (filePath) {
-    const readFile = await fs.promises.readFile(filePath || '', 'utf8');
-    const { type, encoding } = getContentMetadata(filePath);
-    params.ContentType = type;
-    params.ContentEncoding = encoding;
+    const contentMetadata = getContentMetadata(filePath);
+    const readFile = await fs.promises.readFile(filePath, {
+      encoding: contentMetadata.ContentEncoding,
+    });
+    params = { ...params, ...contentMetadata };
     params.Body = Buffer.from(readFile);
   }
 

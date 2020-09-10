@@ -1,7 +1,5 @@
-acmArn: arn:aws:acm:us-east-1:483684946879:certificate/7223ba1a-9788-4b1c-8f0d-229e865631a5
 aliases:
   - carlin.ttoss.dev
 buildFolder: out
 cloudfront: true
-hostedZoneName: ttoss.dev
 stackName: CarlinWebsite
