@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/ttoss/carlin/compare/v0.5.0...v0.5.1) (2020-09-10)
+
+### Bug Fixes
+
+- commitling.config.js dir. woff files deploy ([da63b02](https://github.com/ttoss/carlin/commit/da63b026b466e454509273d07e5a9d7e8286f424))
+
 # [0.5.0](https://github.com/ttoss/carlin/compare/v0.4.0...v0.5.0) (2020-09-09)
 
 ### Features
