@@ -12,7 +12,7 @@ const CodeBlock: React.FC<{ className?: string; maxHeight?: boolean }> = ({
       sx={{
         overflow: 'auto',
         maxHeight: maxHeight ? '1300px' : undefined,
-        marginY: 4,
+        marginY: 3,
       }}
       className={className}
     >

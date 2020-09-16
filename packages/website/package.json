@@ -11,9 +11,7 @@
   "dependencies": {
     "@mdx-js/loader": "^1.6.16",
     "@next/mdx": "^9.5.2",
-    "@tailwindcss/typography": "^0.2.0",
-    "@theme-ui/prism": "^0.3.0",
-    "@theme-ui/typography": "^0.3.0",
+    "@ttoss/ttheme": "^0.0.1",
     "jsdoc-api": "^6.0.0",
     "next": "9.5.2",
     "prism-react-renderer": "^1.1.1",

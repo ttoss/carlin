@@ -45,12 +45,14 @@ export const buildLambdaSingleFile = async ({
     } catch (err) {
       log.error(
         logPrefix,
-        'Rollup cannot build. Check this issue: https://github.com/rollup/plugins/issues/287#issuecomment-611368317',
+        'Rollup cannot build. Maybe this issue may help: https://github.com/rollup/plugins/issues/287#issuecomment-611368317',
       );
       throw err;
     }
   })();
   const { output } = await bundle.generate({
+    banner:
+      '/* Bundled by Carlin using Rollup.js. \n Check out https://carlin.ttoss.dev for more information. */',
     exports: 'named',
     format: 'cjs',
   });

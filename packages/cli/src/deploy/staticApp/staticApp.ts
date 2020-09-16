@@ -106,6 +106,7 @@ export const deployStaticApp = async ({
   aliases,
   buildFolder,
   cloudfront,
+  scp,
   spa,
   hostedZoneName,
 }: {
@@ -114,6 +115,7 @@ export const deployStaticApp = async ({
   aliases?: string[];
   buildFolder: string;
   cloudfront: boolean;
+  scp?: string[];
   spa: boolean;
   hostedZoneName?: string;
 }) => {
@@ -130,6 +132,7 @@ export const deployStaticApp = async ({
       acmArnExportedName,
       aliases,
       cloudfront,
+      scp,
       spa,
       hostedZoneName,
     });

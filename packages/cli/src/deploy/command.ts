@@ -75,7 +75,8 @@ export const deployCommand: CommandModule<
         },
         'lambda-input': {
           default: 'src/lambda.ts',
-          describe: 'Lambda input file.',
+          describe:
+            'Lambda input file. This file export all handlers used by the Lambda Functions.',
           type: 'string',
         },
         parameters: {

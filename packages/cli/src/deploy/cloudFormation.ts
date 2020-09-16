@@ -340,6 +340,7 @@ export const deployCloudFormation = async ({
         cloudFormationTemplate.Parameters = {
           LambdaS3Bucket: { Type: 'String' },
           LambdaS3Key: { Type: 'String' },
+          LambdaS3Version: { Type: 'String' },
           LambdaS3ObjectVersion: { Type: 'String' },
           ...cloudFormationTemplate.Parameters,
         };
@@ -355,8 +356,20 @@ export const deployCloudFormation = async ({
             ParameterKey: 'LambdaS3Key',
             ParameterValue: key,
           },
+          /**
+           * Used by CloudFormation AWS::Lambda::Function
+           * @see {@link https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html}
+           */
           {
             ParameterKey: 'LambdaS3ObjectVersion',
+            ParameterValue: versionId,
+          },
+          /**
+           * Used by CloudFormation AWS::Serverless::Function
+           * @see {@link https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-functioncode.html}
+           */
+          {
+            ParameterKey: 'LambdaS3Version',
             ParameterValue: versionId,
           },
         );

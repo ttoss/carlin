@@ -41,8 +41,11 @@ export const deployStaticAppCommand: CommandModule = {
           require: false,
           type: 'boolean',
         },
+        scp: {
+          describe: 'SCP headers to be added to Lambda@Edge origin response.',
+          type: 'array',
+        },
         spa: {
-          alias: ['single-page-application'],
           default: false,
           describe:
             'This option enables CloudFront to serve a single page application (SPA).',
@@ -54,12 +57,6 @@ export const deployStaticAppCommand: CommandModule = {
           describe: `Is the name of a Route 53 hosted zone. If this value is provided, ${NAME} creates the subdomains defined on \`--aliases\` option. E.g. if you have a hosted zone named "sub.domain.com", the value provided may be "sub.domain.com".`,
           type: 'string',
         },
-      })
-      .middleware((argv) => {
-        const { acmArn, acmArnExportedName, aliases, spa } = argv;
-        if (acmArn || acmArnExportedName || aliases || spa) {
-          argv.cloudfront = true;
-        }
       })
       .check(({ aliases, acmArnExportedName, acmArn }) => {
         if (aliases && !(acmArn || acmArnExportedName)) {

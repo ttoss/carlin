@@ -7,7 +7,7 @@ export const monorepoCommand: CommandModule<
   { name?: string; update?: boolean; skipInstall?: boolean }
 > = {
   command: 'monorepo [name]',
-  describe: 'Update the repository to monorepo.',
+  describe: 'Create or update the monorepo repository configuration.',
   builder: (yargs) => {
     yargs.positional('name', {
       describe: 'Monorepo name.',

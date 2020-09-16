@@ -4,7 +4,6 @@
  * Some implementation idea was taken from here:
  * https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f
  */
-
 import { NAME } from '../../config';
 import { CloudFormationTemplate, Resource, Output } from '../../utils';
 
@@ -69,6 +68,15 @@ const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
  */
 export const originCacheExpression = '/static/';
 
+const defaultScp = [
+  "default-src 'self'",
+  "img-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
+  "object-src 'none'",
+];
+
 /**
  * - Cache the files whose URL matches the regex expression @see {@link originCacheExpression}.
  *
@@ -77,53 +85,72 @@ export const originCacheExpression = '/static/';
  *
  * @param param.spa tells if the static app is a SPA.
  */
-export const getLambdaEdgeOriginResponseZipFile = ({ spa }: { spa: boolean }) =>
-  `
+export const getLambdaEdgeOriginResponseZipFile = ({
+  scp = defaultScp,
+  spa,
+}: {
+  scp?: string[];
+  spa: boolean;
+}) => `
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
   const headers = response.headers;
 
+  const isSpa = ${spa};
+
   const cacheRegex = new RegExp('${originCacheExpression}');
+
+  const cacheControlValue = isSpa || cacheRegex.test(request.uri)
+    ? 'public, max-age=31536000, immutable'
+    : 'public, max-age=0, must-revalidate';
   
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
-      value: ${
-        spa
-          ? "'public, max-age=31536000, immutable'"
-          : "cacheRegex.test(request.uri) ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate'"
-      }
+      value: cacheControlValue
     }
   ];
-
   headers['strict-transport-security'] = [
     {
       key: 'Strict-Transport-Security',
       value: 'max-age=63072000; includeSubdomains; preload'
     }
+  ];  
+  headers['content-security-policy'] = [
+    {
+      key: 'Content-Security-Policy',
+      value: ${JSON.stringify(scp)}.join('; '),
+    },
   ];
-  // headers['content-security-policy'] = [
-  //   {
-  //     key: 'Content-Security-Policy',
-  //     value: [
-  //       "default-src 'self'",
-  //       "img-src 'self'",
-  //       "script-src 'self'",
-  //       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  //       "font-src 'self' https://fonts.gstatic.com",
-  //       "object-src 'none'",
-  //     ].join('; '),
-  //   },
-  // ];
-  headers['x-content-type-options'] = [{key: 'X-Content-Type-Options', value: 'nosniff'}];
-  headers['x-frame-options'] = [{key: 'X-Frame-Options', value: 'DENY'}];
-  headers['x-xss-protection'] = [{key: 'X-XSS-Protection', value: '1; mode=block'}];
-  headers['referrer-policy'] = [{key: 'Referrer-Policy', value: 'same-origin'}];
+  headers['x-content-type-options'] = [
+    {
+      key: 'X-Content-Type-Options',
+      value: 'nosniff'
+    }
+  ];
+  headers['x-frame-options'] = [
+    {
+      key: 'X-Frame-Options',
+      value: 'DENY'
+    }
+  ];
+  headers['x-xss-protection'] = [
+    {
+      key: 'X-XSS-Protection',
+      value: '1; mode=block'
+    }
+  ];
+  headers['referrer-policy'] = [
+    {
+      key: 'Referrer-Policy',
+      value: 'same-origin'
+    }
+  ];
   
   callback(null, response);
 };
-`.trim();
+`;
 
 const getBaseTemplate = (): CloudFormationTemplate => {
   return {
@@ -186,7 +213,13 @@ const getBaseTemplate = (): CloudFormationTemplate => {
   };
 };
 
-const getCloudFrontEdgeLambdas = ({ spa }: { spa: boolean }) => {
+const getCloudFrontEdgeLambdas = ({
+  scp,
+  spa,
+}: {
+  scp?: string[];
+  spa: boolean;
+}) => {
   let lambdaEdgeResources: { [key: string]: Resource } = {
     [PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID]: {
       Type: 'AWS::IAM::Role',
@@ -274,7 +307,7 @@ const getCloudFrontEdgeLambdas = ({ spa }: { spa: boolean }) => {
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
-        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ spa }) },
+        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ scp, spa }) },
         Description: 'Lambda@Edge function serving as origin response.',
         Handler: 'index.handler',
         MemorySize: 128,
@@ -338,19 +371,21 @@ const getCloudFrontTemplate = ({
   acmArn,
   acmArnExportedName,
   aliases,
+  scp,
   spa = false,
   hostedZoneName,
 }: {
   acmArn?: string;
   acmArnExportedName?: string;
   aliases?: string[];
+  scp?: string[];
   spa?: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
   const template = { ...getBaseTemplate() };
 
   const cloudFrontResources: { [key: string]: Resource } = {
-    ...getCloudFrontEdgeLambdas({ spa }),
+    ...getCloudFrontEdgeLambdas({ scp, spa }),
     [CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID]: {
       Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity',
       Properties: {
@@ -556,6 +591,7 @@ export const getStaticAppTemplate = ({
   acmArnExportedName,
   aliases,
   cloudfront,
+  scp,
   spa,
   hostedZoneName,
 }: {
@@ -563,6 +599,7 @@ export const getStaticAppTemplate = ({
   acmArnExportedName?: string;
   aliases?: string[];
   cloudfront: boolean;
+  scp?: string[];
   spa: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
@@ -571,6 +608,7 @@ export const getStaticAppTemplate = ({
       acmArn,
       acmArnExportedName,
       aliases,
+      scp,
       spa,
       hostedZoneName,
     });

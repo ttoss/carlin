@@ -85,7 +85,11 @@ const addLogGroupToResources = (
   const resourcesEntries = Object.entries(Resources);
 
   resourcesEntries.forEach(([key, resource]) => {
-    if (resource.Type === 'AWS::Lambda::Function') {
+    if (
+      ['AWS::Lambda::Function', 'AWS::Serverless::Function'].includes(
+        resource.Type,
+      )
+    ) {
       /**
        * Check if exist a resource on template whose LogGroupName
        * Properties includes the Lambda logical id.
@@ -149,6 +153,7 @@ export const addDefaults = async ({
     addLogGroupToResources,
     // addEnvironmentsToLambdaResources,
   ].reduce(async (acc, addFn) => addFn(await acc), Promise.resolve(template));
+
   return {
     params: await addDefaultsParametersAndTagsToParams(params),
     template: newTemplate,

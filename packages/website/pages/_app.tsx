@@ -1,3 +1,4 @@
+import theme from '@ttoss/ttheme';
 import type { AppProps } from 'next/app';
 import { ThemeProvider } from 'theme-ui';
 
@@ -7,8 +8,6 @@ import Layout from '../components/Layout';
 import 'typeface-asap';
 import 'typeface-overpass';
 import 'typeface-overpass-mono';
-
-import theme from '../theme';
 
 const components = {
   pre: ({ children }: any) => <>{children}</>,

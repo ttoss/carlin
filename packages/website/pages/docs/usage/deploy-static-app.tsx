@@ -4,55 +4,62 @@ import { getComments } from '../../../api/getComments';
 import {
   getJsonYamlTemplates,
   getStaticAppTemplate,
-  JsonYamlTemplates,
 } from '../../../api/getTemplates';
 import * as apiVars from '../../../api/vars';
 
 import CodeBlock from '../../../components/CodeBlock';
 
 export const getStaticProps = async () => {
-  const comments = getComments({
-    deployStaticApp: 'deploy/staticApp/staticApp.js',
-    getLambdaEdgeOriginResponseZipFile:
-      'deploy/staticApp/staticApp.template.js',
-    originCacheExpression: 'deploy/staticApp/staticApp.template.js',
-  });
-
-  const templates = (() => {
-    const mapTemplateParameters = {
-      onlyS3: { cloudfront: false, spa: false },
-      cloudfront: { cloudfront: true, spa: false },
-    };
-
-    return Object.entries(mapTemplateParameters).reduce<
-      {
-        [key in keyof typeof mapTemplateParameters]: JsonYamlTemplates;
-      }
-    >((acc, [key, params]) => {
-      return {
-        ...acc,
-        [key]: getJsonYamlTemplates(getStaticAppTemplate(params)),
-      };
-    }, {} as any);
-  })();
-
-  const vars = {
-    ...apiVars,
-    getLambdaEdgeOriginResponseZipFile: apiVars.getLambdaEdgeOriginResponseZipFile(
-      {
-        spa: false,
-      },
-    ),
+  const root = {
+    comments: getComments({
+      deployStaticApp: 'deploy/staticApp/staticApp.js',
+    }),
   };
 
-  return { props: { templates, comments, vars } };
+  const onlyS3 = (() => {
+    const options = { cloudfront: false, spa: false };
+    const template = getJsonYamlTemplates(getStaticAppTemplate(options));
+    return { options, template };
+  })();
+
+  const cloudfront = (() => {
+    const options = { cloudfront: true, spa: false };
+    const template = getJsonYamlTemplates(getStaticAppTemplate(options));
+    const comments = getComments({
+      getLambdaEdgeOriginResponseZipFile:
+        'deploy/staticApp/staticApp.template.js',
+      originCacheExpression: 'deploy/staticApp/staticApp.template.js',
+    });
+    const { originCacheExpression } = apiVars;
+    const getLambdaEdgeOriginResponseZipFile = apiVars.getLambdaEdgeOriginResponseZipFile(
+      options,
+    );
+    const customScp = ["default-src https: 'unsafe-inline'; object-src 'none'"];
+    const getLambdaEdgeOriginResponseZipFileWithScp = apiVars.getLambdaEdgeOriginResponseZipFile(
+      {
+        ...options,
+        scp: customScp,
+      },
+    );
+    return {
+      options,
+      template,
+      comments,
+      customScp,
+      originCacheExpression,
+      getLambdaEdgeOriginResponseZipFile,
+      getLambdaEdgeOriginResponseZipFileWithScp,
+    };
+  })();
+
+  return { props: { root, onlyS3, cloudfront } };
 };
 
 type ThenArg<T> = T extends PromiseLike<infer U> ? U : T;
 
 type Props = ThenArg<ReturnType<typeof getStaticProps>>['props'];
 
-const DocsUsageDeployStaticApp = ({ templates, comments, vars }: Props) => {
+const DocsUsageDeployStaticApp = ({ root, onlyS3, cloudfront }: Props) => {
   return (
     <article>
       <Styled.h1>deploy static-app</Styled.h1>
@@ -63,18 +70,19 @@ const DocsUsageDeployStaticApp = ({ templates, comments, vars }: Props) => {
           <Styled.code>deploy static app</Styled.code>
           <span>, these steps are performed:</span>
         </Styled.p>
-        <CodeBlock>{comments.deployStaticApp}</CodeBlock>
+        <CodeBlock>{root.comments.deployStaticApp}</CodeBlock>
       </section>
+      <Styled.h2>Usage</Styled.h2>
       <section>
-        <Styled.h2>Only S3 Bucket</Styled.h2>
+        <Styled.h3>Only S3 Bucket</Styled.h3>
         <Styled.p>
           This deploy creates a single bucket to host de static files. The
           template created is shown below:
         </Styled.p>
-        <CodeBlock className="yaml">{templates.onlyS3.templateYaml}</CodeBlock>
+        <CodeBlock className="yaml">{onlyS3.template.templateYaml}</CodeBlock>
       </section>
       <section>
-        <Styled.h2>CloudFront</Styled.h2>
+        <Styled.h3>CloudFront</Styled.h3>
         <Styled.p>
           Besides creating a S3 bucket, this deploy also add CloudFront to
           deployment. Lambda@Edge is used together with CloudFront whose
@@ -82,19 +90,27 @@ const DocsUsageDeployStaticApp = ({ templates, comments, vars }: Props) => {
         </Styled.p>
         <CodeBlock className="js">
           {[
-            comments.getLambdaEdgeOriginResponseZipFile,
+            cloudfront.comments.getLambdaEdgeOriginResponseZipFile,
             '\n',
-            comments.originCacheExpression,
-            `const originCacheExpression = ${vars.originCacheExpression}`,
+            cloudfront.comments.originCacheExpression,
+            `const originCacheExpression = '${cloudfront.originCacheExpression}';`,
           ].join('\n')}
         </CodeBlock>
         <Styled.p>The Lambda@Edge code is show below:</Styled.p>
         <CodeBlock className="js">
-          {vars.getLambdaEdgeOriginResponseZipFile}
+          {cloudfront.getLambdaEdgeOriginResponseZipFile}
+        </CodeBlock>
+        <Styled.p>
+          <span>The Lambda@Edge code with custom SCP </span>
+          <Styled.code>{cloudfront.customScp}</Styled.code>
+          <span> is show below:</span>
+        </Styled.p>
+        <CodeBlock className="js">
+          {cloudfront.getLambdaEdgeOriginResponseZipFileWithScp}
         </CodeBlock>
         <Styled.p>The CloudFormation template created is shown below:</Styled.p>
         <CodeBlock className="yaml">
-          {templates.cloudfront.templateYaml}
+          {cloudfront.template.templateYaml}
         </CodeBlock>
       </section>
     </article>
