@@ -58,6 +58,12 @@ export const deployStaticAppCommand: CommandModule = {
           type: 'string',
         },
       })
+      .middleware((argv) => {
+        const { acmArn, acmArnExportedName, aliases, spa } = argv;
+        if (acmArn || acmArnExportedName || aliases || spa) {
+          argv.cloudfront = true;
+        }
+      })
       .check(({ aliases, acmArnExportedName, acmArn }) => {
         if (aliases && !(acmArn || acmArnExportedName)) {
           throw new Error(
