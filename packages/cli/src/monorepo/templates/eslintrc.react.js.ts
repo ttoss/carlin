@@ -10,16 +10,29 @@ module.exports = {
   extends: ['airbnb', 'react-app', path.resolve(__dirname, 'eslintrc.base.js')],
   rules: {
     'no-console': 'error',
-    'react/jsx-props-no-spreading': 'off',
+    /**
+     * Also want to use with ".tsx".
+     */
     'react/jsx-filename-extension': [
       'warn',
       {
         extensions: ['.jsx', '.tsx'],
       },
-    ], // also want to use with ".tsx"
-    'react/prop-types': 'off', // Is this incompatible with TS props type?
-    'react/jsx-wrap-multilines': 'off', // This rule conflicts with prettier/prettier
-    'react/require-default-props': 'off', // Problems with function components
+    ],
+    'react/jsx-props-no-spreading': 'off',
+    /**
+     * This rule conflicts with prettier/prettier.
+     */
+    'react/jsx-wrap-multilines': 'off',
+    /**
+     * Is this incompatible with TS props type?
+     */
+    'react/prop-types': 'off',
+    'react/react-in-jsx-scope': 'off',
+    /**
+     * Problems with function components.
+     */
+    'react/require-default-props': 'off',
     'react-hooks/rules-of-hooks': 'error',
     'relay/graphql-syntax': 'error',
     'relay/compat-uses-vars': 'warn',

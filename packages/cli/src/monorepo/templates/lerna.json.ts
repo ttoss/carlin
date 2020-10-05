@@ -7,7 +7,7 @@ export const content = `
   "ignoreChanges": ["**/*.md"],
   "command": {
     "publish": {
-      "allowBranch": "master",
+      "allowBranch": ["master", "main"],
       "conventionalCommits": true,
       "message": "chore: publish new version"
     },

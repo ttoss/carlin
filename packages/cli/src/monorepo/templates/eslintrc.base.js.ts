@@ -24,15 +24,33 @@ module.exports = {
     'prettier/@typescript-eslint',
   ],
   rules: {
-    '@typescript-eslint/explicit-module-boundary-types': 'off', // annoying to force return type,
-    '@typescript-eslint/explicit-function-return-type': 'off', // annoying to force return type,
+    /**
+     * Annoying to force return type.
+     */
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    /**
+     * annoying to force return type.
+     */
+    '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': 'error',
     '@typescript-eslint/prefer-optional-chain': 'error',
-    'import/extensions': 'off', // TODO: remove some day. ES modules don't import without extensions
-    'import/no-unresolved': 'off', // Remove error when importing Yarn Workspace modules.
-    'import/no-extraneous-dependencies': 'off', // Remove error when importing Yarn Workspace modules.
-    'import/prefer-default-export': 'off', // Allow single Named-export
+    /**
+     * TODO: remove some day. ES modules don't import without extensions
+     */
+    'import/extensions': 'off',
+    /**
+     * Remove error when importing Yarn Workspace modules.
+     */
+    'import/no-unresolved': 'off',
+    /**
+     * Remove error when importing Yarn Workspace modules.
+     */
+    'import/no-extraneous-dependencies': 'off',
+    /**
+     * Allow single Named-export.
+     */
+    'import/prefer-default-export': 'off',
     'no-console': 'off',
   },
   overrides: [

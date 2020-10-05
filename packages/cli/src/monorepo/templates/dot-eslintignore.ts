@@ -1,4 +1,4 @@
-export const templateName = '.eslintigignore';
+export const templateName = '.eslintignore';
 
 export const dir = '.';
 
