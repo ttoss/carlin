@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.1](https://github.com/ttoss/carlin/compare/v0.6.0...v0.6.1) (2020-10-05)
+
+### Bug Fixes
+
+- update eslint rules ([989e9f9](https://github.com/ttoss/carlin/commit/989e9f9e10c1c864b2b341103e973d0acf543d1c))
+
 # [0.6.0](https://github.com/ttoss/carlin/compare/v0.5.1...v0.6.0) (2020-09-16)
 
 ### Features

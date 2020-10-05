@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.1](https://github.com/ttoss/carlin/compare/v0.6.0...v0.6.1) (2020-10-05)
+
+### Bug Fixes
+
+- automatically assign cloudfront to true if some options are true ([85e0d35](https://github.com/ttoss/carlin/commit/85e0d35a38a4a86b4ae453dcc1c51c2e9c4fe399))
+- update eslint rules ([989e9f9](https://github.com/ttoss/carlin/commit/989e9f9e10c1c864b2b341103e973d0acf543d1c))
+- update eslint rules ([5699593](https://github.com/ttoss/carlin/commit/56995937a859148d282379f2dadf909325dacf13))
+
 # [0.6.0](https://github.com/ttoss/carlin/compare/v0.5.1...v0.6.0) (2020-09-16)
 
 ### Features
