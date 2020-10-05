@@ -8,7 +8,7 @@ import Footer from './Footer';
 import Header from './Header';
 import MaxWidth from './MaxWidth';
 
-const padding = [4];
+const padding = [3];
 
 const navs: Array<{
   group: string;
@@ -56,9 +56,6 @@ const Aside = () => {
         alignContent: 'center',
         minWidth: ['fit-content'],
         width: ['fit-content'],
-        borderRightColor: 'gray',
-        borderRightStyle: [0],
-        borderRightWidth: 0,
       }}
     >
       {navs.map(({ group, links }) => {

@@ -1,1 +1,3 @@
-module.exports = require('./config/eslintrc.base');
+module.exports = {
+  extends: './config/eslintrc.base',
+};

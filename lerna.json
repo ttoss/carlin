@@ -5,6 +5,9 @@
       "allowBranch": "master",
       "conventionalCommits": true,
       "message": "chore: publish new version"
+    },
+    "version": {
+      "forcePublish": true
     }
   },
   "npmClient": "yarn",
