@@ -1,6 +1,14 @@
 import git from 'simple-git';
 
-export const getCurrentBranch = () =>
-  git()
-    .branch()
-    .then(({ current }) => current || 'branch_undefined');
+const branchUndefined = '';
+
+export const getCurrentBranch = async () => {
+  try {
+    return git()
+      .branch()
+      .then(({ current }) => current || branchUndefined)
+      .catch(() => branchUndefined);
+  } catch {
+    return branchUndefined;
+  }
+};
