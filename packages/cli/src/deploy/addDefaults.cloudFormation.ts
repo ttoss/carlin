@@ -52,7 +52,7 @@ const addDefaultsParametersAndTagsToParams = async (
       { Key: 'Package', Value: packageName },
       { Key: 'Project', Value: projectName },
       { Key: 'Version', Value: packageVersion },
-    ],
+    ].filter(({ Value }) => !!Value),
   };
 };
 
