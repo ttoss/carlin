@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/ttoss/carlin/compare/v0.6.1...v0.7.0) (2020-10-18)
+
+### Features
+
+- allow js, ts, json, yml and yaml cloudformation template extensions ([e671daa](https://github.com/ttoss/carlin/commit/e671daa2b6fc2508a52db28d4cb1f90a49d04166))
+
 ## [0.6.1](https://github.com/ttoss/carlin/compare/v0.6.0...v0.6.1) (2020-10-05)
 
 ### Bug Fixes
