@@ -4,11 +4,6 @@
 import fs from 'fs';
 import yaml from 'js-yaml';
 
-require('ts-node').register({
-  compilerOptions: { module: 'commonjs' },
-  transpileOnly: true,
-});
-
 export const readYaml = ({ path }: { path: string }) => {
   const template = fs.readFileSync(path, 'utf8') || JSON.stringify({});
   return yaml.safeLoad(template);
@@ -22,6 +17,10 @@ export const readObjectFile = ({ path }: { path: string }) => {
   const extension = path.split('.').pop();
 
   if (extension === 'ts') {
+    require('ts-node').register({
+      compilerOptions: { module: 'commonjs' },
+      transpileOnly: true,
+    });
     const tsObj = require(path);
     const obj = tsObj.default || tsObj;
     return typeof obj === 'function' ? obj() : obj;
