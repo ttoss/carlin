@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.2](https://github.com/ttoss/carlin/compare/v0.7.1...v0.7.2) (2020-10-18)
+
+
+### Bug Fixes
+
+* ts import and deployCloudformation method ([88752a5](https://github.com/ttoss/carlin/commit/88752a52d2874b1718233e589a00bf25d3c05680))
+
+
+
+
+
 ## [0.7.1](https://github.com/ttoss/carlin/compare/v0.7.0...v0.7.1) (2020-10-18)
 
 **Note:** Version bump only for package carlin
