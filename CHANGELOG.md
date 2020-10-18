@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.1](https://github.com/ttoss/carlin/compare/v0.7.0...v0.7.1) (2020-10-18)
+
+### Bug Fixes
+
+- change method name ([8e22490](https://github.com/ttoss/carlin/commit/8e22490c979b9cb9005b7ce2efac4012dd809438))
+
 # [0.7.0](https://github.com/ttoss/carlin/compare/v0.6.1...v0.7.0) (2020-10-18)
 
 ### Bug Fixes
