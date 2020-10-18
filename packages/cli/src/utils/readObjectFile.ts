@@ -3,7 +3,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import fs from 'fs';
 import yaml from 'js-yaml';
-import typescript from 'typescript';
+
+require('ts-node').register({
+  compilerOptions: { module: 'commonjs' },
+  transpileOnly: true,
+});
 
 export const readYaml = ({ path }: { path: string }) => {
   const template = fs.readFileSync(path, 'utf8') || JSON.stringify({});
@@ -18,9 +22,8 @@ export const readObjectFile = ({ path }: { path: string }) => {
   const extension = path.split('.').pop();
 
   if (extension === 'ts') {
-    const file = fs.readFileSync(path).toString();
-    // eslint-disable-next-line no-eval
-    const obj = eval(typescript.transpile(file));
+    const tsObj = require(path);
+    const obj = tsObj.default || tsObj;
     return typeof obj === 'function' ? obj() : obj;
   }
 

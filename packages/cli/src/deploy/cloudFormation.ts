@@ -349,10 +349,6 @@ export const deployCloudFormation = async ({
       return findAndReadCloudFormationTemplate({ templatePath });
     })();
 
-    console.log(cloudFormationTemplate);
-
-    process.exit(1);
-
     await cloudFormation()
       .validateTemplate({
         TemplateBody: JSON.stringify(cloudFormationTemplate),

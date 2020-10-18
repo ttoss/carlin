@@ -39,6 +39,7 @@
     "npmlog": "^4.1.2",
     "rollup": "^2.26.4",
     "simple-git": "^2.18.0",
+    "ts-node": "^9.0.0",
     "yargs": "^15.4.1"
   },
   "devDependencies": {
