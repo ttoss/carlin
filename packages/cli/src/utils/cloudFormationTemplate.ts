@@ -161,11 +161,15 @@ const getYamlTypes = (tagAndTypeArr: TagAndType[]) =>
 const getSchema = (tagAndTypeArr: TagAndType[] = []) =>
   yaml.Schema.create(getYamlTypes([...tagAndTypeArr, ...cloudFormationTypes]));
 
-export const dumpCloudFormationTemplate = (
+export const dumpToYamlCloudFormationTemplate = (
   cloudFormationTemplate: CloudFormationTemplate,
 ) => yaml.safeDump(cloudFormationTemplate, { schema: getSchema() });
 
-export const readCloudFormationTemplate = ({
+/**
+ * CloudFormation
+ * @param param0
+ */
+export const readCloudFormationYamlTemplate = ({
   templatePath,
 }: {
   templatePath: string;

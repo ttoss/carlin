@@ -31,6 +31,10 @@ const navs: Array<{
     group: 'Usage',
     links: [
       {
+        name: 'deploy',
+        href: '/docs/usage/deploy',
+      },
+      {
         name: 'deploy static-app',
         href: '/docs/usage/deploy-static-app',
       },

@@ -97,7 +97,6 @@ export const deployCommand: CommandModule<
         },
         'template-path': {
           alias: 't',
-          default: 'src/cloudformation.yml',
           type: 'string',
         },
       })

@@ -11,7 +11,14 @@ const Header = () => {
         backgroundColor: 'black',
       }}
     >
-      <MaxWidth>
+      <MaxWidth
+        sx={{
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <span sx={{ color: 'white', fontSize: 5 }}>Carlin</span>
       </MaxWidth>
     </header>
