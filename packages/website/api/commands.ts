@@ -3,4 +3,5 @@ export const commands = [
   'deploy',
   'deploy base-stack',
   'deploy static-app',
+  'deploy lambda-layer',
 ];

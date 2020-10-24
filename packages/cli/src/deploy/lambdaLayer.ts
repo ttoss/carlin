@@ -29,6 +29,14 @@ export const getZipNodeModules = async () => {
   return zip.toBuffer();
 };
 
+/**
+ * The CloudFormation template created to deploy a Lambda Layer.
+ *
+ * - The Description fields of the Output and the LambdaLayer resource use the
+ * name and version of the package.json dependencies and is limited to a limit
+ * defined by: {@link https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-layerversion.html#cfn-lambda-layerversion-description}
+ * - The Layer name is the same as the Stack name.
+ */
 export const getLambdaLayerTemplate = (): CloudFormationTemplate => {
   const { dependencies } = (() => {
     try {

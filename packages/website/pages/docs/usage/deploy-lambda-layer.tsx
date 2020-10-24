@@ -2,78 +2,55 @@ import { Styled } from 'theme-ui';
 
 import { getComments } from '../../../api/getComments';
 import { getJsonYamlTemplates } from '../../../api/getTemplates';
-import * as apiVars from '../../../api/vars';
+import { getLambdaLayerTemplate } from '../../../api/vars';
 
 import CodeBlock from '../../../components/CodeBlock';
 
 export const getStaticProps = async () => {
   const root = {
     comments: getComments({
-      deployStaticApp: 'deploy/staticApp/staticApp.js',
+      deployLambdaLayer: 'deploy/lambdaLayer.js',
+      getLambdaLayerTemplate: 'deploy/lambdaLayer.js',
     }),
   };
 
-  const onlyS3 = (() => {
-    const options = { cloudfront: false, spa: false };
-    const template = getJsonYamlTemplates(
-      apiVars.getStaticAppTemplate(options),
-    );
-    return { options, template };
-  })();
+  const lambdaLayerTemplateYaml = getJsonYamlTemplates(getLambdaLayerTemplate())
+    .templateYaml;
 
-  const cloudfront = (() => {
-    const options = { cloudfront: true, spa: false };
-    const template = getJsonYamlTemplates(
-      apiVars.getStaticAppTemplate(options),
-    );
-    const comments = getComments({
-      getLambdaEdgeOriginResponseZipFile:
-        'deploy/staticApp/staticApp.template.js',
-      originCacheExpression: 'deploy/staticApp/staticApp.template.js',
-    });
-    const { originCacheExpression } = apiVars;
-    const getLambdaEdgeOriginResponseZipFile = apiVars.getLambdaEdgeOriginResponseZipFile(
-      options,
-    );
-    const customScp = ["default-src https: 'unsafe-inline'; object-src 'none'"];
-    const getLambdaEdgeOriginResponseZipFileWithScp = apiVars.getLambdaEdgeOriginResponseZipFile(
-      {
-        ...options,
-        scp: customScp,
-      },
-    );
-    return {
-      options,
-      template,
-      comments,
-      customScp,
-      originCacheExpression,
-      getLambdaEdgeOriginResponseZipFile,
-      getLambdaEdgeOriginResponseZipFileWithScp,
-    };
-  })();
-
-  return { props: { root, onlyS3, cloudfront } };
+  return { props: { root, lambdaLayerTemplateYaml } };
 };
 
 type ThenArg<T> = T extends PromiseLike<infer U> ? U : T;
 
 type Props = ThenArg<ReturnType<typeof getStaticProps>>['props'];
 
-const DocsUsageDeployStaticApp = ({ root, onlyS3, cloudfront }: Props) => {
+const DocsUsageDeployStaticApp = ({ root, lambdaLayerTemplateYaml }: Props) => {
   return (
     <article>
-      <Styled.h1>deploy static-app</Styled.h1>
+      <Styled.h1>deploy lambda-layer</Styled.h1>
       <section>
-        <CodeBlock>carlin deploy static-app</CodeBlock>
+        <CodeBlock>carlin deploy lambda-layer</CodeBlock>
         <Styled.p>
           <span>When you execute </span>
-          <Styled.code>deploy static app</Styled.code>
+          <Styled.code>deploy lambda-layer</Styled.code>
           <span>, these steps are performed:</span>
         </Styled.p>
-        <CodeBlock>{root.comments.deployStaticApp}</CodeBlock>
+        <CodeBlock>{root.comments.deployLambdaLayer}</CodeBlock>
       </section>
-      <Styled.h2>Usage</Styled.h2>
+      <section>
+        <Styled.p>
+          <span>The CloudFormation template created (in this example, </span>
+          <Styled.code>Description </Styled.code>
+          <span>
+            fields were created using the dependencies of this website):
+          </span>
+        </Styled.p>
+        <CodeBlock className="sh">
+          {root.comments.getLambdaLayerTemplate}
+        </CodeBlock>
+        <CodeBlock className="yaml">{lambdaLayerTemplateYaml}</CodeBlock>
+      </section>
+      {/* <Styled.h2>Usage</Styled.h2>
       <section>
         <Styled.h3>Only S3 Bucket</Styled.h3>
         <Styled.p>
@@ -112,8 +89,8 @@ const DocsUsageDeployStaticApp = ({ root, onlyS3, cloudfront }: Props) => {
         <Styled.p>The CloudFormation template created is shown below:</Styled.p>
         <CodeBlock className="yaml">
           {cloudfront.template.templateYaml}
-        </CodeBlock>
-      </section>
+        </CodeBlock> */}
+      {/* </section> */}
     </article>
   );
 };

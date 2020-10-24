@@ -19,7 +19,9 @@ const logPrefix = 'cloudformation';
 log.addLevel('event', 10000, { fg: 'yellow' });
 log.addLevel('output', 10000, { fg: 'blue' });
 
-// https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html
+/**
+ * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html
+ */
 const TEMPLATE_BODY_MAX_SIZE = 51200;
 
 const isTemplateBodyGreaterThanMaxSize = (

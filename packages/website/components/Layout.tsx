@@ -38,6 +38,10 @@ const navs: Array<{
         name: 'deploy static-app',
         href: '/docs/usage/deploy-static-app',
       },
+      {
+        name: 'deploy lambda-layer',
+        href: '/docs/usage/deploy-lambda-layer',
+      },
     ],
   },
   {

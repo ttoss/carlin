@@ -1,4 +1,7 @@
+export { getLambdaLayerTemplate } from 'carlin/dist/deploy/lambdaLayer';
+
 export {
-  originCacheExpression,
   getLambdaEdgeOriginResponseZipFile,
+  getStaticAppTemplate,
+  originCacheExpression,
 } from 'carlin/dist/deploy/staticApp/staticApp.template';

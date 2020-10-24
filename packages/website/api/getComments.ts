@@ -29,12 +29,3 @@ export const getComments = <O extends Record<string, string>>(
     };
   }, {} as any);
 };
-
-export const tt = () =>
-  jsdoc.explainSync({
-    files: path.resolve(
-      process.cwd(),
-      '../cli/dist',
-      'deploy/staticApp/staticApp.template.js',
-    ),
-  });
