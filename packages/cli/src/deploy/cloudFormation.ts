@@ -323,13 +323,13 @@ const findAndReadCloudFormationTemplate = ({
 
 export const deployCloudFormation = async ({
   lambdaInput,
-  lambdaExternals,
+  lambdaExternals = [],
   parameters,
   template,
   templatePath,
 }: {
   lambdaInput: string;
-  lambdaExternals: string[];
+  lambdaExternals?: string[];
   parameters?: Array<{ key: string; value: string }>;
   templatePath?: string;
   template?: CloudFormationTemplate;

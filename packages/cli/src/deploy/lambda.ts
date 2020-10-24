@@ -34,6 +34,11 @@ export const buildLambdaSingleFile = async ({
           }),
           json(),
           typescript({
+            /**
+             * Packages like 'serverless-http' cannot be used without this
+             * property.
+             */
+            allowSyntheticDefaultImports: true,
             declaration: false,
             target: 'es2017',
           }),

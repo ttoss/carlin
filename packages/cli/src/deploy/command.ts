@@ -11,6 +11,7 @@ import {
   destroyCloudFormation,
   printStackOutputsAfterDeploy,
 } from './cloudFormation';
+import { deployLambdaLayer } from './lambdaLayer';
 import { deployStaticAppCommand } from './staticApp/command';
 import { getStackName, setPreDefinedStackName } from './stackName';
 
@@ -123,6 +124,11 @@ export const deployCommand: CommandModule<
           }
         },
       )
+      .command({
+        command: 'lambda-layer',
+        describe: 'Deploy Lambda Layer.',
+        handler: deployLambdaLayer,
+      })
       .command(describeDeployCommand)
       .command(deployBaseStackCommand)
       .command(deployStaticAppCommand);
