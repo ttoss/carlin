@@ -6,8 +6,8 @@ import { CloudFormationTemplate } from '../utils/cloudFormationTemplate';
 import { exec } from '../utils/exec';
 
 import { getBaseStackBucketName } from './baseStack/getBaseStackBucketName';
-import { deploy } from './cloudFormation';
-import { uploadFileToS3 } from './s3';
+import { deploy, destroyCloudFormation } from './cloudFormation';
+import { emptyS3Directory, uploadFileToS3 } from './s3';
 import { getStackName } from './stackName';
 
 const logPrefix = 'lambda-layer';
@@ -43,7 +43,12 @@ export const getLambdaLayerTemplate = (): CloudFormationTemplate => {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       return require(path.resolve(process.cwd(), 'package.json')) || {};
     } catch (err) {
-      return {};
+      log.error(
+        logPrefix,
+        'Cannot read package.json. Error message: %j',
+        err.message,
+      );
+      return process.exit();
     }
   })();
 
@@ -97,26 +102,45 @@ export const getLambdaLayerTemplate = (): CloudFormationTemplate => {
 /**
  * The steps followed when deploying a Lambda Layer are:
  *
- *    1. Remove the package node_nodules.
- *    2. Install node_modules again with the current packages on package.json.
- *    3. Zip node_modules folder.
- *    4. Upload the zipped file to Carlin bucket S3.
- *    5. Deploy the Lambda Layer CloudFormation template referencing the
- *    uploaded zipper folder on Carlin bucket S3.
+ * 1. Remove the package node_nodules.
+ * 2. Install node_modules again with the current packages on package.json.
+ * 3. Zip node_modules folder.
+ * 4. Upload the zipped file to Carlin bucket S3.
+ * 5. Deploy the Lambda Layer CloudFormation template referencing the uploaded
+ * zipper folder on Carlin bucket S3.
+ *
+ * If the flag "destroy" is provided, these steps are performed:
+ *
+ * 1. Remove all uploaded zipped node_modules.
+ * 2. Destroy the CloudFormation deployment.
  */
-export const deployLambdaLayer = async () => {
+export const deployLambdaLayer = async ({
+  destroy,
+  terminationProtection = true,
+}: {
+  destroy?: boolean;
+  terminationProtection: boolean;
+}) => {
   log.info(logPrefix, `Starting Lambda Layer deploy...`);
   const stackName = await getStackName();
-  const zip = await getZipNodeModules();
-  const { bucket, key, versionId } = await uploadFileToS3({
-    bucket: await getBaseStackBucketName(),
+  const bucket = await getBaseStackBucketName();
+  const key = `lambda-layer/${stackName}/layer.zip`;
+
+  if (destroy) {
+    await destroyCloudFormation({ stackName });
+    await emptyS3Directory({ bucket, directory: key });
+    return undefined;
+  }
+
+  const { versionId } = await uploadFileToS3({
+    bucket,
     contentType: 'application/zip' as any,
-    key: `lambda-layer/${stackName}/layer.zip`,
-    file: zip,
+    key,
+    file: await getZipNodeModules(),
   });
-  const template = getLambdaLayerTemplate();
+
   return deploy({
-    template,
+    template: getLambdaLayerTemplate(),
     params: {
       Parameters: [
         { ParameterKey: 'S3Bucket', ParameterValue: bucket },
@@ -125,5 +149,6 @@ export const deployLambdaLayer = async () => {
       ],
       StackName: stackName,
     },
+    terminationProtection,
   });
 };

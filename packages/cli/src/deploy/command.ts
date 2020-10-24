@@ -66,7 +66,8 @@ export const deployCommand: CommandModule<
         },
         destroy: {
           default: false,
-          description: 'Destroy the deployment.',
+          description:
+            'Destroy the deployment. You cannot destroy a deploy with "environment" is defined.',
           type: 'boolean',
         },
         'lambda-externals': {
@@ -99,6 +100,13 @@ export const deployCommand: CommandModule<
         'template-path': {
           alias: 't',
           type: 'string',
+        },
+        'termination-protection': {
+          describe: [
+            'You can prevent a stack from being accidentally deleted by enabling termination protection.',
+            'Note that you cannot disable termination protection (passing false to this option) once it is already activated.',
+          ].join(' '),
+          type: 'boolean',
         },
       })
       .middleware(({ region, stackName }) => {

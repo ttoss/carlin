@@ -487,15 +487,13 @@ const destroy = async ({ stackName }: { stackName: string }) => {
   }
 
   if (!(await doesStackExist({ stackName }))) {
+    log.info(logPrefix, `Stack ${stackName} doesn't exist.`);
     return;
   }
 
   if (!(await canDestroyStack({ stackName }))) {
-    log.info(
-      logPrefix,
-      `Stack ${stackName} cannot be destroyed while TerminationProtection is enabled.`,
-    );
-    return;
+    const message = `Stack ${stackName} cannot be destroyed while TerminationProtection is enabled.`;
+    throw message;
   }
 
   await emptyStackBuckets({ stackName });
@@ -503,14 +501,15 @@ const destroy = async ({ stackName }: { stackName: string }) => {
   await deleteStack({ stackName });
 };
 
-export const destroyCloudFormation = async () => {
+export const destroyCloudFormation = async ({
+  stackName: defaultStackName,
+}: {
+  stackName?: string;
+} = {}) => {
   try {
-    log.info(logPrefix, 'Starting CloudFormation DESTROY...');
-
-    const stackName = await getStackName();
-
+    log.info(logPrefix, 'CAUTION! Starting CloudFormation destroy...');
+    const stackName = defaultStackName || (await getStackName());
     log.info(logPrefix, `stackName: ${stackName}`);
-
     await Promise.all([destroy({ stackName })]);
   } catch (err) {
     log.error(logPrefix, 'Cannot destroy cloudformation stack.');
