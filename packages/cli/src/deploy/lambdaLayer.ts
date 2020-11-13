@@ -111,8 +111,8 @@ export const getLambdaLayerTemplate = (): CloudFormationTemplate => {
  *
  * If the flag "destroy" is provided, these steps are performed:
  *
- * 1. Remove all uploaded zipped node_modules.
- * 2. Destroy the CloudFormation deployment.
+ * 1. Destroy the CloudFormation deployment.
+ * 2. Remove all uploaded zipped node_modules.
  */
 export const deployLambdaLayer = async ({
   destroy,

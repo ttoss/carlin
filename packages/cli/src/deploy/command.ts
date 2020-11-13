@@ -101,16 +101,17 @@ export const deployCommand: CommandModule<
           alias: 't',
           type: 'string',
         },
-        'termination-protection': {
-          describe: [
-            'You can prevent a stack from being accidentally deleted by enabling termination protection.',
-            'Note that you cannot disable termination protection (passing false to this option) once it is already activated.',
-          ].join(' '),
-          type: 'boolean',
-        },
       })
-      .middleware(({ region, stackName }) => {
+      /**
+       * Set AWS region.
+       */
+      .middleware(({ region }) => {
         AWS.config.region = region;
+      })
+      /**
+       * Set stack name,
+       */
+      .middleware(({ stackName }) => {
         if (stackName) setPreDefinedStackName(stackName);
       })
       /**

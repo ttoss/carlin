@@ -273,7 +273,7 @@ export const deploy = async ({
     await createStack({ params });
   }
 
-  if (terminationProtection) {
+  if (terminationProtection || !!getEnvironment()) {
     await enableTerminationProtection({ stackName });
   }
 
@@ -418,7 +418,10 @@ export const deployCloudFormation = async ({
       }
     })();
 
-    const output = await deploy({ params, template: cloudFormationTemplate });
+    const output = await deploy({
+      params,
+      template: cloudFormationTemplate,
+    });
 
     return output;
   } catch (err) {
