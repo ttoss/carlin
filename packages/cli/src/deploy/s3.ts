@@ -58,10 +58,7 @@ export const getContentMetadata = (
       };
     case 'jpeg':
     case 'jpg':
-      return {
-        ContentType: 'image/jpeg',
-        ContentEncoding: 'binary',
-      };
+      return {};
     case 'mjs':
     case 'js':
       return {
@@ -147,8 +144,6 @@ export const uploadFileToS3 = async ({
     throw new Error('file or filePath must be defined');
   }
 
-  log.info(logPrefix, `Uploading file to ${bucket}/${key}...`);
-
   let params: S3.PutObjectRequest = {
     Bucket: bucket,
     Key: key,
@@ -201,17 +196,40 @@ export const uploadDirectoryToS3 = async ({
     },
   );
 
-  const allFiles = allFilesAndDirectories.filter((item) =>
-    fs.lstatSync(item).isFile(),
-  );
+  const allFiles = allFilesAndDirectories
+    /**
+     * Remove directories.
+     */
+    .filter((item) => fs.lstatSync(item).isFile());
 
-  for (const [index, file] of allFiles.entries()) {
-    log.info(logPrefix, `Upload ${index + 1}/${allFiles.length}`);
-    await uploadFileToS3({
-      bucket,
-      key: path.relative(directory, file),
-      filePath: file,
-    });
+  const GROUP_MAX_LENGTH = 63;
+
+  const numberOfGroups = Math.ceil(allFiles.length / GROUP_MAX_LENGTH);
+
+  /**
+   * Divide all files and create "numberOfGroups" groups of files whose max
+   * length is GROUP_MAX_LENGTH.
+   */
+  const aoaOfFiles = allFiles.reduce<string[][]>((acc, file, index) => {
+    const groupIndex = index % numberOfGroups;
+    if (!acc[groupIndex]) {
+      acc[groupIndex] = [];
+    }
+    acc[index % numberOfGroups].push(file);
+    return acc;
+  }, []);
+
+  for (const [index, groupOfFiles] of aoaOfFiles.entries()) {
+    log.info(logPrefix, `Uploading group ${index + 1}/${aoaOfFiles.length}...`);
+    await Promise.all(
+      groupOfFiles.map((file) =>
+        uploadFileToS3({
+          bucket,
+          key: path.relative(directory, file),
+          filePath: file,
+        }),
+      ),
+    );
   }
 };
 
