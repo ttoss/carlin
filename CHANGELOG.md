@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/ttoss/carlin/compare/v0.7.3...v0.8.0) (2020-11-13)
+
+
+### Bug Fixes
+
+* error message ([17a9ab3](https://github.com/ttoss/carlin/commit/17a9ab384d30c0e7b3294308ee93addcbc671f3b))
+
+
+### Features
+
+* add destroy lambda layer ([2f19610](https://github.com/ttoss/carlin/commit/2f19610c9c2dbb068916cf5c6700a7c3ce0157d2))
+* adding lambda layer documentation ([c8dafe7](https://github.com/ttoss/carlin/commit/c8dafe724972ae3e441aaf3113fe5baf21d4e24c))
+* deploy lambda layer ([278048a](https://github.com/ttoss/carlin/commit/278048aa3db1fc13c4344503f4b9a2710fdf66a3))
+* termination protection ([7e2dcc8](https://github.com/ttoss/carlin/commit/7e2dcc840812858d0b033250a993a77d4cc2a15c))
+* upload group of files on s3 ([ea7eaf8](https://github.com/ttoss/carlin/commit/ea7eaf8993467d111211b281f59b152c13028c12))
+
+
+
+
+
 ## [0.7.3](https://github.com/ttoss/carlin/compare/v0.7.2...v0.7.3) (2020-10-18)
 
 
