@@ -14,15 +14,8 @@ export const deployStaticAppCommand: CommandModule = {
     yargs
       .options({
         'acm-arn': {
-          conflicts: 'acmArnExportedName',
           describe:
-            'The ARN of the certificate that will be associated to CloudFront.',
-          type: 'string',
-        },
-        'acm-arn-exported-name': {
-          conflicts: 'acmArn',
-          describe:
-            'The exported name of the ARN value of the ACM if it was created via CloudFormation.',
+            'The ARN of the certificate or the name of the exported variable whose value is the ARN of the certificate that will be associated to CloudFront.',
           type: 'string',
         },
         aliases: {
@@ -59,16 +52,14 @@ export const deployStaticAppCommand: CommandModule = {
         },
       })
       .middleware((argv) => {
-        const { acmArn, acmArnExportedName, aliases, spa } = argv;
-        if (acmArn || acmArnExportedName || aliases || spa) {
+        const { acmArn, aliases, spa } = argv;
+        if (acmArn || aliases || spa) {
           argv.cloudfront = true;
         }
       })
-      .check(({ aliases, acmArnExportedName, acmArn }) => {
-        if (aliases && !(acmArn || acmArnExportedName)) {
-          throw new Error(
-            '"alias" is defined but "acm-arn" or "acm-arn-exported-name" is not.',
-          );
+      .check(({ aliases, acmArn }) => {
+        if (aliases && !acmArn) {
+          throw new Error('"acm-arn" must be defined when "alias" is defined.');
         } else {
           return true;
         }

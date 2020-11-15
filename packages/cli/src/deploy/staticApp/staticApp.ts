@@ -97,12 +97,11 @@ export const invalidateCloudFront = async ({
  *    for instance, only S3, SPA...
  * 3. Create AWS resources using the templated created.
  * 4. Upload static files to the host bucket S3.
- * 5. If is a SPA and has CloudFront, an CloudFront invalidation will be
+ * 5. If is a CloudFront deployment, an CloudFront invalidation will be
  *    created.
  */
 export const deployStaticApp = async ({
   acmArn,
-  acmArnExportedName,
   aliases,
   buildFolder,
   cloudfront,
@@ -111,7 +110,6 @@ export const deployStaticApp = async ({
   hostedZoneName,
 }: {
   acmArn?: string;
-  acmArnExportedName?: string;
   aliases?: string[];
   buildFolder: string;
   cloudfront: boolean;
@@ -129,7 +127,6 @@ export const deployStaticApp = async ({
 
     const template = getStaticAppTemplate({
       acmArn,
-      acmArnExportedName,
       aliases,
       cloudfront,
       scp,
@@ -147,9 +144,7 @@ export const deployStaticApp = async ({
 
     await uploadBuiltAppToS3({ buildFolder, bucket });
 
-    if (spa) {
-      await invalidateCloudFront({ outputs: Outputs });
-    }
+    await invalidateCloudFront({ outputs: Outputs });
   } catch (err) {
     log.error(logPrefix, 'An error occurred. Cannot deploy static app');
     log.error(logPrefix, 'Error message: %j', err.message);

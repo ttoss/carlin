@@ -87,28 +87,22 @@ const defaultScp = [
  */
 export const getLambdaEdgeOriginResponseZipFile = ({
   scp = defaultScp,
-  spa,
 }: {
   scp?: string[];
-  spa: boolean;
 }) => `
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
   const headers = response.headers;
 
-  const isSpa = ${spa};
-
   const cacheRegex = new RegExp('${originCacheExpression}');
-
-  const cacheControlValue = isSpa || cacheRegex.test(request.uri)
-    ? 'public, max-age=31536000, immutable'
-    : 'public, max-age=0, must-revalidate';
+  
+  const maxAge = cacheRegex.test(request.uri) ? 60 * 60 * 24 * 365 : 60;
   
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
-      value: cacheControlValue
+      value: \`public, max-age=\${maxAge}, immutable\`
     }
   ];
   headers['strict-transport-security'] = [
@@ -152,7 +146,13 @@ exports.handler = (event, context, callback) => {
 };
 `;
 
-const getBaseTemplate = (): CloudFormationTemplate => {
+const getBaseTemplate = (
+  {
+    cloudfront,
+  }: {
+    cloudfront?: boolean;
+  } = { cloudfront: false },
+): CloudFormationTemplate => {
   return {
     AWSTemplateFormatVersion: '2010-09-09',
     Resources: {
@@ -195,7 +195,23 @@ const getBaseTemplate = (): CloudFormationTemplate => {
                     ],
                   ],
                 },
-                Principal: '*',
+                Principal: cloudfront
+                  ? /**
+                     * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
+                     */
+                    {
+                      AWS: {
+                        'Fn::Sub': [
+                          'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OAI}',
+                          {
+                            OAI: {
+                              Ref: CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID,
+                            },
+                          },
+                        ],
+                      },
+                    }
+                  : '*',
               },
             ],
           },
@@ -307,7 +323,7 @@ const getCloudFrontEdgeLambdas = ({
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
-        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ scp, spa }) },
+        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ scp }) },
         Description: 'Lambda@Edge function serving as origin response.',
         Handler: 'index.handler',
         MemorySize: 128,
@@ -369,20 +385,18 @@ const getCloudFrontEdgeLambdas = ({
 
 const getCloudFrontTemplate = ({
   acmArn,
-  acmArnExportedName,
   aliases,
   scp,
   spa = false,
   hostedZoneName,
 }: {
   acmArn?: string;
-  acmArnExportedName?: string;
   aliases?: string[];
   scp?: string[];
   spa?: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
-  const template = { ...getBaseTemplate() };
+  const template = { ...getBaseTemplate({ cloudfront: true }) };
 
   const cloudFrontResources: { [key: string]: Resource } = {
     ...getCloudFrontEdgeLambdas({ scp, spa }),
@@ -430,9 +444,18 @@ const getCloudFrontTemplate = ({
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
             Compress: true,
             /**
-             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesDefaultTTL
+             * How MinTTL, MaxTTL and DefaultTTL work together with Cache Control header.
+             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html#ExpirationDownloadDist
+             *
+             * Returns MinTTL, MaxTTL and DefaultTTL.
              */
-            DefaultTTL: 60 * 60 * 24 * 365, // one year
+            ...(() => {
+              const ttl = 60 * 60 * 24 * 365; // One year
+              return {
+                MinTTL: ttl,
+                DefaultTTL: ttl,
+              };
+            })(),
             ForwardedValues: {
               QueryString: true,
             },
@@ -490,7 +513,7 @@ const getCloudFrontTemplate = ({
     },
   };
 
-  if (acmArn || acmArnExportedName) {
+  if (acmArn) {
     /**
      * Add ACM to CloudFront template.
      */
@@ -499,9 +522,13 @@ const getCloudFrontTemplate = ({
         .DistributionConfig,
       Aliases: aliases || { Ref: 'AWS::NoValue' },
       ViewerCertificate: {
-        AcmCertificateArn: acmArn || {
-          'Fn::ImportValue': acmArnExportedName,
-        },
+        AcmCertificateArn: /^arn:aws:acm:[-a-z0-9]+:\d{12}:certificate\/[-a-z0-9]+$/.test(
+          acmArn,
+        )
+          ? acmArn
+          : {
+              'Fn::ImportValue': acmArn,
+            },
         SslSupportMethod: 'sni-only',
       },
     };
@@ -518,7 +545,7 @@ const getCloudFrontTemplate = ({
           'Fn::GetAtt': `${CLOUDFRONT_DISTRIBUTION_LOGICAL_ID}.DomainName`,
         },
       ],
-      TTL: `${60 * 60 * 12}`, // 12 hours.
+      TTL: `${60 * 60 * 24}`, // 24 hours.
       Type: 'CNAME',
     }));
 
@@ -588,7 +615,6 @@ const getCloudFrontTemplate = ({
 
 export const getStaticAppTemplate = ({
   acmArn,
-  acmArnExportedName,
   aliases,
   cloudfront,
   scp,
@@ -596,7 +622,6 @@ export const getStaticAppTemplate = ({
   hostedZoneName,
 }: {
   acmArn?: string;
-  acmArnExportedName?: string;
   aliases?: string[];
   cloudfront: boolean;
   scp?: string[];
@@ -604,14 +629,7 @@ export const getStaticAppTemplate = ({
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
-    return getCloudFrontTemplate({
-      acmArn,
-      acmArnExportedName,
-      aliases,
-      scp,
-      spa,
-      hostedZoneName,
-    });
+    return getCloudFrontTemplate({ acmArn, aliases, scp, spa, hostedZoneName });
   }
   return getBaseTemplate();
 };
