@@ -79,7 +79,6 @@ const addDefaultParametersToTemplate = async (
 const addLogGroupToResources = (
   template: CloudFormationTemplate,
 ): CloudFormationTemplate => {
-  const retentionInDays = 30;
   const { Resources } = template;
 
   const resourcesEntries = Object.entries(Resources);
@@ -109,7 +108,6 @@ const addLogGroupToResources = (
           DeletionPolicy: 'Delete',
           Properties: {
             LogGroupName: { 'Fn::Join': ['/', ['/aws/lambda', { Ref: key }]] },
-            RetentionInDays: retentionInDays,
           },
         };
       }
