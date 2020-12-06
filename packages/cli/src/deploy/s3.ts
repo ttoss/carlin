@@ -225,7 +225,7 @@ export const uploadDirectoryToS3 = async ({
       groupOfFiles.map((file) =>
         uploadFileToS3({
           bucket,
-          key: path.relative(directory, file),
+          key: path.join(bucketKey, path.relative(directory, file)),
           filePath: file,
         }),
       ),

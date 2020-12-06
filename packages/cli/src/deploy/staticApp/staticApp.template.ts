@@ -5,7 +5,12 @@
  * https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f
  */
 import { NAME } from '../../config';
-import { CloudFormationTemplate, Resource, Output } from '../../utils';
+import {
+  CloudFormationTemplate,
+  Resource,
+  Output,
+  getPackageVersion,
+} from '../../utils';
 
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
@@ -37,21 +42,22 @@ exports.handler = (event, context) => {
 }
 `.trim();
 
-const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
+const LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
 
-const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
+const LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID =
   'LambdaEdgeVersionOriginRequest';
 
-const LAMBDA_EDGE_ORIGIN_REQUEST_ZIP_FILE = `
+const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
-  const uri = request.uri;
 
-  if (uri.endsWith('/')) {
+  if (request.uri.endsWith('/')) {
     request.uri += 'index.html';
-  } else if (!uri.includes('.')) {
+  } else if (!request.uri.includes('.')) {
     request.uri += '.html';
   }
+
+  request.uri = "/${getPackageVersion()}" + request.uri;
 
   callback(null, request);
 };
@@ -61,12 +67,6 @@ const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
 
 const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
-
-/**
- * Matches strings that:
- *  - contains substring '/static/'
- */
-export const originCacheExpression = '/static/';
 
 const defaultScp = [
   "default-src 'self'",
@@ -82,8 +82,6 @@ const defaultScp = [
  *
  * - Add some headers to improve security
  * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
- *
- * @param param.spa tells if the static app is a SPA.
  */
 export const getLambdaEdgeOriginResponseZipFile = ({
   scp = defaultScp,
@@ -94,15 +92,13 @@ exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
   const headers = response.headers;
-
-  const cacheRegex = new RegExp('${originCacheExpression}');
   
-  const maxAge = cacheRegex.test(request.uri) ? 60 * 60 * 24 * 365 : 60;
+  const maxAge = 150;
   
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
-      value: \`public, max-age=\${maxAge}, immutable\`
+      value: \`max-age=\${maxAge}\`
     }
   ];
   headers['strict-transport-security'] = [
@@ -347,17 +343,17 @@ const getCloudFrontEdgeLambdas = ({
   };
 
   /**
-   * If not SPA, then add Lambda@Edge origin request, which handle the received
+   * If not SPA, then add Lambda@Edge viewer request, which handle the received
    * URI and convert to final files to be retrieved from AWS S3.
    */
   if (!spa) {
     lambdaEdgeResources = {
       ...lambdaEdgeResources,
-      [LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]: {
+      [LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID]: {
         Type: 'AWS::Lambda::Function',
         Properties: {
-          Code: { ZipFile: LAMBDA_EDGE_ORIGIN_REQUEST_ZIP_FILE },
-          Description: 'Lambda@Edge function serving as origin request.',
+          Code: { ZipFile: LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE },
+          Description: 'Lambda@Edge function serving as viewer request.',
           Handler: 'index.handler',
           MemorySize: 128,
           Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
@@ -365,11 +361,11 @@ const getCloudFrontEdgeLambdas = ({
           Timeout: 5,
         },
       },
-      [LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID]: {
+      [LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID]: {
         Type: 'Custom::LatestLambdaVersion',
         Properties: {
           FunctionName: {
-            Ref: LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
+            Ref: LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID,
           },
           Nonce: `${Date.now()}`,
           ServiceToken: {
@@ -467,9 +463,9 @@ const getCloudFrontTemplate = ({
                 ? []
                 : [
                     {
-                      EventType: 'origin-request',
+                      EventType: 'viewer-request',
                       LambdaFunctionARN: {
-                        'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID}.FunctionArn`,
+                        'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID}.FunctionArn`,
                       },
                     },
                   ]),

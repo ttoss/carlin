@@ -117,30 +117,41 @@ const addLogGroupToResources = (
   return template;
 };
 
-// const addEnvironmentsToLambdaResources = (
-//   template: CloudFormationTemplate,
-// ): CloudFormationTemplate => {
-//   const environment = getEnvironment();
+const addEnvironmentsToLambdaResources = (
+  template: CloudFormationTemplate,
+): CloudFormationTemplate => {
+  const environment = getEnvironment();
 
-//   const { Resources } = template;
+  const { Resources } = template;
 
-//   const resourcesEntries = Object.entries(Resources);
+  const resourcesEntries = Object.entries(Resources);
 
-//   resourcesEntries.forEach(([, resource]) => {
-//     if (resource.Type === 'AWS::Lambda::Function') {
-//       const { Properties } = resource;
-//       if (!Properties.Environment) {
-//         Properties.Environment = {};
-//       }
-//       if (!Properties.Environment.Variables) {
-//         Properties.Environment.Variables = {};
-//       }
-//       Properties.Environment.Variables.ENVIRONMENT = environment;
-//     }
-//   });
+  resourcesEntries.forEach(([, resource]) => {
+    if (resource.Type === 'AWS::Lambda::Function') {
+      const { Properties } = resource;
 
-//   return template;
-// };
+      /**
+       * Lambda@Edege does not support environment variables.
+       * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-lambda-function-configuration
+       * Then every function that has "Lambda@Edge" in its description will not
+       * have the variables passed to Environment.Variables.
+       */
+      if (((Properties.Description as string) || '').includes('Lambda@Edge')) {
+        return;
+      }
+
+      if (!Properties.Environment) {
+        Properties.Environment = {};
+      }
+      if (!Properties.Environment.Variables) {
+        Properties.Environment.Variables = {};
+      }
+      Properties.Environment.Variables.ENVIRONMENT = environment;
+    }
+  });
+
+  return template;
+};
 
 export const addDefaults = async ({
   params,
@@ -149,7 +160,7 @@ export const addDefaults = async ({
   const newTemplate = await [
     addDefaultParametersToTemplate,
     addLogGroupToResources,
-    // addEnvironmentsToLambdaResources,
+    addEnvironmentsToLambdaResources,
   ].reduce(async (acc, addFn) => addFn(await acc), Promise.resolve(template));
 
   return {

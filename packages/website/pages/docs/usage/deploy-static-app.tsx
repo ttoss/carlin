@@ -22,7 +22,7 @@ export const getStaticProps = async () => {
   })();
 
   const cloudfront = (() => {
-    const options = { cloudfront: true, spa: false };
+    const options = { cloudfront: true, spa: false, scp: [] };
     const template = getJsonYamlTemplates(
       apiVars.getStaticAppTemplate(options),
     );
@@ -31,7 +31,6 @@ export const getStaticProps = async () => {
         'deploy/staticApp/staticApp.template.js',
       originCacheExpression: 'deploy/staticApp/staticApp.template.js',
     });
-    const { originCacheExpression } = apiVars;
     const getLambdaEdgeOriginResponseZipFile = apiVars.getLambdaEdgeOriginResponseZipFile(
       options,
     );
@@ -47,7 +46,6 @@ export const getStaticProps = async () => {
       template,
       comments,
       customScp,
-      originCacheExpression,
       getLambdaEdgeOriginResponseZipFile,
       getLambdaEdgeOriginResponseZipFileWithScp,
     };
@@ -90,12 +88,7 @@ const DocsUsageDeployStaticApp = ({ root, onlyS3, cloudfront }: Props) => {
           functionality is explained below:
         </Styled.p>
         <CodeBlock className="js">
-          {[
-            cloudfront.comments.getLambdaEdgeOriginResponseZipFile,
-            '\n',
-            cloudfront.comments.originCacheExpression,
-            `const originCacheExpression = '${cloudfront.originCacheExpression}';`,
-          ].join('\n')}
+          {[cloudfront.comments.getLambdaEdgeOriginResponseZipFile].join('\n')}
         </CodeBlock>
         <Styled.p>The Lambda@Edge code is show below:</Styled.p>
         <CodeBlock className="js">

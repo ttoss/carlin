@@ -2,6 +2,8 @@
 import { CloudFormation, CloudFront } from 'aws-sdk';
 import log from 'npmlog';
 
+import { getPackageVersion } from '../../utils';
+
 import { cloudFormation, deploy } from '../cloudFormation';
 import { uploadDirectoryToS3, emptyS3Directory } from '../s3';
 import { getStackName } from '../stackName';
@@ -32,8 +34,9 @@ export const uploadBuiltAppToS3 = async ({
   buildFolder: string;
   bucket: string;
 }) => {
-  await emptyS3Directory({ bucket });
-  await uploadDirectoryToS3({ bucket, directory });
+  const version = getPackageVersion();
+  await emptyS3Directory({ bucket, directory: version });
+  await uploadDirectoryToS3({ bucket, bucketKey: version, directory });
 };
 
 export const invalidateCloudFront = async ({
