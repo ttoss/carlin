@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.10.0](https://github.com/ttoss/carlin/compare/v0.9.0...v0.10.0) (2020-12-06)
+
+
+### Features
+
+* add versions to static app deployments ([33f9032](https://github.com/ttoss/carlin/commit/33f903277fbe3054ba45d7165e09765e68fcb488))
+* remove retention limit from Lambda logs ([881ae21](https://github.com/ttoss/carlin/commit/881ae212ced29b9cdb014745f12b1bb576480a3e))
+
+
+
+
+
 # [0.9.0](https://github.com/ttoss/carlin/compare/v0.8.0...v0.9.0) (2020-11-15)
 
 
