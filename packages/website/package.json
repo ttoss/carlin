@@ -1,6 +1,6 @@
 {
   "name": "carlin-website",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "private": true,
   "scripts": {
     "build": "rm -rf .next && next build && next export",

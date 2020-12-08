@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.2](https://github.com/ttoss/carlin/compare/v0.10.1...v0.10.2) (2020-12-08)
+
+### Bug Fixes
+
+- remove parcel-bundler ([a33d609](https://github.com/ttoss/carlin/commit/a33d6099c26484720abe6c29e6f6576c70a92638))
+
 ## [0.10.1](https://github.com/ttoss/carlin/compare/v0.10.0...v0.10.1) (2020-12-08)
 
 ### Bug Fixes
