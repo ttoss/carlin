@@ -3,51 +3,33 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [0.10.0](https://github.com/ttoss/carlin/compare/v0.9.0...v0.10.0) (2020-12-06)
+## [0.10.1](https://github.com/ttoss/carlin/compare/v0.10.0...v0.10.1) (2020-12-08)
 
+**Note:** Version bump only for package carlin-website
+
+# [0.10.0](https://github.com/ttoss/carlin/compare/v0.9.0...v0.10.0) (2020-12-06)
 
 ### Features
 
-* add versions to static app deployments ([33f9032](https://github.com/ttoss/carlin/commit/33f903277fbe3054ba45d7165e09765e68fcb488))
-
-
-
-
+- add versions to static app deployments ([33f9032](https://github.com/ttoss/carlin/commit/33f903277fbe3054ba45d7165e09765e68fcb488))
 
 # [0.9.0](https://github.com/ttoss/carlin/compare/v0.8.0...v0.9.0) (2020-11-15)
 
 **Note:** Version bump only for package carlin-website
 
-
-
-
-
 # [0.8.0](https://github.com/ttoss/carlin/compare/v0.7.3...v0.8.0) (2020-11-13)
-
 
 ### Features
 
-* adding lambda layer documentation ([c8dafe7](https://github.com/ttoss/carlin/commit/c8dafe724972ae3e441aaf3113fe5baf21d4e24c))
-
-
-
-
+- adding lambda layer documentation ([c8dafe7](https://github.com/ttoss/carlin/commit/c8dafe724972ae3e441aaf3113fe5baf21d4e24c))
 
 ## [0.7.3](https://github.com/ttoss/carlin/compare/v0.7.2...v0.7.3) (2020-10-18)
 
 **Note:** Version bump only for package carlin-website
 
-
-
-
-
 ## [0.7.2](https://github.com/ttoss/carlin/compare/v0.7.1...v0.7.2) (2020-10-18)
 
 **Note:** Version bump only for package carlin-website
-
-
-
-
 
 ## [0.7.1](https://github.com/ttoss/carlin/compare/v0.7.0...v0.7.1) (2020-10-18)
 
