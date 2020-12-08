@@ -27,7 +27,7 @@ const getConfig = () => {
     }
   } while (findUpPath);
 
-  const configs = paths.map((p) => readObjectFile({ path: p }));
+  const configs = paths.map((p) => readObjectFile({ path: p }) || {});
 
   /**
    * Using configs.reverser() to get the most far config first. This way the

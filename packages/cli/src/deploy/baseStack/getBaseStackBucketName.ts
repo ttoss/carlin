@@ -5,15 +5,23 @@ import { BASE_STACK_NAME, BASE_STACK_BUCKET_LOGICAL_NAME } from './config';
 export const getBaseStackBucketName = async (): Promise<string> => {
   const cloudFormation = new CloudFormation();
 
-  const { Stacks } = await cloudFormation
-    .describeStacks({ StackName: BASE_STACK_NAME })
-    .promise();
+  const Stacks = await (async () => {
+    try {
+      const response = await cloudFormation
+        .describeStacks({ StackName: BASE_STACK_NAME })
+        .promise();
 
-  if (!Stacks) {
-    throw new Error(
-      `Stack ${BASE_STACK_NAME} not found and cannot be described`,
-    );
-  }
+      if (!response.Stacks) {
+        throw new Error();
+      }
+
+      return response.Stacks;
+    } catch (err) {
+      throw new Error(
+        `Stack ${BASE_STACK_NAME} not found. Please, check if you've deployed ${BASE_STACK_NAME}. If don't, execute \`carlin deploy base-stack\`.`,
+      );
+    }
+  })();
 
   const { Outputs } = Stacks[0];
 
@@ -28,7 +36,9 @@ export const getBaseStackBucketName = async (): Promise<string> => {
   }
 
   if (!bucketName.OutputValue) {
-    throw new Error(`Key ${BASE_STACK_BUCKET_LOGICAL_NAME} has no OutputValue`);
+    throw new Error(
+      `Key ${BASE_STACK_BUCKET_LOGICAL_NAME} has no OutputValue.`,
+    );
   }
 
   return bucketName.OutputValue;

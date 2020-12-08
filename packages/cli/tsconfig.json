@@ -3,7 +3,8 @@
   "compilerOptions": {
     "incremental": false, // Do not create tsconfig.tsbuildinfo
     "outDir": "dist",
-    "noEmit": false
+    "noEmit": false,
+    "skipLibCheck": true // TODO: remove this some day because "@rollup/plugin-typescript": "^8.0.0".
   },
   "include": ["src"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]

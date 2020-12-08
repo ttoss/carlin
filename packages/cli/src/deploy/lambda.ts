@@ -5,7 +5,7 @@ import log from 'npmlog';
 import * as rollup from 'rollup';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import resolve from '@rollup/plugin-node-resolve';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 
 import { uploadFileToS3 } from './s3';
@@ -29,7 +29,7 @@ export const buildLambdaSingleFile = async ({
         external: ['aws-sdk', ...builtins, ...lambdaExternals],
         input: lambdaInput,
         plugins: [
-          resolve({
+          nodeResolve({
             preferBuiltins: true,
           }),
           json(),
@@ -39,8 +39,13 @@ export const buildLambdaSingleFile = async ({
              * property.
              */
             allowSyntheticDefaultImports: true,
+            esModuleInterop: true,
             declaration: false,
             target: 'es2017',
+            /**
+             * Fix https://stackoverflow.com/questions/65202242/how-to-use-rollup-js-to-create-a-common-js-and-named-export-bundle/65202822#65202822
+             */
+            module: 'esnext',
           }),
           commonjs({
             include: /\**node_modules\**/,
@@ -55,12 +60,14 @@ export const buildLambdaSingleFile = async ({
       throw err;
     }
   })();
+
   const { output } = await bundle.generate({
     banner:
       '/* Bundled by Carlin using Rollup.js. \n Check out https://carlin.ttoss.dev for more information. */',
     exports: 'named',
     format: 'cjs',
   });
+
   return output[0].code;
 };
 
