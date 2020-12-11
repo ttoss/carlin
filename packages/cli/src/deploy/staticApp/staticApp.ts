@@ -111,6 +111,7 @@ export const deployStaticApp = async ({
   scp,
   spa,
   hostedZoneName,
+  region,
 }: {
   acmArn?: string;
   aliases?: string[];
@@ -119,6 +120,7 @@ export const deployStaticApp = async ({
   scp?: string[];
   spa: boolean;
   hostedZoneName?: string;
+  region: string;
 }) => {
   log.info(logPrefix, `Starting static app deploy...`);
   try {
@@ -135,19 +137,36 @@ export const deployStaticApp = async ({
       scp,
       spa,
       hostedZoneName,
+      region,
     });
-
-    const { Outputs } = await deploy({ params, template });
 
     const bucket = await getStaticAppBucket({ stackName });
 
-    if (!bucket) {
-      throw new Error(`Cannot find bucket at ${stackName}`);
+    /**
+     * Stack already exists. Upload files first after changing the files routes
+     * because of the version changing.
+     */
+    if (bucket) {
+      await uploadBuiltAppToS3({ buildFolder, bucket });
+
+      const { Outputs } = await deploy({ params, template });
+
+      await invalidateCloudFront({ outputs: Outputs });
+      /**
+       * Stack doesn't exist. Deploy CloudFormation first, get the bucket name,
+       * and upload files to S3.
+       */
+    } else {
+      await deploy({ params, template });
+
+      const newBucket = await getStaticAppBucket({ stackName });
+
+      if (!newBucket) {
+        throw new Error(`Cannot find bucket at ${stackName}`);
+      }
+
+      await uploadBuiltAppToS3({ buildFolder, bucket: newBucket });
     }
-
-    await uploadBuiltAppToS3({ buildFolder, bucket });
-
-    await invalidateCloudFront({ outputs: Outputs });
   } catch (err) {
     log.error(logPrefix, 'An error occurred. Cannot deploy static app');
     log.error(logPrefix, 'Error message: %j', err.message);

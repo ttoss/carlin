@@ -12,6 +12,10 @@ import {
   getPackageVersion,
 } from '../../utils';
 
+import { getOriginShieldRegion } from './getOriginShieldRegion';
+
+const PACKAGE_VERSION = getPackageVersion();
+
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
 const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
@@ -19,7 +23,21 @@ const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
 const CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID =
   'CloudFrontDistributionOriginAccessIdentity';
 
-const CLOUDFRONT_DISTRIBUTION_LOGICAL_ID = 'CloudFrontDistribution';
+export const CLOUDFRONT_DISTRIBUTION_LOGICAL_ID = 'CloudFrontDistribution';
+
+/**
+ * Name: Managed-CachingOptimized
+ * ID: 658327ea-f89d-4fab-a63d-7e88639e58f6
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
+ */
+const CACHE_POLICY_ID = '658327ea-f89d-4fab-a63d-7e88639e58f6';
+
+/**
+ * Name: Managed-CORS-S3Origin
+ * ID: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html
+ */
+const ORIGIN_REQUEST_POLICY_ID = '88a5eaf4-2fd4-4709-b370-b4c650ea3fcf';
 
 const LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID = 'LambdaEdgeIAMRole';
 
@@ -57,8 +75,6 @@ exports.handler = (event, context, callback) => {
     request.uri += '.html';
   }
 
-  request.uri = "/${getPackageVersion()}" + request.uri;
-
   callback(null, request);
 };
 `.trim();
@@ -68,12 +84,19 @@ const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
 const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
 
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+ */
 const defaultScp = [
   "default-src 'self'",
+  /**
+   * Fetch APIs, only if start with HTTPS.
+   */
+  "connect-src 'self' https:",
   "img-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self'",
+  "style-src 'self' https://fonts.googleapis.com/",
+  "font-src 'self' https://fonts.gstatic.com/",
   "object-src 'none'",
 ];
 
@@ -142,13 +165,13 @@ exports.handler = (event, context, callback) => {
 };
 `;
 
-const getBaseTemplate = (
-  {
-    cloudfront,
-  }: {
-    cloudfront?: boolean;
-  } = { cloudfront: false },
-): CloudFormationTemplate => {
+const getBaseTemplate = ({
+  cloudfront,
+  spa,
+}: {
+  cloudfront?: boolean;
+  spa?: boolean;
+}): CloudFormationTemplate => {
   return {
     AWSTemplateFormatVersion: '2010-09-09',
     Resources: {
@@ -167,8 +190,8 @@ const getBaseTemplate = (
             ],
           },
           WebsiteConfiguration: {
-            IndexDocument: 'index.html',
-            ErrorDocument: 'index.html',
+            IndexDocument: `index.html`,
+            ErrorDocument: `${spa ? 'index' : '404'}.html`,
           },
         },
       },
@@ -230,7 +253,7 @@ const getCloudFrontEdgeLambdas = ({
   spa,
 }: {
   scp?: string[];
-  spa: boolean;
+  spa?: boolean;
 }) => {
   let lambdaEdgeResources: { [key: string]: Resource } = {
     [PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID]: {
@@ -382,17 +405,21 @@ const getCloudFrontEdgeLambdas = ({
 const getCloudFrontTemplate = ({
   acmArn,
   aliases,
+  cloudfront,
   scp,
-  spa = false,
+  spa,
   hostedZoneName,
+  region,
 }: {
   acmArn?: string;
   aliases?: string[];
+  cloudfront: boolean;
   scp?: string[];
   spa?: boolean;
   hostedZoneName?: string;
+  region?: string;
 }): CloudFormationTemplate => {
-  const template = { ...getBaseTemplate({ cloudfront: true }) };
+  const template = { ...getBaseTemplate({ cloudfront, spa }) };
 
   const cloudFrontResources: { [key: string]: Resource } = {
     ...getCloudFrontEdgeLambdas({ scp, spa }),
@@ -440,24 +467,19 @@ const getCloudFrontTemplate = ({
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
             Compress: true,
             /**
-             * How MinTTL, MaxTTL and DefaultTTL work together with Cache Control header.
-             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html#ExpirationDownloadDist
-             *
-             * Returns MinTTL, MaxTTL and DefaultTTL.
+             * Caching OPTIONS. Related to OriginRequestPolicyId property.
+             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/header-caching.html#header-caching-web-cors
              */
-            ...(() => {
-              const ttl = 60 * 60 * 24 * 365; // One year
-              return {
-                MinTTL: ttl,
-                DefaultTTL: ttl,
-              };
-            })(),
-            ForwardedValues: {
-              QueryString: true,
-            },
+            CachedMethods: ['GET', 'HEAD', 'OPTIONS'],
+            OriginRequestPolicyId: ORIGIN_REQUEST_POLICY_ID,
+            /**
+             * CachePolicyId property:
+             * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-defaultcachebehavior.html#cfn-cloudfront-distribution-defaultcachebehavior-cachepolicyid
+             */
+            CachePolicyId: CACHE_POLICY_ID,
             LambdaFunctionAssociations: [
               /**
-               * If SPA, do not add origin-request.
+               * If SPA, do not add viewer-request.
                */
               ...(spa
                 ? []
@@ -484,10 +506,24 @@ const getCloudFrontTemplate = ({
           HttpVersion: 'http2',
           Origins: [
             {
+              /**
+               * Amazon S3 bucket – awsexamplebucket.s3.us-west-2.amazonaws.com
+               * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesDomainName
+               */
               DomainName: {
-                'Fn::GetAtt': `${STATIC_APP_BUCKET_LOGICAL_ID}.DomainName`,
+                'Fn::GetAtt': `${STATIC_APP_BUCKET_LOGICAL_ID}.RegionalDomainName`,
               },
               Id: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
+              OriginPath: `/${PACKAGE_VERSION}`,
+              /**
+               * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html#choose-origin-shield-region
+               */
+              OriginShield: region
+                ? {
+                    Enabled: true,
+                    OriginShieldRegion: getOriginShieldRegion(region),
+                  }
+                : undefined,
               S3OriginConfig: {
                 OriginAccessIdentity: {
                   'Fn::Join': [
@@ -604,6 +640,9 @@ const getCloudFrontTemplate = ({
         Ref: CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
       },
     },
+    CurrentVersion: {
+      Value: PACKAGE_VERSION,
+    },
   };
 
   return template;
@@ -616,16 +655,26 @@ export const getStaticAppTemplate = ({
   scp,
   spa,
   hostedZoneName,
+  region,
 }: {
   acmArn?: string;
   aliases?: string[];
-  cloudfront: boolean;
+  cloudfront?: boolean;
   scp?: string[];
-  spa: boolean;
+  spa?: boolean;
   hostedZoneName?: string;
+  region?: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
-    return getCloudFrontTemplate({ acmArn, aliases, scp, spa, hostedZoneName });
+    return getCloudFrontTemplate({
+      acmArn,
+      aliases,
+      cloudfront,
+      scp,
+      spa,
+      hostedZoneName,
+      region,
+    });
   }
-  return getBaseTemplate();
+  return getBaseTemplate({ cloudfront, spa });
 };
