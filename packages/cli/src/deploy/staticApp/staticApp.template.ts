@@ -12,6 +12,8 @@ import {
   getPackageVersion,
 } from '../../utils';
 
+import { getOriginShieldRegion } from './getOriginShieldRegion';
+
 const PACKAGE_VERSION = getPackageVersion();
 
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
@@ -73,8 +75,6 @@ exports.handler = (event, context, callback) => {
     request.uri += '.html';
   }
 
-  request.uri = "/${PACKAGE_VERSION}" + request.uri;
-
   callback(null, request);
 };
 `.trim();
@@ -84,12 +84,19 @@ const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
 const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
 
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+ */
 const defaultScp = [
   "default-src 'self'",
+  /**
+   * Fetch APIs, only if start with HTTPS.
+   */
+  "connect-src 'self' https:",
   "img-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self'",
+  "style-src 'self' https://fonts.googleapis.com/",
+  "font-src 'self' https://fonts.gstatic.com/",
   "object-src 'none'",
 ];
 
@@ -402,6 +409,7 @@ const getCloudFrontTemplate = ({
   scp,
   spa,
   hostedZoneName,
+  region,
 }: {
   acmArn?: string;
   aliases?: string[];
@@ -409,6 +417,7 @@ const getCloudFrontTemplate = ({
   scp?: string[];
   spa?: boolean;
   hostedZoneName?: string;
+  region?: string;
 }): CloudFormationTemplate => {
   const template = { ...getBaseTemplate({ cloudfront, spa }) };
 
@@ -457,7 +466,12 @@ const getCloudFrontTemplate = ({
           DefaultCacheBehavior: {
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
             Compress: true,
+            /**
+             * Caching OPTIONS. Related to OriginRequestPolicyId property.
+             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/header-caching.html#header-caching-web-cors
+             */
             CachedMethods: ['GET', 'HEAD', 'OPTIONS'],
+            OriginRequestPolicyId: ORIGIN_REQUEST_POLICY_ID,
             /**
              * CachePolicyId property:
              * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-defaultcachebehavior.html#cfn-cloudfront-distribution-defaultcachebehavior-cachepolicyid
@@ -484,7 +498,6 @@ const getCloudFrontTemplate = ({
                 },
               },
             ],
-            OriginRequestPolicyId: ORIGIN_REQUEST_POLICY_ID,
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
           },
@@ -502,6 +515,15 @@ const getCloudFrontTemplate = ({
               },
               Id: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
               OriginPath: `/${PACKAGE_VERSION}`,
+              /**
+               * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html#choose-origin-shield-region
+               */
+              OriginShield: region
+                ? {
+                    Enabled: true,
+                    OriginShieldRegion: getOriginShieldRegion(region),
+                  }
+                : undefined,
               S3OriginConfig: {
                 OriginAccessIdentity: {
                   'Fn::Join': [
@@ -618,6 +640,9 @@ const getCloudFrontTemplate = ({
         Ref: CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
       },
     },
+    CurrentVersion: {
+      Value: PACKAGE_VERSION,
+    },
   };
 
   return template;
@@ -630,6 +655,7 @@ export const getStaticAppTemplate = ({
   scp,
   spa,
   hostedZoneName,
+  region,
 }: {
   acmArn?: string;
   aliases?: string[];
@@ -637,6 +663,7 @@ export const getStaticAppTemplate = ({
   scp?: string[];
   spa?: boolean;
   hostedZoneName?: string;
+  region?: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
     return getCloudFrontTemplate({
@@ -646,6 +673,7 @@ export const getStaticAppTemplate = ({
       scp,
       spa,
       hostedZoneName,
+      region,
     });
   }
   return getBaseTemplate({ cloudfront, spa });

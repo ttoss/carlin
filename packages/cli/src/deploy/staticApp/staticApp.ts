@@ -111,6 +111,7 @@ export const deployStaticApp = async ({
   scp,
   spa,
   hostedZoneName,
+  region,
 }: {
   acmArn?: string;
   aliases?: string[];
@@ -119,6 +120,7 @@ export const deployStaticApp = async ({
   scp?: string[];
   spa: boolean;
   hostedZoneName?: string;
+  region: string;
 }) => {
   log.info(logPrefix, `Starting static app deploy...`);
   try {
@@ -135,6 +137,7 @@ export const deployStaticApp = async ({
       scp,
       spa,
       hostedZoneName,
+      region,
     });
 
     const bucket = await getStaticAppBucket({ stackName });
