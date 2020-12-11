@@ -10,6 +10,7 @@ jest.mock('fs', () => ({
 }));
 
 beforeAll(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (readFileSync as jest.Mock) = jest.fn().mockReturnValue({
     toString: jest
       .fn()

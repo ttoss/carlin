@@ -12,6 +12,8 @@ import {
   getPackageVersion,
 } from '../../utils';
 
+const PACKAGE_VERSION = getPackageVersion();
+
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
 const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
@@ -19,7 +21,21 @@ const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
 const CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID =
   'CloudFrontDistributionOriginAccessIdentity';
 
-const CLOUDFRONT_DISTRIBUTION_LOGICAL_ID = 'CloudFrontDistribution';
+export const CLOUDFRONT_DISTRIBUTION_LOGICAL_ID = 'CloudFrontDistribution';
+
+/**
+ * Name: Managed-CachingOptimized
+ * ID: 658327ea-f89d-4fab-a63d-7e88639e58f6
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
+ */
+const CACHE_POLICY_ID = '658327ea-f89d-4fab-a63d-7e88639e58f6';
+
+/**
+ * Name: Managed-CORS-S3Origin
+ * ID: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html
+ */
+const ORIGIN_REQUEST_POLICY_ID = '88a5eaf4-2fd4-4709-b370-b4c650ea3fcf';
 
 const LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID = 'LambdaEdgeIAMRole';
 
@@ -57,7 +73,7 @@ exports.handler = (event, context, callback) => {
     request.uri += '.html';
   }
 
-  request.uri = "/${getPackageVersion()}" + request.uri;
+  request.uri = "/${PACKAGE_VERSION}" + request.uri;
 
   callback(null, request);
 };
@@ -142,13 +158,13 @@ exports.handler = (event, context, callback) => {
 };
 `;
 
-const getBaseTemplate = (
-  {
-    cloudfront,
-  }: {
-    cloudfront?: boolean;
-  } = { cloudfront: false },
-): CloudFormationTemplate => {
+const getBaseTemplate = ({
+  cloudfront,
+  spa,
+}: {
+  cloudfront?: boolean;
+  spa?: boolean;
+}): CloudFormationTemplate => {
   return {
     AWSTemplateFormatVersion: '2010-09-09',
     Resources: {
@@ -167,8 +183,8 @@ const getBaseTemplate = (
             ],
           },
           WebsiteConfiguration: {
-            IndexDocument: 'index.html',
-            ErrorDocument: 'index.html',
+            IndexDocument: `index.html`,
+            ErrorDocument: `${spa ? 'index' : '404'}.html`,
           },
         },
       },
@@ -230,7 +246,7 @@ const getCloudFrontEdgeLambdas = ({
   spa,
 }: {
   scp?: string[];
-  spa: boolean;
+  spa?: boolean;
 }) => {
   let lambdaEdgeResources: { [key: string]: Resource } = {
     [PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID]: {
@@ -382,17 +398,19 @@ const getCloudFrontEdgeLambdas = ({
 const getCloudFrontTemplate = ({
   acmArn,
   aliases,
+  cloudfront,
   scp,
-  spa = false,
+  spa,
   hostedZoneName,
 }: {
   acmArn?: string;
   aliases?: string[];
+  cloudfront: boolean;
   scp?: string[];
   spa?: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
-  const template = { ...getBaseTemplate({ cloudfront: true }) };
+  const template = { ...getBaseTemplate({ cloudfront, spa }) };
 
   const cloudFrontResources: { [key: string]: Resource } = {
     ...getCloudFrontEdgeLambdas({ scp, spa }),
@@ -439,25 +457,15 @@ const getCloudFrontTemplate = ({
           DefaultCacheBehavior: {
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
             Compress: true,
+            CachedMethods: ['GET', 'HEAD', 'OPTIONS'],
             /**
-             * How MinTTL, MaxTTL and DefaultTTL work together with Cache Control header.
-             * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html#ExpirationDownloadDist
-             *
-             * Returns MinTTL, MaxTTL and DefaultTTL.
+             * CachePolicyId property:
+             * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-defaultcachebehavior.html#cfn-cloudfront-distribution-defaultcachebehavior-cachepolicyid
              */
-            ...(() => {
-              const ttl = 60 * 60 * 24 * 365; // One year
-              return {
-                MinTTL: ttl,
-                DefaultTTL: ttl,
-              };
-            })(),
-            ForwardedValues: {
-              QueryString: true,
-            },
+            CachePolicyId: CACHE_POLICY_ID,
             LambdaFunctionAssociations: [
               /**
-               * If SPA, do not add origin-request.
+               * If SPA, do not add viewer-request.
                */
               ...(spa
                 ? []
@@ -476,6 +484,7 @@ const getCloudFrontTemplate = ({
                 },
               },
             ],
+            OriginRequestPolicyId: ORIGIN_REQUEST_POLICY_ID,
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
           },
@@ -484,10 +493,15 @@ const getCloudFrontTemplate = ({
           HttpVersion: 'http2',
           Origins: [
             {
+              /**
+               * Amazon S3 bucket – awsexamplebucket.s3.us-west-2.amazonaws.com
+               * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesDomainName
+               */
               DomainName: {
-                'Fn::GetAtt': `${STATIC_APP_BUCKET_LOGICAL_ID}.DomainName`,
+                'Fn::GetAtt': `${STATIC_APP_BUCKET_LOGICAL_ID}.RegionalDomainName`,
               },
               Id: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
+              OriginPath: `/${PACKAGE_VERSION}`,
               S3OriginConfig: {
                 OriginAccessIdentity: {
                   'Fn::Join': [
@@ -619,13 +633,20 @@ export const getStaticAppTemplate = ({
 }: {
   acmArn?: string;
   aliases?: string[];
-  cloudfront: boolean;
+  cloudfront?: boolean;
   scp?: string[];
-  spa: boolean;
+  spa?: boolean;
   hostedZoneName?: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
-    return getCloudFrontTemplate({ acmArn, aliases, scp, spa, hostedZoneName });
+    return getCloudFrontTemplate({
+      acmArn,
+      aliases,
+      cloudfront,
+      scp,
+      spa,
+      hostedZoneName,
+    });
   }
-  return getBaseTemplate();
+  return getBaseTemplate({ cloudfront, spa });
 };
