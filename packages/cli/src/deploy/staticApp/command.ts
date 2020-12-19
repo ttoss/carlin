@@ -36,7 +36,6 @@ export const deployStaticAppCommand: CommandModule = {
         },
         scp: {
           describe: 'SCP headers to be added to Lambda@Edge origin response.',
-          type: 'array',
         },
         spa: {
           default: false,

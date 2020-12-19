@@ -1,5 +1,7 @@
 import {
   getStaticAppTemplate,
+  generateScp,
+  getLambdaEdgeOriginResponseZipFile,
   CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
 } from './staticApp.template';
 
@@ -14,7 +16,44 @@ jest.mock('../../utils', () => ({
   getPackageVersion: jest.fn().mockReturnValue('10.40.23'),
 }));
 
-describe('fix issue #1 https://github.com/ttoss/carlin/issues/1', () => {
+describe("fix issue 'Add Google Marketing Platform to SCP' #3 https://github.com/ttoss/carlin/issues/3", () => {
+  const defaultScp =
+    "default-src 'self'; connect-src 'self' https:; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'";
+
+  test('generate default SCP', () => {
+    expect(generateScp()).toEqual(defaultScp);
+  });
+
+  test('add new directive', () => {
+    expect(generateScp({ scp: { newDirective: "'some text'" } })).toContain(
+      "newDirective 'some text'",
+    );
+  });
+
+  test('append directive', () => {
+    const expected = /default-src .*'some text'/;
+    expect(generateScp({ scp: { 'default-src': "'some text'" } })).toMatch(
+      expected,
+    );
+    expect(generateScp({ scp: { 'default-src': ["'some text'"] } })).toMatch(
+      expected,
+    );
+  });
+
+  test('replace directive', () => {
+    expect(
+      generateScp({ scp: { 'default-src': ["'some text'", 'replace'] } }),
+    ).toContain("default-src 'some text'");
+  });
+
+  test('should add scp to Lambda@Edge Origin response', () => {
+    expect(getLambdaEdgeOriginResponseZipFile()).toContain(
+      `value: "${defaultScp}"`,
+    );
+  });
+});
+
+describe("fix issue 'PWA doesn't redirect correctly when browser URL has a path' #1 https://github.com/ttoss/carlin/issues/1", () => {
   test('cloudfront', () => {
     expect(
       getStaticAppTemplate({ cloudfront: true }).Resources[

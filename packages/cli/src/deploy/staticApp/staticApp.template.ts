@@ -84,21 +84,51 @@ const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
 const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
 
+export type SCP = { [key: string]: string | string[] };
+
 /**
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
  */
-const defaultScp = [
-  "default-src 'self'",
+const defaultScp: SCP = {
+  'default-src': "'self'",
   /**
    * Fetch APIs, only if start with HTTPS.
    */
-  "connect-src 'self' https:",
-  "img-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' https://fonts.googleapis.com/",
-  "font-src 'self' https://fonts.gstatic.com/",
-  "object-src 'none'",
-];
+  'connect-src': "'self' https:",
+  'img-src': "'self'",
+  'script-src': "'self'",
+  /**
+   * 'unsafe-inline' is needed to load components library.
+   */
+  'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com/",
+  'font-src': "'self' https://fonts.gstatic.com/",
+  'object-src': "'none'",
+};
+
+export const generateScp = ({ scp }: { scp?: SCP } = {}) => {
+  const newScp = Object.entries(scp || {}).reduce(
+    (acc, [key, value]) => {
+      if (Array.isArray(value)) {
+        const [scpValue, operation] = value;
+        if (operation === 'replace') {
+          acc[key] = scpValue;
+        } else {
+          acc[key] = `${acc[key]} ${scpValue}`;
+        }
+      } else if (acc[key]) {
+        acc[key] = `${acc[key]} ${value}`;
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    { ...defaultScp },
+  );
+
+  return Object.entries(newScp)
+    .map(([key, value]) => `${key} ${value}`)
+    .join('; ');
+};
 
 /**
  * - Cache the files whose URL matches the regex expression @see {@link originCacheExpression}.
@@ -107,10 +137,9 @@ const defaultScp = [
  * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
  */
 export const getLambdaEdgeOriginResponseZipFile = ({
-  scp = defaultScp,
-}: {
-  scp?: string[];
-}) => `
+  scp,
+}: { scp?: SCP } = {}) => {
+  return `
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
@@ -133,7 +162,7 @@ exports.handler = (event, context, callback) => {
   headers['content-security-policy'] = [
     {
       key: 'Content-Security-Policy',
-      value: ${JSON.stringify(scp)}.join('; '),
+      value: "${generateScp({ scp })}"
     },
   ];
   headers['x-content-type-options'] = [
@@ -164,6 +193,7 @@ exports.handler = (event, context, callback) => {
   callback(null, response);
 };
 `;
+};
 
 const getBaseTemplate = ({
   cloudfront,
@@ -252,7 +282,7 @@ const getCloudFrontEdgeLambdas = ({
   scp,
   spa,
 }: {
-  scp?: string[];
+  scp?: SCP;
   spa?: boolean;
 }) => {
   let lambdaEdgeResources: { [key: string]: Resource } = {
@@ -414,7 +444,7 @@ const getCloudFrontTemplate = ({
   acmArn?: string;
   aliases?: string[];
   cloudfront: boolean;
-  scp?: string[];
+  scp?: SCP;
   spa?: boolean;
   hostedZoneName?: string;
   region?: string;
@@ -518,12 +548,12 @@ const getCloudFrontTemplate = ({
               /**
                * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html#choose-origin-shield-region
                */
-              OriginShield: region
-                ? {
-                    Enabled: true,
-                    OriginShieldRegion: getOriginShieldRegion(region),
-                  }
-                : undefined,
+              ...(region && {
+                OriginShield: {
+                  Enabled: true,
+                  OriginShieldRegion: getOriginShieldRegion(region),
+                },
+              }),
               S3OriginConfig: {
                 OriginAccessIdentity: {
                   'Fn::Join': [
@@ -660,7 +690,7 @@ export const getStaticAppTemplate = ({
   acmArn?: string;
   aliases?: string[];
   cloudfront?: boolean;
-  scp?: string[];
+  scp?: SCP;
   spa?: boolean;
   hostedZoneName?: string;
   region?: string;

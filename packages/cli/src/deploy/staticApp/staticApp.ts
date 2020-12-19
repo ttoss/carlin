@@ -8,7 +8,7 @@ import { cloudFormation, deploy } from '../cloudFormation';
 import { uploadDirectoryToS3, emptyS3Directory } from '../s3';
 import { getStackName } from '../stackName';
 
-import { getStaticAppTemplate } from './staticApp.template';
+import { getStaticAppTemplate, SCP } from './staticApp.template';
 
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
@@ -117,7 +117,7 @@ export const deployStaticApp = async ({
   aliases?: string[];
   buildFolder: string;
   cloudfront: boolean;
-  scp?: string[];
+  scp?: SCP;
   spa: boolean;
   hostedZoneName?: string;
   region: string;
