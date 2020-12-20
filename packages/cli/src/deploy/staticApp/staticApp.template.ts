@@ -60,12 +60,13 @@ exports.handler = (event, context) => {
 }
 `.trim();
 
-const LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
+const LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID = 'LambdaEdgeViewerRequest';
 
 const LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID =
-  'LambdaEdgeVersionOriginRequest';
+  'LambdaEdgeVersionViewerRequest';
 
 const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
+'use strict';
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
 
@@ -79,45 +80,56 @@ exports.handler = (event, context, callback) => {
 };
 `.trim();
 
-const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
-
-const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
-  'LambdaEdgeVersionOriginResponse';
+export type CSP = { [key: string]: string | string[] };
 
 /**
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
  */
-const defaultScp = [
-  "default-src 'self'",
+const getDefaultCsp = (): CSP => ({
+  'default-src': "'self'",
   /**
    * Fetch APIs, only if start with HTTPS.
    */
-  "connect-src 'self' https:",
-  "img-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' https://fonts.googleapis.com/",
-  "font-src 'self' https://fonts.gstatic.com/",
-  "object-src 'none'",
-];
+  'connect-src': "'self' https:",
+  'img-src': "'self'",
+  'script-src': "'self'",
+  /**
+   * 'unsafe-inline' is needed to load components library.
+   */
+  'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com/",
+  'font-src': "'self' https://fonts.gstatic.com/",
+  'object-src': "'none'",
+});
 
-/**
- * - Cache the files whose URL matches the regex expression @see {@link originCacheExpression}.
- *
- * - Add some headers to improve security
- * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
- */
-export const getLambdaEdgeOriginResponseZipFile = ({
-  scp = defaultScp,
-}: {
-  scp?: string[];
-}) => `
-exports.handler = (event, context, callback) => {
-  const request = event.Records[0].cf.request;
-  const response = event.Records[0].cf.response;
-  const headers = response.headers;
-  
+const updateCspObject = ({ csp, currentCsp }: { csp: CSP; currentCsp: CSP }) =>
+  Object.entries(csp).reduce(
+    (acc, [key, value]) => {
+      if (Array.isArray(value)) {
+        const [cspValue, operation] = value;
+        if (operation === 'replace') {
+          acc[key] = cspValue;
+        } else {
+          acc[key] = `${acc[key]} ${cspValue}`;
+        }
+      } else if (acc[key]) {
+        acc[key] = `${acc[key]} ${value}`;
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    { ...currentCsp },
+  );
+
+export const generateCsp = ({ csp = getDefaultCsp() }: { csp?: CSP } = {}) => {
+  return Object.entries(csp)
+    .map(([key, value]) => `${key} ${value}`)
+    .join('; ');
+};
+
+const assignHeaders = ({ csp }: { csp?: CSP }) => {
+  return `
   const maxAge = 150;
-  
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
@@ -133,7 +145,7 @@ exports.handler = (event, context, callback) => {
   headers['content-security-policy'] = [
     {
       key: 'Content-Security-Policy',
-      value: ${JSON.stringify(scp)}.join('; '),
+      value: "${generateCsp({ csp })}"
     },
   ];
   headers['x-content-type-options'] = [
@@ -160,10 +172,186 @@ exports.handler = (event, context, callback) => {
       value: 'same-origin'
     }
   ];
+  `;
+};
+
+const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
+
+const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
+  'LambdaEdgeVersionOriginRequest';
+
+/**
+ * Created to allow Google Marketing Platform though Google Tag Manager.
+ * {@link https://github.com/ttoss/carlin/issues/3}
+ *
+ * It's not possible to change body from S3 origin thought Lambda@Edge. The
+ * implementation was made considering this questions and responses.
+ * - {@link https://stackoverflow.com/questions/62893845/how-can-i-modify-a-pages-html-with-aws-cloudfront-running-a-lambdaedge-functio}
+ * - {@link https://stackoverflow.com/questions/51230768/aws-lambdaedge-how-to-read-html-file-from-s3-and-put-content-in-response-body}
+ */
+const getLambdaEdgeOriginRequestZipFile = ({
+  gtmId,
+  region,
+  csp,
+}: {
+  gtmId: string;
+  region: string;
+  csp?: CSP;
+}) => {
+  /**
+   * Add CSP to allow Google Marketing Platform words.
+   * {@link https://developers.google.com/tag-manager/web/csp}
+   */
+  const fullCsp = [
+    getDefaultCsp(),
+    /**
+     * https://developers.google.com/tag-manager/web/csp#enabling_the_google_tag_manager_snippet
+     */
+    {
+      'img-src': 'www.googletagmanager.com',
+    },
+    /**
+     * https://developers.google.com/tag-manager/web/csp#preview_mode
+     */
+    {
+      'script-src': 'https://tagmanager.google.com',
+      'style-src': 'https://tagmanager.google.com https://fonts.googleapis.com',
+      'img-src': 'https://ssl.gstatic.com https://www.gstatic.com',
+      'font-src': 'data:',
+    },
+    /**
+     * https://developers.google.com/tag-manager/web/csp#universal_analytics_google_analytics
+     */
+    {
+      'script-src':
+        'https://www.google-analytics.com https://ssl.google-analytics.com',
+      'img-src': 'https://www.google-analytics.com',
+      'connect-src': 'https://www.google-analytics.com',
+    },
+    /**
+     * https://developers.google.com/tag-manager/web/csp#google_optimize
+     */
+    {
+      'script-src': 'https://www.google-analytics.com',
+    },
+    /**
+     * https://developers.google.com/tag-manager/web/csp#google_ads_conversions
+     */
+    {
+      'script-src': 'https://www.googleadservices.com https://www.google.com',
+      'img-src': 'https://googleads.g.doubleclick.net https://www.google.com',
+    },
+    /**
+     * https://developers.google.com/tag-manager/web/csp#google_ads_remarketing
+     */
+    {
+      'script-src':
+        'https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com',
+      'img-src': 'https://www.google.com',
+      'frame-src': 'https://bid.g.doubleclick.net',
+    },
+  ].reduce(
+    (acc, curCsp) => updateCspObject({ csp: curCsp, currentCsp: acc }),
+    csp || {},
+  );
+
+  return `
+'use strict';
+
+const { S3 } = require('aws-sdk');
+const crypto = require('crypto');
+
+const s3 = new S3({ region: "${region}" });
+
+const nonce = crypto.randomBytes(16).toString('base64');
+
+// https://developers.google.com/tag-manager/web/csp
+const gtmScript = \`
+<script nonce="\${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');
+n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${gtmId}');</script>
+\`.replace(/\\n/g, '');
+
+exports.handler = async (event, context) => {
+  const request = { ...event.Records[0].cf.request };
+
+  if (request.uri !== "/index.html") {
+    return request;
+  }
+
+  const { origin } = request;
+
+  const bucket = origin.s3.domainName.split(".")[0];
+
+  const key = origin.s3.path.replace(new RegExp("^/"), '') + "/index.html";
+
+  const {
+    Body,
+    ContentType
+  } = await s3.getObject({
+    Bucket: bucket,
+    Key: key,
+  }).promise();
+
+  let headers = { };
+  
+  headers["content-type"] = [
+    {
+      key: "Content-Type",
+      value: ContentType
+    }
+  ];  
+
+  ${assignHeaders({ csp: fullCsp })}
+
+  const cspValue = headers['content-security-policy'][0].value.replace("script-src", \`script-src 'nonce-\${nonce}'\`);
+
+  headers['content-security-policy'][0].value = cspValue;
+
+  const body = Body.toString().replace("</head>", gtmScript + "</head>");
+  
+  const response = {
+    status: "200",
+    statusDescription: "Ok",
+    headers,
+    body
+  };
+
+  return response;
+};
+`.trim();
+};
+
+const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
+
+const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
+  'LambdaEdgeVersionOriginResponse';
+
+/**
+ * - Cache the files whose URL matches the regex expression @see {@link originCacheExpression}.
+ *
+ * - Add some headers to improve security
+ * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
+ */
+export const getLambdaEdgeOriginResponseZipFile = ({
+  csp,
+}: { csp?: CSP } = {}) => {
+  return `
+'use strict';
+exports.handler = (event, context, callback) => {
+  const request = event.Records[0].cf.request;
+  const response = event.Records[0].cf.response;
+  const headers = response.headers;
+  
+  ${assignHeaders({ csp })}
   
   callback(null, response);
 };
-`;
+`.trim();
+};
 
 const getBaseTemplate = ({
   cloudfront,
@@ -249,10 +437,14 @@ const getBaseTemplate = ({
 };
 
 const getCloudFrontEdgeLambdas = ({
-  scp,
+  gtmId,
+  region,
+  csp,
   spa,
 }: {
-  scp?: string[];
+  gtmId?: string;
+  region: string;
+  csp?: CSP;
   spa?: boolean;
 }) => {
   let lambdaEdgeResources: { [key: string]: Resource } = {
@@ -329,9 +521,19 @@ const getCloudFrontEdgeLambdas = ({
               Version: '2012-10-17',
               Statement: [
                 {
-                  Effect: 'Deny',
-                  Action: '*',
-                  Resource: '*',
+                  Effect: 'Allow',
+                  Action: 's3:GetObject',
+                  Resource: {
+                    'Fn::Join': [
+                      '',
+                      [
+                        {
+                          'Fn::GetAtt': [STATIC_APP_BUCKET_LOGICAL_ID, 'Arn'],
+                        },
+                        '/*',
+                      ],
+                    ],
+                  },
                 },
               ],
             },
@@ -339,10 +541,38 @@ const getCloudFrontEdgeLambdas = ({
         ],
       },
     },
+    ...(gtmId && {
+      [LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]: {
+        Type: 'AWS::Lambda::Function',
+        Properties: {
+          Code: {
+            ZipFile: getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
+          },
+          Description: 'Lambda@Edge function serving as origin request.',
+          Handler: 'index.handler',
+          MemorySize: 128,
+          Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
+          Runtime: 'nodejs12.x',
+          Timeout: 5,
+        },
+      },
+      [LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID]: {
+        Type: 'Custom::LatestLambdaVersion',
+        Properties: {
+          FunctionName: {
+            Ref: LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
+          },
+          Nonce: `${Date.now()}`,
+          ServiceToken: {
+            'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
+          },
+        },
+      },
+    }),
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
-        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ scp }) },
+        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ csp }) },
         Description: 'Lambda@Edge function serving as origin response.',
         Handler: 'index.handler',
         MemorySize: 128,
@@ -406,7 +636,8 @@ const getCloudFrontTemplate = ({
   acmArn,
   aliases,
   cloudfront,
-  scp,
+  gtmId,
+  csp,
   spa,
   hostedZoneName,
   region,
@@ -414,15 +645,23 @@ const getCloudFrontTemplate = ({
   acmArn?: string;
   aliases?: string[];
   cloudfront: boolean;
-  scp?: string[];
+  gtmId?: string;
+  csp?: CSP;
   spa?: boolean;
   hostedZoneName?: string;
-  region?: string;
+  region: string;
 }): CloudFormationTemplate => {
   const template = { ...getBaseTemplate({ cloudfront, spa }) };
 
+  const cloudFrontEdgeLambdas = getCloudFrontEdgeLambdas({
+    gtmId,
+    region,
+    csp,
+    spa,
+  });
+
   const cloudFrontResources: { [key: string]: Resource } = {
-    ...getCloudFrontEdgeLambdas({ scp, spa }),
+    ...cloudFrontEdgeLambdas,
     [CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID]: {
       Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity',
       Properties: {
@@ -478,19 +717,26 @@ const getCloudFrontTemplate = ({
              */
             CachePolicyId: CACHE_POLICY_ID,
             LambdaFunctionAssociations: [
-              /**
-               * If SPA, do not add viewer-request.
-               */
-              ...(spa
-                ? []
-                : [
+              ...(cloudFrontEdgeLambdas[LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID]
+                ? [
                     {
                       EventType: 'viewer-request',
                       LambdaFunctionARN: {
                         'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID}.FunctionArn`,
                       },
                     },
-                  ]),
+                  ]
+                : []),
+              ...(cloudFrontEdgeLambdas[LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]
+                ? [
+                    {
+                      EventType: 'origin-request',
+                      LambdaFunctionARN: {
+                        'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID}.FunctionArn`,
+                      },
+                    },
+                  ]
+                : []),
               {
                 EventType: 'origin-response',
                 LambdaFunctionARN: {
@@ -518,12 +764,12 @@ const getCloudFrontTemplate = ({
               /**
                * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html#choose-origin-shield-region
                */
-              OriginShield: region
-                ? {
-                    Enabled: true,
-                    OriginShieldRegion: getOriginShieldRegion(region),
-                  }
-                : undefined,
+              ...(region && {
+                OriginShield: {
+                  Enabled: true,
+                  OriginShieldRegion: getOriginShieldRegion(region),
+                },
+              }),
               S3OriginConfig: {
                 OriginAccessIdentity: {
                   'Fn::Join': [
@@ -652,7 +898,8 @@ export const getStaticAppTemplate = ({
   acmArn,
   aliases,
   cloudfront,
-  scp,
+  gtmId,
+  csp,
   spa,
   hostedZoneName,
   region,
@@ -660,17 +907,19 @@ export const getStaticAppTemplate = ({
   acmArn?: string;
   aliases?: string[];
   cloudfront?: boolean;
-  scp?: string[];
+  gtmId?: string;
+  csp?: CSP;
   spa?: boolean;
   hostedZoneName?: string;
-  region?: string;
+  region: string;
 }): CloudFormationTemplate => {
   if (cloudfront) {
     return getCloudFrontTemplate({
       acmArn,
       aliases,
       cloudfront,
-      scp,
+      gtmId,
+      csp,
       spa,
       hostedZoneName,
       region,

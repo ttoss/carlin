@@ -34,9 +34,13 @@ export const deployStaticAppCommand: CommandModule = {
           require: false,
           type: 'boolean',
         },
-        scp: {
-          describe: 'SCP headers to be added to Lambda@Edge origin response.',
-          type: 'array',
+        csp: {
+          describe: 'CSP headers to be added to Lambda@Edge origin response.',
+        },
+        gtmId: {
+          describe: 'Id of the GTM container.',
+          require: false,
+          type: 'string',
         },
         spa: {
           default: false,

@@ -14,7 +14,7 @@ export const getStaticProps = async () => {
   };
 
   const onlyS3 = (() => {
-    const options = { cloudfront: false, spa: false };
+    const options = { cloudfront: false, spa: false, region: 'us-east-1' };
     const template = getJsonYamlTemplates(
       apiVars.getStaticAppTemplate(options),
     );
@@ -22,7 +22,12 @@ export const getStaticProps = async () => {
   })();
 
   const cloudfront = (() => {
-    const options = { cloudfront: true, spa: false, scp: [] };
+    const options = {
+      region: 'us-east-1',
+      cloudfront: true,
+      spa: false,
+      csp: { 'some-src': "'some text'" },
+    };
     const template = getJsonYamlTemplates(
       apiVars.getStaticAppTemplate(options),
     );
@@ -34,18 +39,11 @@ export const getStaticProps = async () => {
     const getLambdaEdgeOriginResponseZipFile = apiVars.getLambdaEdgeOriginResponseZipFile(
       options,
     );
-    const customScp = ["default-src https: 'unsafe-inline'; object-src 'none'"];
-    const getLambdaEdgeOriginResponseZipFileWithScp = apiVars.getLambdaEdgeOriginResponseZipFile(
-      {
-        ...options,
-        scp: customScp,
-      },
-    );
+    const getLambdaEdgeOriginResponseZipFileWithScp = apiVars.getLambdaEdgeOriginResponseZipFile();
     return {
       options,
       template,
       comments,
-      customScp,
       getLambdaEdgeOriginResponseZipFile,
       getLambdaEdgeOriginResponseZipFileWithScp,
     };
@@ -94,11 +92,11 @@ const DocsUsageDeployStaticApp = ({ root, onlyS3, cloudfront }: Props) => {
         <CodeBlock className="js">
           {cloudfront.getLambdaEdgeOriginResponseZipFile}
         </CodeBlock>
-        <Styled.p>
+        {/* <Styled.p>
           <span>The Lambda@Edge code with custom SCP </span>
           <Styled.code>{cloudfront.customScp}</Styled.code>
           <span> is show below:</span>
-        </Styled.p>
+        </Styled.p> */}
         <CodeBlock className="js">
           {cloudfront.getLambdaEdgeOriginResponseZipFileWithScp}
         </CodeBlock>
