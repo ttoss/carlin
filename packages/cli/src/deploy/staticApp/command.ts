@@ -42,6 +42,12 @@ export const deployStaticAppCommand: CommandModule = {
           require: false,
           type: 'string',
         },
+        'skip-upload': {
+          default: false,
+          describe:
+            'Skip files upload to S3. Useful when wanting update only CloudFormation.',
+          type: 'boolean',
+        },
         spa: {
           default: false,
           describe:

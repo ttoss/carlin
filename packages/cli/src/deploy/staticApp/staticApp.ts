@@ -113,6 +113,7 @@ export const deployStaticApp = async ({
   spa,
   hostedZoneName,
   region,
+  skipUpload,
 }: {
   acmArn?: string;
   aliases?: string[];
@@ -123,6 +124,7 @@ export const deployStaticApp = async ({
   spa: boolean;
   hostedZoneName?: string;
   region: string;
+  skipUpload?: boolean;
 }) => {
   log.info(logPrefix, `Starting static app deploy...`);
   try {
@@ -150,7 +152,9 @@ export const deployStaticApp = async ({
      * because of the version changing.
      */
     if (bucket) {
-      await uploadBuiltAppToS3({ buildFolder, bucket });
+      if (!skipUpload) {
+        await uploadBuiltAppToS3({ buildFolder, bucket });
+      }
 
       const { Outputs } = await deploy({ params, template });
 
