@@ -14,7 +14,7 @@ export const getStaticProps = async () => {
   };
 
   const onlyS3 = (() => {
-    const options = { cloudfront: false, spa: false };
+    const options = { cloudfront: false, spa: false, region: 'us-east-1' };
     const template = getJsonYamlTemplates(
       apiVars.getStaticAppTemplate(options),
     );
@@ -23,9 +23,10 @@ export const getStaticProps = async () => {
 
   const cloudfront = (() => {
     const options = {
+      region: 'us-east-1',
       cloudfront: true,
       spa: false,
-      scp: { 'some-src': "'some text'" },
+      csp: { 'some-src': "'some text'" },
     };
     const template = getJsonYamlTemplates(
       apiVars.getStaticAppTemplate(options),
