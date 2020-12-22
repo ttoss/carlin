@@ -216,7 +216,8 @@ const getLambdaEdgeOriginRequestZipFile = ({
     {
       'script-src': 'https://tagmanager.google.com',
       'style-src': 'https://tagmanager.google.com https://fonts.googleapis.com',
-      'img-src': 'https://ssl.gstatic.com https://www.gstatic.com',
+      'img-src':
+        'https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com data:',
       'font-src': 'data:',
     },
     /**
@@ -278,7 +279,7 @@ n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertB
 exports.handler = async (event, context) => {
   const request = { ...event.Records[0].cf.request };
 
-  if (request.uri !== "/index.html") {
+  if (!request.uri.endsWith(".html")) {
     return request;
   }
 
@@ -286,7 +287,7 @@ exports.handler = async (event, context) => {
 
   const bucket = origin.s3.domainName.split(".")[0];
 
-  const key = origin.s3.path.replace(new RegExp("^/"), '') + "/index.html";
+  const key = origin.s3.path.replace(new RegExp("^/"), '') + request.uri;
 
   const {
     Body,
