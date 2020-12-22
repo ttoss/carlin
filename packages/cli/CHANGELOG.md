@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.11.1](https://github.com/ttoss/carlin/compare/v0.11.0...v0.11.1) (2020-12-22)
+
+### Features
+
+- add GTM to all pages ([#7](https://github.com/ttoss/carlin/issues/7)) ([4e8e945](https://github.com/ttoss/carlin/commit/4e8e945095c0c42a28209a248d7d6bc23bd65413))
+
 # [0.11.0](https://github.com/ttoss/carlin/compare/v0.10.3...v0.11.0) (2020-12-20)
 
 **Note:** Version bump only for package carlin
