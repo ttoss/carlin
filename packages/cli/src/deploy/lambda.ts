@@ -2,11 +2,8 @@ import AdmZip from 'adm-zip';
 import builtins from 'builtin-modules';
 import fs from 'fs';
 import log from 'npmlog';
-import * as rollup from 'rollup';
-import commonjs from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
-import nodeResolve from '@rollup/plugin-node-resolve';
-import typescript from '@rollup/plugin-typescript';
+import path from 'path';
+import webpack from 'webpack';
 
 import { uploadFileToS3 } from './s3';
 
@@ -14,6 +11,14 @@ import { getBaseStackBucketName } from './baseStack/getBaseStackBucketName';
 
 const logPrefix = 'lambda';
 
+const outFolder = 'dist';
+
+const webpackOutputFilename = 'index.js';
+
+/**
+ * Using Webpack because of issue #8.
+ * {@link https://github.com/ttoss/carlin/issues/8}
+ */
 export const buildLambdaSingleFile = async ({
   lambdaExternals,
   lambdaInput,
@@ -23,63 +28,66 @@ export const buildLambdaSingleFile = async ({
 }) => {
   log.info(logPrefix, 'Building Lambda single file...');
 
-  const bundle = await (async () => {
-    try {
-      return await rollup.rollup({
-        external: ['aws-sdk', ...builtins, ...lambdaExternals],
-        input: lambdaInput,
-        plugins: [
-          nodeResolve({
-            preferBuiltins: true,
-          }),
-          json(),
-          typescript({
-            /**
-             * Packages like 'serverless-http' cannot be used without this
-             * property.
-             */
-            allowSyntheticDefaultImports: true,
-            esModuleInterop: true,
-            declaration: false,
-            target: 'es2017',
-            /**
-             * Fix https://stackoverflow.com/questions/65202242/how-to-use-rollup-js-to-create-a-common-js-and-named-export-bundle/65202822#65202822
-             */
-            module: 'esnext',
-          }),
-          commonjs({
-            include: /\**node_modules\**/,
-          }),
-        ],
-      });
-    } catch (err) {
-      log.error(
-        logPrefix,
-        'Rollup cannot build. Maybe this issue may help: https://github.com/rollup/plugins/issues/287#issuecomment-611368317',
-      );
-      throw err;
-    }
-  })();
+  const webpackConfig: webpack.Configuration = {
+    entry: path.join(process.cwd(), lambdaInput),
+    mode: 'none',
+    externals: ['aws-sdk', ...builtins, ...lambdaExternals],
+    module: {
+      rules: [
+        {
+          exclude: /node_modules/,
+          test: /\.tsx?$/,
+          loader: require.resolve('ts-loader'),
+          options: {
+            compilerOptions: {
+              /**
+               * Packages like 'serverless-http' cannot be used without this
+               * property.
+               */
+              allowSyntheticDefaultImports: true,
+              esModuleInterop: true,
+              declaration: false,
+              target: 'es2017',
+              /**
+               * Fix https://stackoverflow.com/questions/65202242/how-to-use-rollup-js-to-create-a-common-js-and-named-export-bundle/65202822#65202822
+               */
+              module: 'esnext',
+              noEmit: false,
+            },
+          },
+        },
+      ],
+    },
+    resolve: {
+      extensions: ['.tsx', '.ts', '.js', '.json'],
+    },
+    target: 'node',
+    output: {
+      filename: webpackOutputFilename,
+      libraryTarget: 'commonjs',
+      path: path.join(process.cwd(), outFolder),
+    },
+  };
 
-  const { output } = await bundle.generate({
-    banner:
-      '/* Bundled by Carlin using Rollup.js. \n Check out https://carlin.ttoss.dev for more information. */',
-    exports: 'named',
-    format: 'cjs',
+  const compiler = webpack(webpackConfig);
+
+  return new Promise<void>((resolve, reject) => {
+    compiler.run((err) => {
+      if (err) {
+        return reject(err);
+      }
+
+      return resolve();
+    });
   });
-
-  return output[0].code;
 };
 
-const updateCodeToS3 = async ({
-  code,
-  stackName,
-}: {
-  code: string;
-  stackName: string;
-}) => {
+const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
   const zip = new AdmZip();
-  zip.addFile('index.js', Buffer.from(code));
+  const code = fs.readFileSync(
+    path.join(process.cwd(), outFolder, webpackOutputFilename),
+  );
+  zip.addFile('index.js', code);
   if (!fs.existsSync('dist')) {
     fs.mkdirSync('dist');
   }
@@ -106,7 +114,7 @@ export const deployLambdaCode = async ({
     return undefined;
   }
   log.info(logPrefix, 'Deploy Lambda code.');
-  const code = await buildLambdaSingleFile({ lambdaExternals, lambdaInput });
-  const { bucket, key, versionId } = await updateCodeToS3({ code, stackName });
+  await buildLambdaSingleFile({ lambdaExternals, lambdaInput });
+  const { bucket, key, versionId } = await uploadCodeToS3({ stackName });
   return { bucket, key, versionId };
 };
