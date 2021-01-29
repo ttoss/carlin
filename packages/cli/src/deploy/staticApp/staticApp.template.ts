@@ -121,10 +121,22 @@ const updateCspObject = ({ csp, currentCsp }: { csp: CSP; currentCsp: CSP }) =>
     { ...currentCsp },
   );
 
-export const generateCsp = ({ csp = getDefaultCsp() }: { csp?: CSP } = {}) => {
-  return Object.entries(csp)
-    .map(([key, value]) => `${key} ${value}`)
-    .join('; ');
+/**
+ * Generate CSP string from object.
+ */
+export const generateCspString = ({
+  csp = getDefaultCsp(),
+}: { csp?: CSP } = {}) => {
+  return (
+    Object.entries(csp)
+      /**
+       * Yargs transform kebab-case to camelCase. Then return only keys that
+       * end with '-src' {@link https://github.com/ttoss/carlin/issues/11}
+       */
+      .filter(([key]) => key.endsWith('-src'))
+      .map(([key, value]) => `${key} ${value}`)
+      .join('; ')
+  );
 };
 
 const assignHeaders = ({ csp }: { csp?: CSP }) => {
@@ -145,7 +157,7 @@ const assignHeaders = ({ csp }: { csp?: CSP }) => {
   headers['content-security-policy'] = [
     {
       key: 'Content-Security-Policy',
-      value: "${generateCsp({ csp })}"
+      value: "${generateCspString({ csp })}"
     },
   ];
   headers['x-content-type-options'] = [
@@ -188,6 +200,9 @@ const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
  * implementation was made considering this questions and responses.
  * - {@link https://stackoverflow.com/questions/62893845/how-can-i-modify-a-pages-html-with-aws-cloudfront-running-a-lambdaedge-functio}
  * - {@link https://stackoverflow.com/questions/51230768/aws-lambdaedge-how-to-read-html-file-from-s3-and-put-content-in-response-body}
+ *
+ * When this Lambda@Edge is created, origin response is not created because
+ * this function make a GET request to S3 and return the body.
  */
 const getLambdaEdgeOriginRequestZipFile = ({
   gtmId,
@@ -332,13 +347,14 @@ const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
 
 /**
- * - Cache the files whose URL matches the regex expression @see {@link originCacheExpression}.
+ * This method is only triggered if origin request is not created, because
+ * origin request return a "body".
  *
- * - Add some headers to improve security
+ * Add some headers to improve security
  * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
  */
 export const getLambdaEdgeOriginResponseZipFile = ({
-  csp,
+  csp = {},
 }: { csp?: CSP } = {}) => {
   return `
 'use strict';
@@ -347,7 +363,9 @@ exports.handler = (event, context, callback) => {
   const response = event.Records[0].cf.response;
   const headers = response.headers;
   
-  ${assignHeaders({ csp })}
+  ${assignHeaders({
+    csp: updateCspObject({ csp, currentCsp: getDefaultCsp() }),
+  })}
   
   callback(null, response);
 };
