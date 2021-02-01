@@ -1,5 +1,6 @@
 aliases:
   - carlin.ttoss.dev
-buildFolder: out
 cloudfront: true
+csp:
+  default-src: ["* 'unsafe-inline' 'unsafe-eval'", replace]
 stackName: CarlinWebsite

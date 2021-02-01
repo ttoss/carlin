@@ -230,6 +230,58 @@ export const enableTerminationProtection = async ({
   }
 };
 
+export const defaultTemplatePaths = ['ts', 'js', 'yaml', 'yml', 'json'].map(
+  (extension) => `src/cloudformation.${extension}`,
+);
+
+const findAndReadCloudFormationTemplate = ({
+  templatePath: defaultTemplatePath,
+}: {
+  templatePath?: string;
+}): CloudFormationTemplate => {
+  const templatePath =
+    defaultTemplatePath ||
+    defaultTemplatePaths
+      /**
+       * Iterate over extensions. If the template of the current extension is
+       * found, we save it on the accumulator and return it every time until
+       * the loop ends.
+       */
+      .reduce((acc, cur) => {
+        if (acc) {
+          return acc;
+        }
+        return fs.existsSync(path.resolve(process.cwd(), cur)) ? cur : acc;
+      }, '');
+
+  if (!templatePath) {
+    throw new Error('Cannot find a CloudFormation template.');
+  }
+
+  const extension = templatePath?.split('.').pop() as string;
+
+  const fullPath = path.resolve(process.cwd(), templatePath);
+
+  /**
+   * We need to read Yaml first because CloudFormation specific tags aren't
+   * recognized when parsing a simple Yaml file. I.e., a possible error:
+   * "Error message: "unknown tag !<!Ref> at line 21, column 34:\n"
+   */
+  if (['yaml', 'yml'].includes(extension)) {
+    return readCloudFormationYamlTemplate({ templatePath });
+  }
+
+  return readObjectFile({ path: fullPath });
+};
+
+/**
+ * 1. Add defaults to CloudFormation template and parameters.
+ * 1. Check is CloudFormation template body is greater than max size limit.
+ *  1. If is greater, upload to S3 base stack.
+ * 1. If stack exists, update the stack, else create a new stack.
+ * 1. If `terminationProtection` option is true or `environment` is defined,
+ * then stack termination protection will be enabled.
+ */
 export const deploy = async ({
   terminationProtection = false,
   ...paramsAndTemplate
@@ -282,47 +334,6 @@ export const deploy = async ({
   return describeStack({ stackName });
 };
 
-const findAndReadCloudFormationTemplate = ({
-  templatePath: defaultTemplatePath,
-}: {
-  templatePath?: string;
-}): CloudFormationTemplate => {
-  const templatePath =
-    defaultTemplatePath ||
-    ['ts', 'js', 'yaml', 'yml', 'json']
-      .map((extension) => `src/cloudformation.${extension}`)
-      /**
-       * Iterate over extensions. If the template of the current extension is
-       * found, we save it on the accumulator and return it every time until
-       * the loop ends.
-       */
-      .reduce((acc, cur) => {
-        if (acc) {
-          return acc;
-        }
-        return fs.existsSync(path.resolve(process.cwd(), cur)) ? cur : acc;
-      }, '');
-
-  if (!templatePath) {
-    throw new Error('Cannot find a CloudFormation template.');
-  }
-
-  const extension = templatePath?.split('.').pop() as string;
-
-  const fullPath = path.resolve(process.cwd(), templatePath);
-
-  /**
-   * We need to read Yaml first because CloudFormation specific tags aren't
-   * recognized when parsing a simple Yaml file. I.e., a possible error:
-   * "Error message: "unknown tag !<!Ref> at line 21, column 34:\n"
-   */
-  if (['yaml', 'yml'].includes(extension)) {
-    return readCloudFormationYamlTemplate({ templatePath });
-  }
-
-  return readObjectFile({ path: fullPath });
-};
-
 export const deployCloudFormation = async ({
   lambdaInput,
   lambdaExternals = [],
@@ -366,14 +377,18 @@ export const deployCloudFormation = async ({
     };
 
     /**
-     * Add S3Bucket and S3Key if Lambda file exists.
+     * 1. If Lambda code exists, build and upload the code to base stack bucket.
+     * 2. Retrieve the `bucket`, `key` and `version` of the uploaded code and pass
+     * to CloudFormation template as parameters
+     * (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html).
      */
-    await (async () => {
+    const deployCloudFormationDeployLambdaCode = async () => {
       const response = await deployLambdaCode({
         lambdaExternals,
         lambdaInput,
         stackName,
       });
+
       if (response) {
         const { bucket, key, versionId } = response;
         /**
@@ -416,7 +431,9 @@ export const deployCloudFormation = async ({
           },
         );
       }
-    })();
+    };
+
+    await deployCloudFormationDeployLambdaCode();
 
     const output = await deploy({
       params,
@@ -478,6 +495,13 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
   return Promise.all(buckets.map((bucket) => emptyS3Directory({ bucket })));
 };
 
+/**
+ * 1. Check if `environment` is defined. If defined, return. It doesn't destroy
+ * stacks with defined `environment`.
+ * 1. Check if termination protection is disabled.
+ * 1. If the stack deployed buckets, empty all buckets.
+ * 1. Delete the stack.
+ */
 const destroy = async ({ stackName }: { stackName: string }) => {
   const environment = getEnvironment();
 

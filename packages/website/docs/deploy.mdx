@@ -1,0 +1,132 @@
+---
+title: Deploy
+sidebar_label: deploy
+slug: /deploy
+---
+
+import carlin from '../.docusaurus/carlin/default/carlin.json';
+
+export const DefaultTemplatePaths = () => {
+  return (
+    <ol>
+      {carlin.defaultTemplatePaths.map((path) => (
+        <li key={path}>
+          <code>{path}</code>,
+        </li>
+      ))}
+    </ol>
+  );
+};
+
+export const DeployAlgorithm = () => (
+  <div dangerouslySetInnerHTML={{ __html: carlin.comments.deploy }} />
+);
+
+export const DeployCloudFormationDeployLambdaCodeAlgorithm = () => (
+  <div
+    dangerouslySetInnerHTML={{
+      __html: carlin.comments.deployCloudFormationDeployLambdaCode,
+    }}
+  />
+);
+
+export const DeployLambdaCodeAlgorithm = () => (
+  <div
+    dangerouslySetInnerHTML={{
+      __html: carlin.comments.deployLambdaCode,
+    }}
+  />
+);
+
+export const DestroyAlgorithm = () => (
+  <div
+    dangerouslySetInnerHTML={{
+      __html: carlin.comments.destroy,
+    }}
+  />
+);
+
+export const DeployApi = () => {
+  return (
+    <pre>
+      <code className="js">{carlin.api.deploy}</code>
+    </pre>
+  );
+};
+
+## Overview
+
+```js
+carlin deploy
+```
+
+This command deploys the cloud resources. **carlin** takes the template defined by `-t, --template-path` option, whose defaults values are:
+
+<DefaultTemplatePaths />
+
+and deploy accordingly to the following algorithm:
+
+:::note Algorithm
+
+<DeployAlgorithm />
+:::
+
+## Lambda
+
+If `src/lambda.ts` or any file defined by `lambda-input` exists, **carlin** will deploy with the Lambda algorithm.
+
+:::note Algorithm
+
+<DeployCloudFormationDeployLambdaCodeAlgorithm />
+:::
+
+The build and upload algorithm is:
+
+:::note Algorithm
+
+<DeployLambdaCodeAlgorithm />
+:::
+
+## Destroy
+
+To destroy the stack, just pass the option `destroy` to the deploy command:
+
+```
+carlin deploy --destroy
+```
+
+When this option exists, the following algorithm is executed:
+
+:::note Algorithm
+
+<DestroyAlgorithm />
+:::
+
+:::caution
+This operation is irreversible. You must pay attention because you may destroy resources that contains your App data, like DynamoDB, using this command.
+To overcome this problem, destroy will only delete the resources if termination protetion isn't enabled and if `environment` isn't defined.
+:::
+
+## Examples
+
+- Change the CloudFormation template path:
+
+```
+carlin deploy -t src/cloudformation.template1.yml
+```
+
+- Set environment:
+
+```
+carlin deploy -e Production
+```
+
+- Lambda exists:
+
+```
+carlin deploy --lambda-input src/lambda/index.ts --lambda-externals momentjs
+```
+
+## API
+
+<DeployApi />

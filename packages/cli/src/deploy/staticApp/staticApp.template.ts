@@ -91,8 +91,6 @@ const getDefaultCsp = (): CSP => ({
    * Fetch APIs, only if start with HTTPS.
    */
   'connect-src': "'self' https:",
-  'img-src': "'self'",
-  'script-src': "'self'",
   /**
    * 'unsafe-inline' is needed to load components library.
    */

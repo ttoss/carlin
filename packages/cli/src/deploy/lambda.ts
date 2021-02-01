@@ -101,6 +101,13 @@ const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
   });
 };
 
+/**
+ * 1. Build Lambda code using Webpack. The build process create a single file.
+ *  1. If packages is passed to `lambda-externals` option, Webpack will ignore
+ *  them.
+ * 1. Zip the output file.
+ * 1. Upload the zipped code to base stack bucket.
+ */
 export const deployLambdaCode = async ({
   lambdaExternals,
   lambdaInput,

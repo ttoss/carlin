@@ -7,7 +7,6 @@ import * as yargs from 'yargs';
 import { NAME } from './config';
 
 import { deployCommand } from './deploy/command';
-import { monorepoCommand } from './monorepo/command';
 import { setEnvironment, readObjectFile } from './utils';
 
 /**
@@ -85,7 +84,6 @@ yargs
     handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
   })
   .command(deployCommand)
-  .command(monorepoCommand)
   .help();
 
 export default yargs;

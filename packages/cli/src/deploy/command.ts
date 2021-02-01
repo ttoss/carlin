@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk';
 import log from 'npmlog';
-import { CommandModule } from 'yargs';
+import yargs, { CommandModule } from 'yargs';
 
 import { AWS_DEFAULT_REGION } from '../config';
 import { getAwsAccountId } from '../utils';
@@ -44,64 +44,59 @@ const describeDeployCommand: CommandModule = {
   },
 };
 
+export const options = {
+  'aws-account-id': {
+    description: 'AWS account id associated with the deployment.',
+    type: 'string',
+  },
+  destroy: {
+    default: false,
+    description:
+      'Destroy the deployment. You cannot destroy a deploy with "environment" is defined.',
+    type: 'boolean',
+  },
+  'lambda-externals': {
+    default: [],
+    describe: 'Lambda external packages.',
+    type: 'array',
+  },
+  'lambda-input': {
+    default: 'src/lambda.ts',
+    describe:
+      'Lambda input file. This file export all handlers used by the Lambda Functions.',
+    type: 'string',
+  },
+  parameters: {
+    default: [],
+    describe:
+      'A list of Parameter structures that specify input parameters for the stack.',
+    type: 'array',
+  },
+  region: {
+    alias: 'r',
+    default: AWS_DEFAULT_REGION,
+    describe: 'AWS region',
+    type: 'string',
+  },
+  'stack-name': {
+    describe: 'CloudFormation Stack name.',
+    type: 'string',
+  },
+  'template-path': {
+    alias: 't',
+    type: 'string',
+  },
+} as const;
+
 export const deployCommand: CommandModule<
   any,
-  {
-    destroy: boolean;
-    lambdaInput: string;
-    lambdaExternals: string[];
-    region: string;
-    stackName?: string;
-    templatePath: string;
-  }
+  yargs.InferredOptionTypes<typeof options>
 > = {
   command: 'deploy [specific]',
   describe: 'Deploy cloud resources.',
-  builder: (yargs) => {
-    yargs
-      .options({
-        'aws-account-id': {
-          description: 'AWS account id associated with the deployment.',
-          type: 'string',
-        },
-        destroy: {
-          default: false,
-          description:
-            'Destroy the deployment. You cannot destroy a deploy with "environment" is defined.',
-          type: 'boolean',
-        },
-        'lambda-externals': {
-          default: [],
-          describe: 'Lambda external packages.',
-          type: 'array',
-        },
-        'lambda-input': {
-          default: 'src/lambda.ts',
-          describe:
-            'Lambda input file. This file export all handlers used by the Lambda Functions.',
-          type: 'string',
-        },
-        parameters: {
-          default: [],
-          describe:
-            'A list of Parameter structures that specify input parameters for the stack.',
-          type: 'array',
-        },
-        region: {
-          alias: 'r',
-          default: AWS_DEFAULT_REGION,
-          describe: 'AWS region',
-          type: 'string',
-        },
-        'stack-name': {
-          describe: 'CloudFormation Stack name.',
-          type: 'string',
-        },
-        'template-path': {
-          alias: 't',
-          type: 'string',
-        },
-      })
+  builder: (yargsBuilder) => {
+    yargsBuilder
+      .options(options)
       /**
        * Set AWS region.
        */
@@ -142,13 +137,13 @@ export const deployCommand: CommandModule<
       .command(deployBaseStackCommand)
       .command(deployStaticAppCommand);
 
-    return yargs;
+    return yargsBuilder;
   },
   handler: ({ destroy, ...rest }) => {
     if (destroy) {
       destroyCloudFormation();
     } else {
-      deployCloudFormation(rest);
+      deployCloudFormation(rest as any);
     }
   },
 };
