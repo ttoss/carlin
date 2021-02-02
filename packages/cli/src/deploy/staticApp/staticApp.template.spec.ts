@@ -1,9 +1,4 @@
-import {
-  getStaticAppTemplate,
-  generateCspString,
-  getLambdaEdgeOriginResponseZipFile,
-  CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
-} from './staticApp.template';
+/* eslint-disable import/first */
 
 /**
  * Mock to snapshots don't fail.
@@ -12,11 +7,18 @@ Date.now = jest.fn(() => 1487076708000);
 const PACKAGE_VERSION = '10.40.23';
 
 jest.mock('../../utils', () => ({
-  getPackageVersion: jest.fn().mockReturnValue('10.40.23'),
+  getPackageVersion: jest.fn().mockReturnValue(PACKAGE_VERSION),
 }));
 
+import {
+  getStaticAppTemplate,
+  generateCspString,
+  getLambdaEdgeOriginResponseZipFile,
+  CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
+} from './staticApp.template';
+
 const defaultCspString =
-  "default-src 'self'; connect-src 'self' https:; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'";
+  "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'";
 
 describe("fix issue 'Filter CSP directives' #11 https://github.com/ttoss/carlin/issues/11", () => {
   test('generate default CSP', () => {

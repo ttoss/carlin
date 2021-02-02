@@ -1,0 +1,32 @@
+---
+title: CLI
+---
+
+## Environments
+
+**carlin** was projected to work with environments. As we've been building a lot of Apps, we realized that we commonly have some environments, like production and staging. The difference between these environments was some options values that we passed to the deploy command. To handle these options, we've created the `environments` option. It receives an object whose keys are the environment name and the values are an object containing the command options.
+
+Besides `environments`, if we provide the option `-e`, `--env` or `--environment`, **carlin** searches if such environment exists inside `environments` object and assign the values to the command. For instance, suppose that we have the `carlin.yml` below.
+
+```yaml title="carlin.yml"
+region: us-east-1
+environments:
+  Production:
+    region: ap-south-1
+```
+
+The `region` value will be, for each command:
+
+| Command                                          | `region`       |
+| ------------------------------------------------ | -------------- |
+| `carlin deploy`                                  | **us-east-1**  |
+| `carlin deploy --region eu-west-1`               | **eu-west-1**  |
+| `carlin deploy -e production`\*                  | **us-east-1**  |
+| `carlin deploy -e Production`                    | **ap-south-1** |
+| `carlin deploy -e Production --region eu-west-1` | **eu-west-1**  |
+
+:::note
+
+\* `environment` is case sensitive.
+
+:::

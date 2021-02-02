@@ -1,7 +1,5 @@
 ---
-title: Deploy
-sidebar_label: deploy
-slug: /deploy
+title: deploy
 ---
 
 import carlin from '../.docusaurus/carlin/default/carlin.json';
@@ -49,14 +47,14 @@ export const DestroyAlgorithm = () => (
 export const DeployApi = () => {
   return (
     <pre>
-      <code className="js">{carlin.api.deploy}</code>
+      <code className="bash">{carlin.api.deploy}</code>
     </pre>
   );
 };
 
 ## Overview
 
-```js
+```bash
 carlin deploy
 ```
 
@@ -102,7 +100,7 @@ When this option exists, the following algorithm is executed:
 <DestroyAlgorithm />
 :::
 
-:::caution
+:::danger
 This operation is irreversible. You must pay attention because you may destroy resources that contains your App data, like DynamoDB, using this command.
 To overcome this problem, destroy will only delete the resources if termination protetion isn't enabled and if `environment` isn't defined.
 :::
@@ -111,19 +109,19 @@ To overcome this problem, destroy will only delete the resources if termination 
 
 - Change the CloudFormation template path:
 
-```
+```bash
 carlin deploy -t src/cloudformation.template1.yml
 ```
 
 - Set environment:
 
-```
+```bash
 carlin deploy -e Production
 ```
 
 - Lambda exists:
 
-```
+```bash
 carlin deploy --lambda-input src/lambda/index.ts --lambda-externals momentjs
 ```
 
