@@ -9,10 +9,12 @@ import { NAME } from './config';
 import { deployCommand } from './deploy/command';
 import { setEnvironment, readObjectFile } from './utils';
 
+let finalConfig: any;
+
 /**
  * Get all carlin configs from directories.
  */
-const getConfig = () => {
+export const getConfig = () => {
   const names = ['js', 'yml', 'yaml', 'json'].map((ext) => `${NAME}.${ext}`);
   const paths = [];
   let currentPath = process.cwd();
@@ -32,7 +34,7 @@ const getConfig = () => {
    * Using configs.reverser() to get the most far config first. This way the
    * nearest configs will replace others.
    */
-  const finalConfig: any = deepmerge.all(configs.reverse());
+  finalConfig = deepmerge.all(configs.reverse());
 
   return finalConfig;
 };
@@ -57,19 +59,23 @@ yargs
       },
       type: 'string',
     },
-    environments: {
-      type: 'string',
-    },
+    environments: {},
   })
   .middleware((argv) => {
     const { environment, environments } = argv as any;
+
     /**
      * Create final options with environment and environments.
      */
     if (environment && environments && environments[environment as string]) {
       Object.entries(environments[environment]).forEach(([key, value]) => {
-        // eslint-disable-next-line no-param-reassign
-        argv[key] = value;
+        /**
+         * Fixes #13 https://github.com/ttoss/carlin/issues/13
+         */
+        if (!argv[key] || argv[key] === finalConfig[key]) {
+          // eslint-disable-next-line no-param-reassign
+          argv[key] = value;
+        }
       });
     }
   })

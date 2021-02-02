@@ -1,1 +1,3 @@
-module.exports = require('../../config/jest.config.base')(__dirname);
+const config = require('../../config/jest.config.base')(__dirname);
+
+module.exports = { ...config, collectCoverage: false };
