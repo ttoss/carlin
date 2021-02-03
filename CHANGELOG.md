@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.11.5](https://github.com/ttoss/carlin/compare/v0.11.4...v0.11.5) (2021-02-03)
+
+### Bug Fixes
+
+- stack name tests ([b7b9464](https://github.com/ttoss/carlin/commit/b7b9464fc8d72c513d996ecffc6f7a7da842832e))
+
 ## [0.11.4](https://github.com/ttoss/carlin/compare/v0.11.3...v0.11.4) (2021-02-02)
 
 ### Bug Fixes
