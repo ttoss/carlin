@@ -39,28 +39,30 @@ export const getConfig = () => {
   return finalConfig;
 };
 
+export const options = {
+  config: {
+    alias: 'c',
+    describe: 'Path to JavaScript, JSON or YAML file.',
+    require: false,
+    type: 'string',
+  },
+  environment: {
+    alias: ['e', 'env'],
+    coerce: (environment: string) => {
+      if (environment) {
+        setEnvironment(environment);
+      }
+      return environment;
+    },
+    type: 'string',
+  },
+  environments: {},
+} as const;
+
 yargs
   .scriptName(NAME)
   .env(constantCase(NAME))
-  .options({
-    config: {
-      alias: 'c',
-      describe: 'Path to JavaScript, JSON or YAML file.',
-      require: false,
-      type: 'string',
-    },
-    environment: {
-      alias: ['e', 'env'],
-      coerce: (environment) => {
-        if (environment) {
-          setEnvironment(environment);
-        }
-        return environment;
-      },
-      type: 'string',
-    },
-    environments: {},
-  })
+  .options(options)
   .middleware((argv) => {
     const { environment, environments } = argv as any;
 

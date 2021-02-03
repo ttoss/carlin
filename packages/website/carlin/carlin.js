@@ -1,5 +1,4 @@
 const cli = require('carlin/dist/cli').default;
-// const { options: deployOptions } = require('carlin/dist/deploy/command');
 
 const cliApi = async (cmd) =>
   new Promise((resolve) => {

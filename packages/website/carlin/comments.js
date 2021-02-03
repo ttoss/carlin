@@ -13,13 +13,15 @@ const getComment = ([pathFromDist, longname]) => {
   return description;
 };
 
+const toHtml = (comment) => renderToString(compiler(comment));
+
 const getComments = (commentsDir, { html } = { html: true }) =>
   Object.entries(commentsDir).reduce((acc, [key, value]) => {
     const comment = getComment(value);
     return {
       ...acc,
-      [key]: html ? renderToString(compiler(comment)) : comment,
+      [key]: html ? toHtml(comment) : comment,
     };
   }, {});
 
-module.exports = { getComments };
+module.exports = { getComment, getComments, toHtml };

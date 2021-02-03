@@ -2,6 +2,11 @@
 title: deploy
 ---
 
+import Algorithm from '../src/components/Algorithm';
+import Api from '../src/components/Api';
+import InnerHTML from '../src/components/InnerHTML';
+import OptionAliasesInline from '../src/components/OptionAliasesInline';
+
 import carlin from '../.docusaurus/carlin/default/carlin.json';
 
 export const DefaultTemplatePaths = () => {
@@ -16,49 +21,13 @@ export const DefaultTemplatePaths = () => {
   );
 };
 
-export const DeployAlgorithm = () => (
-  <div dangerouslySetInnerHTML={{ __html: carlin.comments.deploy }} />
-);
-
-export const DeployCloudFormationDeployLambdaCodeAlgorithm = () => (
-  <div
-    dangerouslySetInnerHTML={{
-      __html: carlin.comments.deployCloudFormationDeployLambdaCode,
-    }}
-  />
-);
-
-export const DeployLambdaCodeAlgorithm = () => (
-  <div
-    dangerouslySetInnerHTML={{
-      __html: carlin.comments.deployLambdaCode,
-    }}
-  />
-);
-
-export const DestroyAlgorithm = () => (
-  <div
-    dangerouslySetInnerHTML={{
-      __html: carlin.comments.destroy,
-    }}
-  />
-);
-
-export const DeployApi = () => {
-  return (
-    <pre>
-      <code className="bash">{carlin.api.deploy}</code>
-    </pre>
-  );
-};
-
 ## Overview
 
 ```bash
 carlin deploy
 ```
 
-This command deploys the cloud resources. **carlin** takes the template defined by `-t, --template-path` option, whose defaults values are:
+This command deploys the cloud resources. **carlin** takes the template defined by <OptionAliasesInline options={carlin.options.deploy} option="template-path" /> option, whose defaults values are:
 
 <DefaultTemplatePaths />
 
@@ -66,23 +35,36 @@ and deploy accordingly to the following algorithm:
 
 :::note Algorithm
 
-<DeployAlgorithm />
+<Algorithm algorithm={carlin.comments.deploy} />
+
 :::
+
+### Stack Name
+
+**carlin** creates automatically the [CloudFormation stack name](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html), unless it is already specified at the <OptionAliasesInline options={carlin.options.deploy} option="stack-name" /> option.
+This name is very important because it'll track the deployment when a update or a delete is performed.
+
+:::caution
+
+<InnerHTML html={carlin.comments.stackNameWarning} />
+::::
+
+<InnerHTML html={carlin.comments.stackName} />
 
 ## Lambda
 
-If `src/lambda.ts` or any file defined by `lambda-input` exists, **carlin** will deploy with the Lambda algorithm.
+If <code children={carlin.options.deploy['lambda-input'].default} /> or any file defined by <OptionAliasesInline options={carlin.options.deploy} option="lambda-input" /> exists, **carlin** will deploy with the Lambda algorithm.
 
 :::note Algorithm
 
-<DeployCloudFormationDeployLambdaCodeAlgorithm />
+<Algorithm algorithm={carlin.comments.deployCloudFormationDeployLambdaCode} />
 :::
 
 The build and upload algorithm is:
 
 :::note Algorithm
 
-<DeployLambdaCodeAlgorithm />
+<Algorithm algorithm={carlin.comments.deployLambdaCode} />
 :::
 
 ## Destroy
@@ -97,7 +79,7 @@ When this option exists, the following algorithm is executed:
 
 :::note Algorithm
 
-<DestroyAlgorithm />
+<Algorithm algorithm={carlin.comments.destroy} />
 :::
 
 :::danger
@@ -127,4 +109,4 @@ carlin deploy --lambda-input src/lambda/index.ts --lambda-externals momentjs
 
 ## API
 
-<DeployApi />
+<Api api={carlin.api.deploy} />
