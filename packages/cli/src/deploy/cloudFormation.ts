@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk';
+import AWS, { CloudFormation } from 'aws-sdk';
 import fs from 'fs';
 import log from 'npmlog';
 import path from 'path';
@@ -343,7 +343,7 @@ export const deployCloudFormation = async ({
 }: {
   lambdaInput: string;
   lambdaExternals?: string[];
-  parameters?: Array<{ key: string; value: string }>;
+  parameters?: CloudFormation.Parameters;
   templatePath?: string;
   template?: CloudFormationTemplate;
 }) => {
@@ -370,10 +370,7 @@ export const deployCloudFormation = async ({
 
     const params = {
       StackName: stackName,
-      Parameters: (parameters || []).map(({ key, value }) => ({
-        ParameterKey: key,
-        ParameterValue: value,
-      })),
+      Parameters: parameters || [],
     };
 
     /**

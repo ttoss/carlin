@@ -2,7 +2,7 @@
 title: Installation
 ---
 
-You can install **carlin** with NPM or Yarn.
+You can install **carlin** with NPM or Yarn 🚀
 
 ```bash
 npm install -g carlin

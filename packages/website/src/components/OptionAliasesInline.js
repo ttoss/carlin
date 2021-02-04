@@ -1,6 +1,16 @@
 import * as React from 'react';
 
-const OptionAliasesInline = ({ option, options }) => {
+import Link from '@docusaurus/Link';
+
+const Wrapper = ({ children, to }) => {
+  if (to) {
+    return <Link to={to}>{children}</Link>;
+  }
+
+  return <>{children}</>;
+};
+
+const OptionAliasesInline = ({ option, options, to }) => {
   const { alias } = options[option];
 
   const words = (() => {
@@ -15,14 +25,23 @@ const OptionAliasesInline = ({ option, options }) => {
     return [option, alias];
   })();
 
-  const inline = words
-    .map((word) => {
-      const hyphens = word.length === 1 ? '-' : '--';
-      return `${hyphens}${word}`;
-    })
-    .join(', ');
-
-  return <code>{inline}</code>;
+  return (
+    <Wrapper to={to}>
+      <code>
+        {words.map((word, index, arr) => {
+          const hyphens = word.length === 1 ? '-' : '--';
+          return (
+            <span key={word}>
+              <span style={{ whiteSpace: 'nowrap' }}>
+                {`${hyphens}${word}`}
+              </span>
+              {index !== arr.length - 1 && <span>{', '}</span>}
+            </span>
+          );
+        })}
+      </code>
+    </Wrapper>
+  );
 };
 
 export default OptionAliasesInline;

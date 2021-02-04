@@ -1,3 +1,4 @@
+export * from './addGroupToOptions';
 export * from './cloudFormationTemplate';
 export * from './environment';
 export * from './exec';

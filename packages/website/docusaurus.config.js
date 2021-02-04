@@ -40,7 +40,7 @@ module.exports = {
           items: [
             {
               label: 'Deploy',
-              to: 'docs/deploy',
+              to: 'docs/Commands/deploy',
             },
           ],
         },

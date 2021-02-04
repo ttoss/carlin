@@ -1,0 +1,81 @@
+import Api from '../../src/components/Api';
+import OptionAliasesInline from '../../src/components/OptionAliasesInline';
+import OptionHeader from '../../src/components/OptionHeader';
+
+import carlin from '../../.docusaurus/carlin/default/carlin.json';
+
+<Api api={carlin.api.deploy} />
+
+## aws-account-id
+
+<OptionHeader option="aws-account-id" options={carlin.options.deploy} />
+
+This option locks the deployment AWS accound id. As we work with many [environments](/docs/CLI#environments), sometimes we might perform some deploy with undesired credentials.
+For instance, we might run a deploy for staging environment but with production credentials.
+This way the deployment process will be only performed if the credentials AWS account id matches the value of this option.
+
+Suppose we have the following configuration:
+
+```yaml title="carlin.yml"
+aws-account-id: 111111111111
+  environments:
+    Staging:
+      aws-account-id: 222222222222
+    Production:
+      aws-account-id: 333333333333
+```
+
+Deploys with <OptionAliasesInline option="environment" options={carlin.options.cli} /> equals to, will only be performed if the credetial AWS accound id is:
+
+- **Production**: `333333333333`.
+- **Staging**: `222222222222`.
+- `undefined` or values other than **Staging** or **Production**: `111111111111`.
+
+## destroy
+
+<OptionHeader option="destroy" options={carlin.options.deploy} />
+
+## lambda-externals
+
+<OptionHeader option="lambda-externals" options={carlin.options.deploy} />
+
+## lambda-input
+
+<OptionHeader option="lambda-input" options={carlin.options.deploy} />
+
+## parameters
+
+<OptionHeader option="parameters" options={carlin.options.deploy} />
+
+This option has the format, the same format as the paramters used by [aws cloudformation create-stack CLI command](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/create-stack.html):
+
+```ts
+Array<{
+  ParameterKey: string,
+  ParameterValue: string,
+  UsePreviousValue: true | false,
+  ResolvedValue: string
+}>
+```
+
+### Example
+
+```yaml title="carlin.yml"
+parameters:
+  - ParameterKey: InstanceTypeParameter
+    ParameterValue: t2.micro
+  - ParameterKey: Port
+    ParameterValue: 3500
+```
+
+## region
+
+<OptionHeader option="region" options={carlin.options.deploy} />
+
+## stack-name
+
+<OptionHeader option="stack-name" options={carlin.options.deploy} />
+
+## template-path
+
+<OptionHeader option="template-path" options={carlin.options.deploy} />

@@ -22,7 +22,7 @@ export const DefaultTemplatePaths = () => {
 carlin deploy
 ```
 
-This command deploys the cloud resources. **carlin** takes the template defined by <OptionAliasesInline options={carlin.options.deploy} option="template-path" /> option, whose defaults values are:
+This command deploys the cloud resources. **carlin** takes the template defined by <OptionAliasesInline options={carlin.options.deploy} option="template-path" to="/docs/api-reference/deploy#template-path" /> option. If this option has no value, the algorithm will search for these files to be used as template:
 
 <DefaultTemplatePaths />
 
@@ -40,7 +40,7 @@ The files listed above must provide an object containing the [CloudFormation tem
 
 ### Stack Name
 
-**carlin** creates automatically the [CloudFormation stack name](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html), unless it is already specified at the <OptionAliasesInline options={carlin.options.deploy} option="stack-name" /> option.
+**carlin** creates automatically the [CloudFormation stack name](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html), unless it is already specified at the <OptionAliasesInline options={carlin.options.deploy} option="stack-name" to="/docs/api-reference/deploy#stack-name" /> option.
 This name is very important because it'll track the deployment when a update or a delete is performed.
 
 :::caution
@@ -54,11 +54,11 @@ This name is very important because it'll track the deployment when a update or 
 
 <InnerHTML html={carlin.comments.deployBaseStack} />
 
-Please, refer to [this link](/docs/Commands/deploy%20base-stack) for more details about base stack.
+Please, refer to [this link](/docs/Commands/deploy-base-stack) for more details about base stack.
 
 ## Lambda
 
-If <code children={carlin.options.deploy['lambda-input'].default} /> or any file defined by <OptionAliasesInline options={carlin.options.deploy} option="lambda-input" /> exists, **carlin** will deploy with the Lambda algorithm.
+If <code children={carlin.options.deploy['lambda-input'].default} /> or any file defined by <OptionAliasesInline options={carlin.options.deploy} option="lambda-input" to="/docs/api-reference/deploy#lambda-input" /> exists, **carlin** will deploy with the Lambda algorithm.
 
 :::note Algorithm
 
@@ -78,7 +78,7 @@ The build and upload algorithm is:
 
 ## Destroy
 
-To destroy the stack, just pass the option `destroy` to the deploy command:
+To destroy the stack, just pass the option <OptionAliasesInline options={carlin.options.deploy} option="destroy" to="/docs/api-reference/deploy#destroy" /> to the deploy command:
 
 ```
 carlin deploy --destroy

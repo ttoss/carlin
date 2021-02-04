@@ -7,7 +7,7 @@ import * as yargs from 'yargs';
 import { NAME } from './config';
 
 import { deployCommand } from './deploy/command';
-import { setEnvironment, readObjectFile } from './utils';
+import { addGroupToOptions, setEnvironment, readObjectFile } from './utils';
 
 let finalConfig: any;
 
@@ -62,7 +62,7 @@ export const options = {
 yargs
   .scriptName(NAME)
   .env(constantCase(NAME))
-  .options(options)
+  .options(addGroupToOptions(options, 'Common Options'))
   .middleware((argv) => {
     const { environment, environments } = argv as any;
 

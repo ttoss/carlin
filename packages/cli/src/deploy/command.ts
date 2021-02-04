@@ -3,7 +3,7 @@ import log from 'npmlog';
 import yargs, { CommandModule } from 'yargs';
 
 import { AWS_DEFAULT_REGION } from '../config';
-import { getAwsAccountId } from '../utils';
+import { addGroupToOptions, getAwsAccountId } from '../utils';
 
 import { deployBaseStackCommand } from './baseStack/command';
 import {
@@ -66,16 +66,29 @@ export const options = {
       'Lambda input file. This file export all handlers used by the Lambda Functions.',
     type: 'string',
   },
+  /**
+   * This option has the format:
+   *
+   * ```ts
+   * Array<{
+   *  ParameterKey: string,
+   *  ParameterValue: string,
+   *  UsePreviousValue: true | false,
+   *  ResolvedValue: string
+   * }>
+   * ```
+   */
   parameters: {
+    alias: 'p',
     default: [],
     describe:
-      'A list of Parameter structures that specify input parameters for the stack.',
+      'A list of parameters that will be passed to CloudFormation Parameters when deploying. The format is the same as parameters from cloudformation create-stack CLI command.',
     type: 'array',
   },
   region: {
     alias: 'r',
     default: AWS_DEFAULT_REGION,
-    describe: 'AWS region',
+    describe: 'AWS region.',
     type: 'string',
   },
   'stack-name': {
@@ -96,7 +109,7 @@ export const deployCommand: CommandModule<
   describe: 'Deploy cloud resources.',
   builder: (yargsBuilder) => {
     yargsBuilder
-      .options(options)
+      .options(addGroupToOptions(options, 'Deploy Options'))
       /**
        * Set AWS region.
        */
