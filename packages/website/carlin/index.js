@@ -1,4 +1,10 @@
 /* eslint-disable global-require */
+const { dumpToYamlCloudFormationTemplate } = require('carlin/dist/utils');
+
+const {
+  baseStackTemplate,
+} = require('carlin/dist/deploy/baseStack/deployBaseStack');
+
 const carlin = require('./carlin');
 const { getComment, getComments, toHtml } = require('./comments');
 
@@ -18,8 +24,13 @@ module.exports = () => {
               'deploy/cloudFormation.js',
               'deployCloudFormation~deployCloudFormationDeployLambdaCode',
             ],
+            deployBaseStack: [
+              'deploy/baseStack/deployBaseStack.js',
+              'deployBaseStack',
+            ],
             deployLambdaCode: ['deploy/lambda.js', 'deployLambdaCode'],
             destroy: ['deploy/cloudFormation.js', 'destroy'],
+            readObjectFile: ['utils/readObjectFile.js', 'readObjectFile'],
           }),
           stackName: toHtml(
             getComment(['deploy/stackName.js', 'getStackName']).split(
@@ -35,6 +46,12 @@ module.exports = () => {
         options: {
           cli: require('carlin/dist/cli').options,
           deploy: require('carlin/dist/deploy/command').options,
+        },
+        templates: {
+          baseStack: {
+            json: baseStackTemplate,
+            yaml: dumpToYamlCloudFormationTemplate(baseStackTemplate),
+          },
         },
       };
     },

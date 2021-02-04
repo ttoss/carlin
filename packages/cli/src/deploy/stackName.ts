@@ -26,11 +26,11 @@ export const limitStackName = (stackName: string) =>
  * 1. The name has to parts.
  *
  * 1. The first part is defined by the package.json name, if it is defined.
- * Else, it'll be a random name starting with the string "Stack-", , e.g. **Stack-96830**.
+ * Else, it'll be a random name starting with the string "Stack-", e.g. **Stack-96830**.
  *
  * 1. The second part will be defined by, whichever is defined first:
- *  1. environment;
- *  1. branch name in param-case;
+ *  1. environment,
+ *  1. branch name in param-case,
  *  1. `undefined`.
  *
  * Example:

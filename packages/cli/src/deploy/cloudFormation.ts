@@ -364,7 +364,7 @@ export const deployCloudFormation = async ({
 
     await cloudFormation()
       .validateTemplate({
-        TemplateBody: JSON.stringify(cloudFormationTemplate),
+        TemplateBody: JSON.stringify(cloudFormationTemplate, null, 2),
       })
       .promise();
 
@@ -379,8 +379,7 @@ export const deployCloudFormation = async ({
     /**
      * 1. If Lambda code exists, build and upload the code to base stack bucket.
      * 2. Retrieve the `bucket`, `key` and `version` of the uploaded code and pass
-     * to CloudFormation template as parameters
-     * (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html).
+     * to CloudFormation template as [parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html).
      */
     const deployCloudFormationDeployLambdaCode = async () => {
       const response = await deployLambdaCode({

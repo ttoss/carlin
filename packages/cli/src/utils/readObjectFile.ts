@@ -9,6 +9,13 @@ export const readYaml = ({ path }: { path: string }) => {
   return yaml.safeLoad(template);
 };
 
+/**
+ * If your file is `.ts`, you must you must export the final object
+ * `export default { ... }`. If your file is `.js`, you must you must export
+ * the final object `module.exports =  { ... }`. `.json` and `.yml/yaml` must
+ * define the resources in [JSON](https://www.json.org/json-en.html) and
+ * [YAML](https://yaml.org/) format respectively.
+ */
 export const readObjectFile = ({ path }: { path: string }) => {
   if (!fs.existsSync(path)) {
     return {};

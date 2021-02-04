@@ -1,13 +1,8 @@
----
-title: deploy
----
+import Algorithm from '../../src/components/Algorithm';
+import InnerHTML from '../../src/components/InnerHTML';
+import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 
-import Algorithm from '../src/components/Algorithm';
-import Api from '../src/components/Api';
-import InnerHTML from '../src/components/InnerHTML';
-import OptionAliasesInline from '../src/components/OptionAliasesInline';
-
-import carlin from '../.docusaurus/carlin/default/carlin.json';
+import carlin from '../../.docusaurus/carlin/default/carlin.json';
 
 export const DefaultTemplatePaths = () => {
   return (
@@ -39,6 +34,10 @@ and deploy accordingly to the following algorithm:
 
 :::
 
+The files listed above must provide an object containing the [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-guide.html).
+
+<InnerHTML html={carlin.comments.readObjectFile} />
+
 ### Stack Name
 
 **carlin** creates automatically the [CloudFormation stack name](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html), unless it is already specified at the <OptionAliasesInline options={carlin.options.deploy} option="stack-name" /> option.
@@ -50,6 +49,12 @@ This name is very important because it'll track the deployment when a update or 
 ::::
 
 <InnerHTML html={carlin.comments.stackName} />
+
+### Base Stack
+
+<InnerHTML html={carlin.comments.deployBaseStack} />
+
+Please, refer to [this link](/docs/Commands/deploy%20base-stack) for more details about base stack.
 
 ## Lambda
 
@@ -66,6 +71,10 @@ The build and upload algorithm is:
 
 <Algorithm algorithm={carlin.comments.deployLambdaCode} />
 :::
+
+### Use Cases:
+
+- _[POC - AWS Serverless REST API](https://github.com/ttoss/poc-aws-serverless-rest-api)_
 
 ## Destroy
 
@@ -84,7 +93,7 @@ When this option exists, the following algorithm is executed:
 
 :::danger
 This operation is irreversible. You must pay attention because you may destroy resources that contains your App data, like DynamoDB, using this command.
-To overcome this problem, destroy will only delete the resources if termination protetion isn't enabled and if `environment` isn't defined.
+To overcome this problem, destroy will only delete the resources if termination protetion isn't enabled and if <OptionAliasesInline options={carlin.options.cli} option="environment" /> isn't defined.
 :::
 
 ## Examples
@@ -107,6 +116,8 @@ carlin deploy -e Production
 carlin deploy --lambda-input src/lambda/index.ts --lambda-externals momentjs
 ```
 
-## API
+- Destroy a specific stack:
 
-<Api api={carlin.api.deploy} />
+```bash
+carlin deploy --destroy --stack-name StackToBeDeleted
+```
