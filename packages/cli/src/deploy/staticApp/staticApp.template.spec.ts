@@ -18,7 +18,7 @@ import {
 } from './staticApp.template';
 
 const defaultCspString =
-  "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'";
+  "default-src 'self'; connect-src 'self' https:; script-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'";
 
 describe("fix issue 'Filter CSP directives' #11 https://github.com/ttoss/carlin/issues/11", () => {
   test('generate default CSP', () => {

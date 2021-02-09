@@ -182,7 +182,7 @@ export const uploadDirectoryToS3 = async ({
 }) => {
   log.info(
     logPrefix,
-    `Uploading directory ${directory} to ${bucket}/${bucketKey}...`,
+    `Uploading directory ${directory}/ to ${bucket}/${bucketKey}...`,
   );
 
   /**
@@ -201,6 +201,14 @@ export const uploadDirectoryToS3 = async ({
      * Remove directories.
      */
     .filter((item) => fs.lstatSync(item).isFile());
+
+  /**
+   * If the folder has no files (the folder name may be wrong), thrown an
+   * error. Discovered at #16 https://github.com/ttoss/carlin/issues/16.
+   */
+  if (allFiles.length === 0) {
+    throw new Error(`Directory ${directory}/ has no files.`);
+  }
 
   const GROUP_MAX_LENGTH = 63;
 

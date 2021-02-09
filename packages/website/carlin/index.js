@@ -5,17 +5,27 @@ const {
   baseStackTemplate,
 } = require('carlin/dist/deploy/baseStack/deployBaseStack');
 
-const carlin = require('./carlin');
+const cli = require('carlin/dist/cli').default;
+
+const { defaultTemplatePaths } = require('carlin/dist/deploy/cloudFormation');
+
 const { getComment, getComments, toHtml } = require('./comments');
+
+const cliApi = async (cmd) =>
+  new Promise((resolve) => {
+    cli.parse(cmd, { help: true }, (_, __, output) => {
+      resolve(output);
+    });
+  });
 
 module.exports = () => {
   return {
     name: 'carlin',
     loadContent: async () => {
       return {
-        ...carlin,
+        defaultTemplatePaths,
         api: {
-          deploy: await carlin.cliApi('deploy'),
+          deploy: await cliApi('deploy'),
         },
         comments: {
           ...getComments({
@@ -42,6 +52,9 @@ module.exports = () => {
               'CAUTION!!!',
             )[1],
           ),
+        },
+        examples: {
+          deploy: require('carlin/dist/deploy/command').examples,
         },
         options: {
           cli: require('carlin/dist/cli').options,

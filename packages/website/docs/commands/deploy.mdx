@@ -1,4 +1,5 @@
 import Algorithm from '../../src/components/Algorithm';
+import Examples from '../../src/components/Examples';
 import InnerHTML from '../../src/components/InnerHTML';
 import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 
@@ -98,26 +99,4 @@ To overcome this problem, destroy will only delete the resources if termination 
 
 ## Examples
 
-- Change the CloudFormation template path:
-
-```bash
-carlin deploy -t src/cloudformation.template1.yml
-```
-
-- Set environment:
-
-```bash
-carlin deploy -e Production
-```
-
-- Lambda exists:
-
-```bash
-carlin deploy --lambda-input src/lambda/index.ts --lambda-externals momentjs
-```
-
-- Destroy a specific stack:
-
-```bash
-carlin deploy --destroy --stack-name StackToBeDeleted
-```
+<Examples examples={carlin.examples.deploy} />

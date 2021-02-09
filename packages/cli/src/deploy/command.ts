@@ -101,14 +101,31 @@ export const options = {
   },
 } as const;
 
+export const examples: ReadonlyArray<[string, string?]> = [
+  [
+    'carlin deploy -t src/cloudformation.template1.yml',
+    'Change the CloudFormation template path.',
+  ],
+  ['carlin deploy -e Production', 'Set environment.'],
+  [
+    'carlin deploy --lambda-input src/lambda/index.ts --lambda-externals momentjs',
+    "Lambda exists. Don't bundle momentjs.",
+  ],
+  [
+    'carlin deploy --destroy --stack-name StackToBeDeleted',
+    'Destroy a specific stack.',
+  ],
+];
+
 export const deployCommand: CommandModule<
   any,
   yargs.InferredOptionTypes<typeof options>
 > = {
-  command: 'deploy [specific]',
+  command: 'deploy [deploy]',
   describe: 'Deploy cloud resources.',
   builder: (yargsBuilder) => {
     yargsBuilder
+      .example(examples)
       .options(addGroupToOptions(options, 'Deploy Options'))
       /**
        * Set AWS region.

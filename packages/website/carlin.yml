@@ -3,4 +3,5 @@ aliases:
 cloudfront: true
 csp:
   default-src: ["* 'unsafe-inline' 'unsafe-eval'", replace]
+deploy: static-app
 stackName: CarlinWebsite

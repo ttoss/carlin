@@ -92,6 +92,14 @@ const getDefaultCsp = (): CSP => ({
    */
   'connect-src': "'self' https:",
   /**
+   * 'script-src' and 'img-src' must have 'self' default because when
+   * Lambda@Edge will append these policies, these values will have values and
+   * it won't have 'self'. This what self scripts and images won't work.
+   * Issue #17 https://github.com/ttoss/carlin/issues/17.
+   */
+  'script-src': "'self'",
+  'img-src': "'self'",
+  /**
    * 'unsafe-inline' is needed to load components library.
    */
   'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com/",
@@ -650,7 +658,7 @@ const getCloudFrontEdgeLambdas = ({
 };
 
 const getCloudFrontTemplate = ({
-  acmArn,
+  acm,
   aliases,
   cloudfront,
   gtmId,
@@ -659,7 +667,7 @@ const getCloudFrontTemplate = ({
   hostedZoneName,
   region,
 }: {
-  acmArn?: string;
+  acm?: string;
   aliases?: string[];
   cloudfront: boolean;
   gtmId?: string;
@@ -808,7 +816,7 @@ const getCloudFrontTemplate = ({
     },
   };
 
-  if (acmArn) {
+  if (acm) {
     /**
      * Add ACM to CloudFront template.
      */
@@ -818,11 +826,11 @@ const getCloudFrontTemplate = ({
       Aliases: aliases || { Ref: 'AWS::NoValue' },
       ViewerCertificate: {
         AcmCertificateArn: /^arn:aws:acm:[-a-z0-9]+:\d{12}:certificate\/[-a-z0-9]+$/.test(
-          acmArn,
+          acm,
         )
-          ? acmArn
+          ? acm
           : {
-              'Fn::ImportValue': acmArn,
+              'Fn::ImportValue': acm,
             },
         SslSupportMethod: 'sni-only',
       },
@@ -912,7 +920,7 @@ const getCloudFrontTemplate = ({
 };
 
 export const getStaticAppTemplate = ({
-  acmArn,
+  acm,
   aliases,
   cloudfront,
   gtmId,
@@ -921,7 +929,7 @@ export const getStaticAppTemplate = ({
   hostedZoneName,
   region,
 }: {
-  acmArn?: string;
+  acm?: string;
   aliases?: string[];
   cloudfront?: boolean;
   gtmId?: string;
@@ -932,7 +940,7 @@ export const getStaticAppTemplate = ({
 }): CloudFormationTemplate => {
   if (cloudfront) {
     return getCloudFrontTemplate({
-      acmArn,
+      acm,
       aliases,
       cloudfront,
       gtmId,

@@ -104,7 +104,7 @@ export const invalidateCloudFront = async ({
  *    created.
  */
 export const deployStaticApp = async ({
-  acmArn,
+  acm,
   aliases,
   buildFolder,
   cloudfront,
@@ -115,7 +115,7 @@ export const deployStaticApp = async ({
   region,
   skipUpload,
 }: {
-  acmArn?: string;
+  acm?: string;
   aliases?: string[];
   buildFolder: string;
   cloudfront: boolean;
@@ -135,7 +135,7 @@ export const deployStaticApp = async ({
     const params = { StackName: stackName };
 
     const template = getStaticAppTemplate({
-      acmArn,
+      acm,
       aliases,
       cloudfront,
       gtmId,
