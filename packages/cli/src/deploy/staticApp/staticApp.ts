@@ -5,7 +5,11 @@ import log from 'npmlog';
 import { getPackageVersion } from '../../utils';
 
 import { cloudFormation, deploy } from '../cloudFormation';
-import { uploadDirectoryToS3, emptyS3Directory } from '../s3';
+import {
+  uploadDirectoryToS3,
+  emptyS3Directory,
+  getAllFilesInsideADirectory,
+} from '../s3';
 import { getStackName } from '../stackName';
 
 import { getStaticAppTemplate, CSP } from './staticApp.template';
@@ -27,16 +31,75 @@ const getStaticAppBucket = async ({ stackName }: { stackName: string }) => {
   return StackResourceDetail?.PhysicalResourceId;
 };
 
+/**
+ * Fixes #20 https://github.com/ttoss/carlin/issues/20
+ */
+export const defaultBuildFolders = ['build', 'out'];
+
+const findDefaultBuildFolder = async () => {
+  /**
+   * Valid folders have at least one file inside.
+   */
+  const validFolders = await Promise.all(
+    defaultBuildFolders.map(async (directory) => {
+      const allFiles = await getAllFilesInsideADirectory({
+        directory,
+      });
+
+      return { directory, isValid: allFiles.length !== 0 };
+    }),
+  );
+
+  const validFolder = validFolders.reduce((acc, cur) => {
+    if (cur.isValid) {
+      return cur.directory;
+    }
+
+    return acc;
+  }, '');
+
+  return validFolder;
+};
+
 export const uploadBuiltAppToS3 = async ({
   buildFolder: directory,
   bucket,
 }: {
-  buildFolder: string;
+  buildFolder?: string;
   bucket: string;
 }) => {
   const version = getPackageVersion();
-  await emptyS3Directory({ bucket, directory: version });
-  await uploadDirectoryToS3({ bucket, bucketKey: version, directory });
+
+  /**
+   * Only empty directory if the number of the files inside $directory.
+   * If the number of files is zero, uploadDirectoryToS3 will thrown.
+   */
+  if (directory) {
+    const files = await getAllFilesInsideADirectory({ directory });
+    if (files.length > 0) {
+      await emptyS3Directory({ bucket, directory: version });
+    }
+    await uploadDirectoryToS3({ bucket, bucketKey: version, directory });
+    return;
+  }
+
+  const defaultDirectory = await findDefaultBuildFolder();
+
+  if (defaultDirectory) {
+    await emptyS3Directory({ bucket, directory: version });
+    await uploadDirectoryToS3({
+      bucket,
+      bucketKey: version,
+      directory: defaultDirectory,
+    });
+    return;
+  }
+
+  throw new Error(
+    `build-folder option wasn't provided and files weren't found in ${defaultBuildFolders.join(
+      ', ',
+    )} directories.`,
+  );
 };
 
 export const invalidateCloudFront = async ({
@@ -117,7 +180,7 @@ export const deployStaticApp = async ({
 }: {
   acm?: string;
   aliases?: string[];
-  buildFolder: string;
+  buildFolder?: string;
   cloudfront: boolean;
   gtmId?: string;
   csp?: CSP;

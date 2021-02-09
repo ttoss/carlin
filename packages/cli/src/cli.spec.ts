@@ -1,14 +1,14 @@
 /* eslint-disable import/first */
 import * as faker from 'faker';
 
-const buildFolder = faker.random.word();
+const region = faker.random.word();
 
 const optionsFromConfigFiles = {
   option: faker.random.word(),
   optionEnv: faker.random.word(),
   environments: {
     Production: {
-      buildFolder,
+      region,
       optionEnv: faker.random.word(),
     },
   },
@@ -28,12 +28,10 @@ import { deployStaticApp } from './deploy/staticApp/staticApp';
 
 describe('handle merge config correctly', () => {
   describe('Config merging errors when default values is present #16 https://github.com/ttoss/carlin/issues/16', () => {
-    test('deploy static-app --build-folder should not be the default', async () => {
+    test('deploy static-app --region should not be the default', async () => {
       await cli().parse('deploy static-app', { environment: 'Production' });
       expect(deployStaticApp).toHaveBeenCalledWith(
-        expect.objectContaining({
-          buildFolder,
-        }),
+        expect.objectContaining({ region }),
       );
     });
   });

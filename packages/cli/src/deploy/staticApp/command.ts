@@ -2,10 +2,11 @@
 import { CommandModule, InferredOptionTypes } from 'yargs';
 
 import { NAME } from '../../config';
+import { addGroupToOptions } from '../../utils';
 
 import { destroyCloudFormation } from '../cloudFormation';
 
-import { deployStaticApp } from './staticApp';
+import { deployStaticApp, defaultBuildFolders } from './staticApp';
 
 export const options = {
   acm: {
@@ -19,7 +20,9 @@ export const options = {
     type: 'array',
   },
   'build-folder': {
-    default: 'build',
+    describe: `The folder that will be uploaded. If not provided, it'll search for the folders ${defaultBuildFolders.join(
+      ', ',
+    )}.`,
     type: 'string',
   },
   cloudfront: {
@@ -65,7 +68,7 @@ export const deployStaticAppCommand: CommandModule<
   describe: 'Deploy static app.',
   builder: (yargs) =>
     yargs
-      .options(options)
+      .options(addGroupToOptions(options, 'Deploy Static App Options'))
       .middleware((argv: any) => {
         const { acm, aliases, csp, gtmId, spa } = argv;
         const someDefined = [acm, aliases, csp, gtmId, spa].some(

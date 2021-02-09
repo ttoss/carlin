@@ -1,3 +1,4 @@
+/* eslint-disable no-eval */
 /* eslint-disable import/first */
 
 import * as faker from 'faker';
@@ -48,6 +49,7 @@ import {
   getLambdaEdgeOriginResponseZipFile,
   getLambdaEdgeOriginRequestZipFile,
   CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
+  LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE,
 } from './staticApp.template';
 
 const defaultCspString =
@@ -61,7 +63,6 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   const uri = `${faker.random.word()}.html`;
 
   const handler = (event: any = {}, csp: any = {}) =>
-    // eslint-disable-next-line no-eval
     eval(getLambdaEdgeOriginRequestZipFile({ gtmId, region, csp }))(event);
 
   const record = {
@@ -143,7 +144,7 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   test('return body undefined if not find S3 object', async () => {
     mockS3GetObjectPromise.mockRejectedValueOnce(new Error());
     const response = await handler(event);
-    expect(response.body).toBeUndefined();
+    expect(response).toEqual(event.Records[0].cf.request);
   });
 
   test('should call crypto properly', async () => {
@@ -204,6 +205,22 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
         `default-src ${defaultSrc};`,
       );
     });
+  });
+});
+
+describe('testing LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE', () => {
+  test('should add index.html', async () => {
+    const uri = `${faker.random.word()}/`;
+    const event = { Records: [{ cf: { request: { uri } } }] };
+    const request = await eval(LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE)(event);
+    expect(request.uri).toEqual(`${uri}index.html`);
+  });
+
+  test('should add .html', async () => {
+    const uri = `${faker.random.word()}`;
+    const event = { Records: [{ cf: { request: { uri } } }] };
+    const request = await eval(LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE)(event);
+    expect(request.uri).toEqual(`${uri}.html`);
   });
 });
 

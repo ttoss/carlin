@@ -171,6 +171,31 @@ export const uploadFileToS3 = async ({
   };
 };
 
+/**
+ * Get all files inside $directory.
+ */
+export const getAllFilesInsideADirectory = async ({
+  directory,
+}: {
+  directory: string;
+}) => {
+  const allFilesAndDirectories = await new Promise<string[]>(
+    (resolve, reject) => {
+      glob(`${directory}/**/*`, (err, matches) => {
+        return err ? reject(err) : resolve(matches);
+      });
+    },
+  );
+
+  const allFiles = allFilesAndDirectories
+    /**
+     * Remove directories.
+     */
+    .filter((item) => fs.lstatSync(item).isFile());
+
+  return allFiles;
+};
+
 export const uploadDirectoryToS3 = async ({
   bucket,
   bucketKey = '',
@@ -185,22 +210,7 @@ export const uploadDirectoryToS3 = async ({
     `Uploading directory ${directory}/ to ${bucket}/${bucketKey}...`,
   );
 
-  /**
-   * Get all files and directories inside ${directory}.
-   */
-  const allFilesAndDirectories = await new Promise<string[]>(
-    (resolve, reject) => {
-      glob(`${directory}/**/*`, (err, matches) => {
-        return err ? reject(err) : resolve(matches);
-      });
-    },
-  );
-
-  const allFiles = allFilesAndDirectories
-    /**
-     * Remove directories.
-     */
-    .filter((item) => fs.lstatSync(item).isFile());
+  const allFiles = await getAllFilesInsideADirectory({ directory });
 
   /**
    * If the folder has no files (the folder name may be wrong), thrown an

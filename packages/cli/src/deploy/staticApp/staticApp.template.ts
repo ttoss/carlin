@@ -65,9 +65,9 @@ const LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID = 'LambdaEdgeViewerRequest';
 const LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID =
   'LambdaEdgeVersionViewerRequest';
 
-const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
+export const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
 'use strict';
-exports.handler = (event, context, callback) => {
+exports.handler = async (event, context) => {
   const request = event.Records[0].cf.request;
 
   if (request.uri.endsWith('/')) {
@@ -76,7 +76,7 @@ exports.handler = (event, context, callback) => {
     request.uri += '.html';
   }
 
-  callback(null, request);
+  return request;
 };
 `.trim();
 
@@ -364,14 +364,16 @@ exports.handler = async (event, context) => {
     }
   })();
 
-  const response = {
+  if(!body) {
+    return request;
+  }
+
+  return {
     status: "200",
     statusDescription: "Ok",
     headers,
     body
   };
-
-  return response;
 };
 `.trim();
 };
@@ -393,7 +395,7 @@ export const getLambdaEdgeOriginResponseZipFile = ({
 }: { csp?: CSP } = {}) => {
   return `
 'use strict';
-exports.handler = (event, context, callback) => {
+exports.handler = async (event, context) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
   const headers = response.headers;
@@ -402,7 +404,7 @@ exports.handler = (event, context, callback) => {
     csp: updateCspObject({ csp, currentCsp: getDefaultCsp() }),
   })}
   
-  callback(null, response);
+  return response;
 };
 `.trim();
 };
