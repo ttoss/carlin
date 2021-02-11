@@ -1,6 +1,4 @@
-import fs from 'fs';
 import yaml from 'js-yaml';
-import path from 'path';
 
 interface Parameter {
   AllowedValues?: string[];
@@ -141,44 +139,12 @@ const cloudFormationTypes: TagAndType[] = [
   },
 ];
 
-const getTypes = (): TagAndType[] => [
-  {
-    tag: `!SubString`,
-    options: {
-      kind: 'scalar',
-      construct: (filePath: string) => {
-        return fs
-          .readFileSync(path.resolve(process.cwd(), filePath))
-          .toString();
-      },
-    },
-  },
-];
-
 const getYamlTypes = (tagAndTypeArr: TagAndType[]) =>
   tagAndTypeArr.map(({ tag, options }) => new yaml.Type(tag, options));
 
-const getSchema = (tagAndTypeArr: TagAndType[] = []) =>
+export const getSchema = (tagAndTypeArr: TagAndType[] = []) =>
   yaml.Schema.create(getYamlTypes([...tagAndTypeArr, ...cloudFormationTypes]));
 
 export const dumpToYamlCloudFormationTemplate = (
   cloudFormationTemplate: CloudFormationTemplate,
 ) => yaml.safeDump(cloudFormationTemplate, { schema: getSchema() });
-
-/**
- * CloudFormation
- * @param param0
- */
-export const readCloudFormationYamlTemplate = ({
-  templatePath,
-}: {
-  templatePath: string;
-}): CloudFormationTemplate => {
-  const schema = getSchema(getTypes());
-  const template = fs.readFileSync(templatePath).toString();
-  const parsed = yaml.safeLoad(template, { schema });
-  if (!parsed || typeof parsed === 'string') {
-    throw new Error('Cannot parse CloudFormation template.');
-  }
-  return parsed as CloudFormationTemplate;
-};

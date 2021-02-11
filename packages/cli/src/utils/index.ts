@@ -7,4 +7,5 @@ export * from './getAwsAccountId';
 export * from './getCurrentBranch';
 export * from './getProjectName';
 export * from './packageJson';
+export * from './readCloudFormationTemplate';
 export * from './readObjectFile';

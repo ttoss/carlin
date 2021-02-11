@@ -1,0 +1,73 @@
+---
+title: deploy static-app
+---
+
+import CodeBlock from '@theme/CodeBlock';
+
+import Algorithm from '../../src/components/Algorithm';
+import Carlin from '../../src/components/Carlin';
+import InnerHTML from '../../src/components/InnerHTML';
+import Template from '../../src/components/Template';
+
+import carlin from '../../.docusaurus/carlin/default/carlin.json';
+
+## Overview
+
+```
+carlin deploy static-app
+```
+
+This command deploys static apps to [AWS](https://aws.amazon.com/) using [Amazon S3](https://aws.amazon.com/s3/) and [CloudFront](https://aws.amazon.com/cloudfront/). In a big overview, <Carlin /> performs the algorithm below when this command is executed:
+
+:::note Algorithm
+
+<Algorithm algorithm={carlin.comments.deployStaticApp} />
+
+:::
+
+## Versioning
+
+For every deploy, <Carlin /> uses the current version of the package as key on S3 bucket. For instance, if the version of the package is `2.3.11`, the App files will be uploaded inside `2.3.11/` folder on bucket.
+This feature comes in hand when you need to rollback a version. In this case, if [cloudfront](#cloudfront) is enabled, you just need to change the [Origin Path](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesOriginPath)
+to the required version.
+
+## Security
+
+## Deployments
+
+The differences among all deployments occurs at the template level. Each option adds a piece of instructions on the final CloudFormation template, that we'll present to you.
+
+### Only S3
+
+This is the most basic deployment. <Carlin /> only deploys the application in a S3 bucket.
+
+:::tip Use Cases
+
+This kind of deployment is good to use to deploy an application to the QA team validade the implementation.
+
+:::
+
+#### CloudFormation Template
+
+<Template json={carlin.templates.staticAppOnlyS3} />
+
+### CloudFront
+
+:::info
+
+<InnerHTML html={carlin.comments.publishLambdaVersionZipFile} />
+
+:::
+
+<Template json={carlin.templates.staticAppCloudFront} />
+
+The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) templates.
+
+- CloudFront restricts S3 bucket access. Only CloudFront has access to S3 in this case.
+
+<Template
+  json={
+    carlin.templates.staticAppCloudFront.Resources.StaticBucketS3BucketPolicy
+      .Properties.PolicyDocument
+  }
+/>

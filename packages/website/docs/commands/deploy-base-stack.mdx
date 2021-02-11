@@ -1,6 +1,11 @@
+---
+title: deploy base-stack
+---
+
 import CodeBlock from '@theme/CodeBlock';
 
 import InnerHTML from '../../src/components/InnerHTML';
+import Template from '../../src/components/Template';
 
 import carlin from '../../.docusaurus/carlin/default/carlin.json';
 
@@ -16,4 +21,4 @@ carlin deploy base-stack
 
 The command create a stack whose template is:
 
-<CodeBlock children={carlin.templates.baseStack.yaml} className="yaml" />
+<Template json={carlin.templates.baseStack} />

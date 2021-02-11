@@ -1,19 +1,21 @@
 /* eslint-disable global-require */
-const { dumpToYamlCloudFormationTemplate } = require('carlin/dist/utils');
+const cli = require('carlin/dist/cli').default;
 
 const {
   baseStackTemplate,
 } = require('carlin/dist/deploy/baseStack/deployBaseStack');
 
-const cli = require('carlin/dist/cli').default;
-
 const { defaultTemplatePaths } = require('carlin/dist/deploy/cloudFormation');
+
+const {
+  getStaticAppTemplate,
+} = require('carlin/dist/deploy/staticApp/staticApp.template');
 
 const { getComment, getComments, toHtml } = require('./comments');
 
 const cliApi = async (cmd) =>
   new Promise((resolve) => {
-    cli.parse(cmd, { help: true }, (_, __, output) => {
+    cli().parse(cmd, { help: true }, (_, __, output) => {
       resolve(output);
     });
   });
@@ -26,6 +28,7 @@ module.exports = () => {
         defaultTemplatePaths,
         api: {
           deploy: await cliApi('deploy'),
+          deployStaticApp: await cliApi('deploy static-app'),
         },
         comments: {
           ...getComments({
@@ -39,7 +42,15 @@ module.exports = () => {
               'deployBaseStack',
             ],
             deployLambdaCode: ['deploy/lambda.js', 'deployLambdaCode'],
+            deployStaticApp: [
+              'deploy/staticApp/staticApp.js',
+              'deployStaticApp',
+            ],
             destroy: ['deploy/cloudFormation.js', 'destroy'],
+            publishLambdaVersionZipFile: [
+              'deploy/staticApp/staticApp.template.js',
+              'PUBLISH_LAMBDA_VERSION_ZIP_FILE',
+            ],
             readObjectFile: ['utils/readObjectFile.js', 'readObjectFile'],
           }),
           stackName: toHtml(
@@ -61,10 +72,9 @@ module.exports = () => {
           deploy: require('carlin/dist/deploy/command').options,
         },
         templates: {
-          baseStack: {
-            json: baseStackTemplate,
-            yaml: dumpToYamlCloudFormationTemplate(baseStackTemplate),
-          },
+          baseStack: baseStackTemplate,
+          staticAppOnlyS3: getStaticAppTemplate({}),
+          staticAppCloudFront: getStaticAppTemplate({ cloudfront: true }),
         },
       };
     },

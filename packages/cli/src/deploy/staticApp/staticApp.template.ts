@@ -1,9 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
 
-/**
- * Some implementation idea was taken from here:
- * https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f
- */
 import { NAME } from '../../config';
 import {
   CloudFormationTemplate,
@@ -45,6 +41,9 @@ const PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID = 'PublishLambdaVersionRole';
 
 const PUBLISH_LAMBDA_VERSION_LOGICAL_ID = 'PublishLambdaVersion';
 
+/**
+ * Some implementation ideas were taken from [this Gist](https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f).
+ */
 const PUBLISH_LAMBDA_VERSION_ZIP_FILE = `
 const {Lambda} = require('aws-sdk')
 const {send, SUCCESS, FAILED} = require('cfn-response')
@@ -137,7 +136,10 @@ export const generateCspString = ({
   );
 };
 
-const assignHeaders = ({
+/**
+ *
+ */
+export const assignHeaders = ({
   csp,
   maxAge = 30,
 }: {

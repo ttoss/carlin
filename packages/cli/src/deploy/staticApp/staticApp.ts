@@ -156,15 +156,11 @@ export const invalidateCloudFront = async ({
 };
 
 /**
- * # Deploy static app performs these steps:
- *
- * 1. Get the stack name that will be passed to CloudFormation.
- * 2. Create a CloudFormation template based on the type of the deployment,
- *    for instance, only S3, SPA...
- * 3. Create AWS resources using the templated created.
- * 4. Upload static files to the host bucket S3.
- * 5. If is a CloudFront deployment, an CloudFront invalidation will be
- *    created.
+ * 1. Create the stack name that will be passed to CloudFormation.
+ * 1. Create a CloudFormation template based on the type of the deployment, and
+ *    the options, for instance, only S3, SPA, with hosted zone...
+ * 1. Create AWS resources using the templated created.
+ * 1. Upload static files to the host bucket S3.
  */
 export const deployStaticApp = async ({
   acm,
