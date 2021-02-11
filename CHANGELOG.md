@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.12.0](https://github.com/ttoss/carlin/compare/v0.11.7...v0.12.0) (2021-02-11)
+
+### Features
+
+- static app improvements and docs ([#21](https://github.com/ttoss/carlin/issues/21)) ([5723688](https://github.com/ttoss/carlin/commit/572368840758ee35e3256847b830dcabc4de327f)), closes [#16](https://github.com/ttoss/carlin/issues/16) [#17](https://github.com/ttoss/carlin/issues/17) [#18](https://github.com/ttoss/carlin/issues/18) [#19](https://github.com/ttoss/carlin/issues/19) [#20](https://github.com/ttoss/carlin/issues/20)
+
 ## [0.11.7](https://github.com/ttoss/carlin/compare/v0.11.6...v0.11.7) (2021-02-04)
 
 **Note:** Version bump only for package carlin-monorepo
