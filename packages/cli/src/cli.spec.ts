@@ -19,6 +19,7 @@ jest.mock('deepmerge', () => ({
 }));
 
 jest.mock('./deploy/staticApp/staticApp', () => ({
+  ...(jest.requireActual('./deploy/staticApp/staticApp') as any),
   deployStaticApp: jest.fn(),
 }));
 
