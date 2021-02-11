@@ -171,23 +171,14 @@ export const uploadFileToS3 = async ({
   };
 };
 
-export const uploadDirectoryToS3 = async ({
-  bucket,
-  bucketKey = '',
+/**
+ * Get all files inside $directory.
+ */
+export const getAllFilesInsideADirectory = async ({
   directory,
 }: {
-  bucket: string;
-  bucketKey?: string;
   directory: string;
 }) => {
-  log.info(
-    logPrefix,
-    `Uploading directory ${directory} to ${bucket}/${bucketKey}...`,
-  );
-
-  /**
-   * Get all files and directories inside ${directory}.
-   */
   const allFilesAndDirectories = await new Promise<string[]>(
     (resolve, reject) => {
       glob(`${directory}/**/*`, (err, matches) => {
@@ -201,6 +192,33 @@ export const uploadDirectoryToS3 = async ({
      * Remove directories.
      */
     .filter((item) => fs.lstatSync(item).isFile());
+
+  return allFiles;
+};
+
+export const uploadDirectoryToS3 = async ({
+  bucket,
+  bucketKey = '',
+  directory,
+}: {
+  bucket: string;
+  bucketKey?: string;
+  directory: string;
+}) => {
+  log.info(
+    logPrefix,
+    `Uploading directory ${directory}/ to ${bucket}/${bucketKey}...`,
+  );
+
+  const allFiles = await getAllFilesInsideADirectory({ directory });
+
+  /**
+   * If the folder has no files (the folder name may be wrong), thrown an
+   * error. Discovered at #16 https://github.com/ttoss/carlin/issues/16.
+   */
+  if (allFiles.length === 0) {
+    throw new Error(`Directory ${directory}/ has no files.`);
+  }
 
   const GROUP_MAX_LENGTH = 63;
 

@@ -1,9 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
 
-/**
- * Some implementation idea was taken from here:
- * https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f
- */
 import { NAME } from '../../config';
 import {
   CloudFormationTemplate,
@@ -45,6 +41,9 @@ const PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID = 'PublishLambdaVersionRole';
 
 const PUBLISH_LAMBDA_VERSION_LOGICAL_ID = 'PublishLambdaVersion';
 
+/**
+ * Some implementation ideas were taken from [this Gist](https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f).
+ */
 const PUBLISH_LAMBDA_VERSION_ZIP_FILE = `
 const {Lambda} = require('aws-sdk')
 const {send, SUCCESS, FAILED} = require('cfn-response')
@@ -65,9 +64,9 @@ const LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID = 'LambdaEdgeViewerRequest';
 const LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID =
   'LambdaEdgeVersionViewerRequest';
 
-const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
+export const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
 'use strict';
-exports.handler = (event, context, callback) => {
+exports.handler = async (event, context) => {
   const request = event.Records[0].cf.request;
 
   if (request.uri.endsWith('/')) {
@@ -76,7 +75,7 @@ exports.handler = (event, context, callback) => {
     request.uri += '.html';
   }
 
-  callback(null, request);
+  return request;
 };
 `.trim();
 
@@ -137,9 +136,18 @@ export const generateCspString = ({
   );
 };
 
-const assignHeaders = ({ csp }: { csp?: CSP }) => {
+/**
+ *
+ */
+export const assignHeaders = ({
+  csp,
+  maxAge = 30,
+}: {
+  csp?: CSP;
+  maxAge?: number;
+}) => {
   return `
-  const maxAge = 150;
+  const maxAge = ${maxAge};
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
@@ -202,10 +210,10 @@ const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
  * When this Lambda@Edge is created, origin response is not created because
  * this function make a GET request to S3 and return the body.
  */
-const getLambdaEdgeOriginRequestZipFile = ({
+export const getLambdaEdgeOriginRequestZipFile = ({
   gtmId,
   region,
-  csp,
+  csp = {},
 }: {
   gtmId: string;
   region: string;
@@ -217,6 +225,20 @@ const getLambdaEdgeOriginRequestZipFile = ({
    */
   const fullCsp = [
     getDefaultCsp(),
+    csp,
+    /**
+     * 'script-src' and 'img-src' must have 'self' default because when
+     * Lambda@Edge will append the policies, these values will have values and
+     * it won't have 'self'. This way self scripts and images won't work.
+     * Issue #17 https://github.com/ttoss/carlin/issues/17.
+     */
+    {
+      'script-src': "'self'",
+      'img-src': "'self'",
+    },
+    {
+      'frame-src': "'self'",
+    },
     /**
      * https://developers.google.com/tag-manager/web/csp#enabling_the_google_tag_manager_snippet
      */
@@ -266,7 +288,7 @@ const getLambdaEdgeOriginRequestZipFile = ({
     },
   ].reduce(
     (acc, curCsp) => updateCspObject({ csp: curCsp, currentCsp: acc }),
-    csp || {},
+    {},
   );
 
   return `
@@ -280,7 +302,7 @@ const s3 = new S3({ region: "${region}" });
 const nonce = crypto.randomBytes(16).toString('base64');
 
 // https://developers.google.com/tag-manager/web/csp
-const gtmScript = \`
+const gtmScriptHead = \`
 <script nonce="\${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -289,52 +311,71 @@ n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertB
 })(window,document,'script','dataLayer','${gtmId}');</script>
 \`.replace(/\\n/g, '');
 
+const gtmScriptBody = \`
+<noscript><iframe nonce='\${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}'${' '}
+height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript>
+\`.replace(/\\n/g, '');
+
 exports.handler = async (event, context) => {
   const request = { ...event.Records[0].cf.request };
 
   if (!request.uri.endsWith(".html")) {
     return request;
-  }
-
-  const { origin } = request;
-
-  const bucket = origin.s3.domainName.split(".")[0];
-
-  const key = origin.s3.path.replace(new RegExp("^/"), '') + request.uri;
-
-  const {
-    Body,
-    ContentType
-  } = await s3.getObject({
-    Bucket: bucket,
-    Key: key,
-  }).promise();
+  }  
 
   let headers = { };
-  
-  headers["content-type"] = [
-    {
-      key: "Content-Type",
-      value: ContentType
-    }
-  ];  
 
   ${assignHeaders({ csp: fullCsp })}
 
-  const cspValue = headers['content-security-policy'][0].value.replace("script-src", \`script-src 'nonce-\${nonce}'\`);
+  const cspValue = headers['content-security-policy'][0]
+    .value
+    .replace("script-src", \`script-src 'nonce-\${nonce}'\`)
+    .replace("frame-src", \`frame-src 'nonce-\${nonce}'\`);
 
   headers['content-security-policy'][0].value = cspValue;
 
-  const body = Body.toString().replace("</head>", gtmScript + "</head>");
-  
-  const response = {
+  const body = await (async () => {
+    try {
+      const { origin } = request;
+
+      const bucket = origin.s3.domainName.split(".")[0];
+
+      const key = origin.s3.path.replace(new RegExp("^/"), '') + request.uri;
+
+      const {
+        Body,
+        ContentType
+      } = await s3.getObject({
+        Bucket: bucket,
+        Key: key,
+      }).promise();
+
+      headers["content-type"] = [
+        {
+          key: "Content-Type",
+          value: ContentType
+        }
+      ];      
+
+      return Body
+        .toString()
+        .replace("</head>", gtmScriptHead + "</head>")
+        .replace("<body>", "<body>" + gtmScriptBody);
+    } catch {
+      return undefined;
+    }
+  })();
+
+  if(!body) {
+    return request;
+  }
+
+  return {
     status: "200",
     statusDescription: "Ok",
     headers,
     body
   };
-
-  return response;
 };
 `.trim();
 };
@@ -356,7 +397,7 @@ export const getLambdaEdgeOriginResponseZipFile = ({
 }: { csp?: CSP } = {}) => {
   return `
 'use strict';
-exports.handler = (event, context, callback) => {
+exports.handler = async (event, context) => {
   const request = event.Records[0].cf.request;
   const response = event.Records[0].cf.response;
   const headers = response.headers;
@@ -365,7 +406,7 @@ exports.handler = (event, context, callback) => {
     csp: updateCspObject({ csp, currentCsp: getDefaultCsp() }),
   })}
   
-  callback(null, response);
+  return response;
 };
 `.trim();
 };
@@ -650,7 +691,7 @@ const getCloudFrontEdgeLambdas = ({
 };
 
 const getCloudFrontTemplate = ({
-  acmArn,
+  acm,
   aliases,
   cloudfront,
   gtmId,
@@ -659,7 +700,7 @@ const getCloudFrontTemplate = ({
   hostedZoneName,
   region,
 }: {
-  acmArn?: string;
+  acm?: string;
   aliases?: string[];
   cloudfront: boolean;
   gtmId?: string;
@@ -808,7 +849,7 @@ const getCloudFrontTemplate = ({
     },
   };
 
-  if (acmArn) {
+  if (acm) {
     /**
      * Add ACM to CloudFront template.
      */
@@ -818,11 +859,11 @@ const getCloudFrontTemplate = ({
       Aliases: aliases || { Ref: 'AWS::NoValue' },
       ViewerCertificate: {
         AcmCertificateArn: /^arn:aws:acm:[-a-z0-9]+:\d{12}:certificate\/[-a-z0-9]+$/.test(
-          acmArn,
+          acm,
         )
-          ? acmArn
+          ? acm
           : {
-              'Fn::ImportValue': acmArn,
+              'Fn::ImportValue': acm,
             },
         SslSupportMethod: 'sni-only',
       },
@@ -912,7 +953,7 @@ const getCloudFrontTemplate = ({
 };
 
 export const getStaticAppTemplate = ({
-  acmArn,
+  acm,
   aliases,
   cloudfront,
   gtmId,
@@ -921,7 +962,7 @@ export const getStaticAppTemplate = ({
   hostedZoneName,
   region,
 }: {
-  acmArn?: string;
+  acm?: string;
   aliases?: string[];
   cloudfront?: boolean;
   gtmId?: string;
@@ -932,7 +973,7 @@ export const getStaticAppTemplate = ({
 }): CloudFormationTemplate => {
   if (cloudfront) {
     return getCloudFrontTemplate({
-      acmArn,
+      acm,
       aliases,
       cloudfront,
       gtmId,
