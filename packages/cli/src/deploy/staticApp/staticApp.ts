@@ -20,15 +20,25 @@ const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
 
 const logPrefix = 'static-app';
 
-const getStaticAppBucket = async ({ stackName }: { stackName: string }) => {
+export const getStaticAppBucket = async ({
+  stackName,
+}: {
+  stackName: string;
+}) => {
   const params = {
     LogicalResourceId: STATIC_APP_BUCKET_LOGICAL_ID,
     StackName: stackName,
   };
-  const { StackResourceDetail } = await cloudFormation()
-    .describeStackResource(params)
-    .promise();
-  return StackResourceDetail?.PhysicalResourceId;
+
+  try {
+    const {
+      StackResourceDetail,
+    } = await cloudFormation().describeStackResource(params).promise();
+
+    return StackResourceDetail?.PhysicalResourceId;
+  } catch (error) {
+    return undefined;
+  }
 };
 
 /**
