@@ -74,11 +74,13 @@ const findDefaultBuildFolder = async () => {
 export const uploadBuiltAppToS3 = async ({
   buildFolder: directory,
   bucket,
+  cloudfront,
 }: {
   buildFolder?: string;
   bucket: string;
+  cloudfront?: boolean;
 }) => {
-  const version = getPackageVersion();
+  const version = cloudfront ? getPackageVersion() : undefined;
 
   /**
    * Only empty directory if the number of the files inside $directory.
@@ -187,10 +189,10 @@ export const deployStaticApp = async ({
   acm?: string;
   aliases?: string[];
   buildFolder?: string;
-  cloudfront: boolean;
+  cloudfront?: boolean;
   gtmId?: string;
   csp?: CSP;
-  spa: boolean;
+  spa?: boolean;
   hostedZoneName?: string;
   region: string;
   skipUpload?: boolean;
@@ -222,7 +224,7 @@ export const deployStaticApp = async ({
      */
     if (bucket) {
       if (!skipUpload) {
-        await uploadBuiltAppToS3({ buildFolder, bucket });
+        await uploadBuiltAppToS3({ buildFolder, bucket, cloudfront });
       }
 
       const { Outputs } = await deploy({ params, template });
@@ -238,14 +240,14 @@ export const deployStaticApp = async ({
       const newBucket = await getStaticAppBucket({ stackName });
 
       if (!newBucket) {
-        throw new Error(`Cannot find bucket at ${stackName}`);
+        throw new Error(`Cannot find bucket at ${stackName}.`);
       }
 
-      await uploadBuiltAppToS3({ buildFolder, bucket: newBucket });
+      await uploadBuiltAppToS3({ buildFolder, bucket: newBucket, cloudfront });
     }
   } catch (err) {
-    log.error(logPrefix, 'An error occurred. Cannot deploy static app');
+    log.error(logPrefix, 'An error occurred. Cannot deploy static app.');
     log.error(logPrefix, 'Error message: %j', err.message);
-    process.exit();
+    process.exit(1);
   }
 };
