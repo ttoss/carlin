@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.4](https://github.com/ttoss/carlin/compare/v0.12.3...v0.12.4) (2021-02-24)
+
+### Bug Fixes
+
+- fixes [#24](https://github.com/ttoss/carlin/issues/24) ([cb076f9](https://github.com/ttoss/carlin/commit/cb076f9a667bbc69382930a76884234c33e3f26c))
+
 ## [0.12.3](https://github.com/ttoss/carlin/compare/v0.12.2...v0.12.3) (2021-02-22)
 
 **Note:** Version bump only for package carlin-website
