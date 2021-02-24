@@ -17,14 +17,23 @@ const mockS3GetObjectPromise = jest.fn().mockResolvedValue({
   Body: '<html><head></head><body></body></html>',
 });
 
+const mockS3GetObject = jest.fn().mockReturnValue({
+  promise: mockS3GetObjectPromise,
+});
+
+const mockS3HeadObjectPromise = jest.fn();
+
+const mockS3HeadObject = jest.fn().mockReturnValue({
+  promise: mockS3HeadObjectPromise,
+});
+
 /**
  * Mocked to test Lambda@Edge origin request.
  */
 jest.mock('aws-sdk', () => ({
   S3: jest.fn(() => ({
-    getObject: jest.fn().mockReturnValue({
-      promise: mockS3GetObjectPromise,
-    }),
+    getObject: mockS3GetObject,
+    headObject: mockS3HeadObject,
   })),
 }));
 
@@ -49,7 +58,7 @@ import {
   getLambdaEdgeOriginResponseZipFile,
   getLambdaEdgeOriginRequestZipFile,
   CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
-  LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE,
+  LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID,
 } from './staticApp.template';
 
 const defaultCspString =
@@ -59,11 +68,8 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   const gtmId = faker.random.word();
   const region = faker.random.word();
   const bucketName = faker.random.word();
-  const s3Path = faker.random.word();
+  const s3Path = `${faker.random.word()}/`;
   const uri = `${faker.random.word()}.html`;
-
-  const handler = (event: any = {}, csp: any = {}) =>
-    eval(getLambdaEdgeOriginRequestZipFile({ gtmId, region, csp }))(event);
 
   const record = {
     cf: {
@@ -112,6 +118,9 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
         origin: {
           s3: {
             domainName: `${bucketName}.${faker.random.word()}`,
+            /**
+             * Starts with /
+             */
             path: `/${s3Path}`,
           },
           custom: {
@@ -126,16 +135,72 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
           },
         },
         querystring: '',
+        /**
+         * Starts with /
+         */
         uri,
       },
     },
   };
 
-  const event = { Records: [record] };
+  const defaultEvent = { Records: [record] };
+
+  describe('Issue #24 https://github.com/ttoss/carlin/issues/11. It tests requestUri method.', () => {
+    const handler = (event: any = {}) =>
+      eval(getLambdaEdgeOriginRequestZipFile({ region }))(event);
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test('should add index.html because uri ends with /', async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const newUri = `/${faker.random.word()}/`;
+      newRecord.cf.request.uri = newUri;
+      const response = await handler({ Records: [newRecord] });
+      expect(response.uri).toEqual(`${newUri}index.html`);
+    });
+
+    test('should return request because uri has a dot', async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const newUri = '/script.js';
+      newRecord.cf.request.uri = newUri;
+      const response = await handler({ Records: [newRecord] });
+      expect(response).toEqual(newRecord.cf.request);
+    });
+
+    test('should add .html because file exists on bucket', async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const newUri = `/${faker.random.word()}`;
+      newRecord.cf.request.uri = newUri;
+      const response = await handler({ Records: [newRecord] });
+      expect(response.uri).toEqual(`${newUri}.html`);
+    });
+
+    test("should add /index.html because file doesn't exist on bucket", async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const newUri = `/${faker.random.word()}`;
+      newRecord.cf.request.uri = newUri;
+      mockS3HeadObjectPromise.mockRejectedValueOnce('Not Found');
+      const response = await handler({ Records: [newRecord] });
+      expect(response.uri).toEqual(`${newUri}/index.html`);
+    });
+
+    test('should have correct IAM policy actions', () => {
+      expect(
+        getStaticAppTemplate({ cloudfront: true, region }).Resources[
+          LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID
+        ].Properties.Policies[0].PolicyDocument.Statement[0].Action,
+      ).toEqual(expect.arrayContaining(['s3:GetObject', 's3:HeadObject']));
+    });
+  });
+
+  const handler = (event: any = {}, csp: any = {}) =>
+    eval(getLambdaEdgeOriginRequestZipFile({ gtmId, region, csp }))(event);
 
   test('return request if uri is not an HTML', async () => {
     const newRecord = JSON.parse(JSON.stringify(record));
-    const newUri = '/';
+    const newUri = '/script.js';
     newRecord.cf.request.uri = newUri;
     const response = await handler({ Records: [newRecord] });
     expect(response).toEqual(newRecord.cf.request);
@@ -143,21 +208,24 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
 
   test('return body undefined if not find S3 object', async () => {
     mockS3GetObjectPromise.mockRejectedValueOnce(new Error());
-    const response = await handler(event);
-    expect(response).toEqual(event.Records[0].cf.request);
+    const response = await handler(defaultEvent);
+    expect(response).toEqual(defaultEvent.Records[0].cf.request);
   });
 
   test('should call crypto properly', async () => {
-    await handler(event);
+    await handler(defaultEvent);
     expect(cryptoRandomBytesToString).toHaveBeenCalledWith('base64');
     expect(cryptoRandomBytes).toHaveBeenLastCalledWith(16);
   });
 
   test('return response if uri is an HTML', async () => {
-    const response = await handler(event);
+    const response = await handler(defaultEvent);
     expect(response.status).toEqual('200');
-    expect(response.body).toEqual(
-      `<html><head><script nonce="${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');</script></head><body><noscript><iframe nonce='${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}' height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript></body></html>`,
+    expect(response.body.replace(/ /g, '')).toEqual(
+      `<html><head><script nonce="${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');</script></head><body><noscript><iframe nonce='${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}' height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript></body></html>`.replace(
+        / /g,
+        '',
+      ),
     );
     expect(response.headers).toMatchObject(
       expect.objectContaining({
@@ -191,36 +259,22 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
     const defaultSrc = faker.random.words(5);
 
     test('without replace', async () => {
-      const response = await handler(event, { 'default-src': defaultSrc });
+      const response = await handler(defaultEvent, {
+        'default-src': defaultSrc,
+      });
       expect(response.headers['content-security-policy'][0].value).toContain(
         `default-src 'self' ${defaultSrc};`,
       );
     });
 
     test('with replace', async () => {
-      const response = await handler(event, {
+      const response = await handler(defaultEvent, {
         'default-src': [defaultSrc, 'replace'],
       });
       expect(response.headers['content-security-policy'][0].value).toContain(
         `default-src ${defaultSrc};`,
       );
     });
-  });
-});
-
-describe('testing LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE', () => {
-  test('should add index.html', async () => {
-    const uri = `${faker.random.word()}/`;
-    const event = { Records: [{ cf: { request: { uri } } }] };
-    const request = await eval(LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE)(event);
-    expect(request.uri).toEqual(`${uri}index.html`);
-  });
-
-  test('should add .html', async () => {
-    const uri = `${faker.random.word()}`;
-    const event = { Records: [{ cf: { request: { uri } } }] };
-    const request = await eval(LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE)(event);
-    expect(request.uri).toEqual(`${uri}.html`);
   });
 });
 
@@ -240,7 +294,7 @@ describe("fix issue 'Filter CSP directives' #11 https://github.com/ttoss/carlin/
 describe("fix issue 'Add default CSP to Lambda@Edge origin response' #10 https://github.com/ttoss/carlin/issues/10", () => {
   test('should add csp to Lambda@Edge Origin response', () => {
     expect(getLambdaEdgeOriginResponseZipFile({ csp: {} })).toContain(
-      `value: "${defaultCspString}"`,
+      `"${defaultCspString}"`,
     );
   });
 
@@ -284,7 +338,7 @@ describe("fix issue 'Add Google Marketing Platform to CSP' #3 https://github.com
 
   test('should add csp to Lambda@Edge Origin response', () => {
     expect(getLambdaEdgeOriginResponseZipFile()).toContain(
-      `value: "${defaultCspString}"`,
+      `"${defaultCspString}"`,
     );
   });
 });

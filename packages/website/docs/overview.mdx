@@ -3,6 +3,8 @@ title: Overview
 slug: /
 ---
 
+import Carlin from '../src/components/Carlin';
+
 **carlin** has been built for the last years as helpers scripts that support deploying AWS cloud resources. The first scripts were used to deploy CloudFormation templates as we've started performing numerous deployments along with staging, production, development... environments.
 
 As the scripts grew, it was very useful put them all in a CLI using [Yargs](https://yargs.js.org/) and create an [NPM package](https://www.npmjs.com/package/carlin), this way it can be used by all team in all projects.
@@ -10,3 +12,11 @@ As the scripts grew, it was very useful put them all in a CLI using [Yargs](http
 We've changed **carlin** API at least five times trying to provide the better API possible. Currently, **carlin** has the best API that we could design and for that reason, we've decided to open-source it, joining as a [TTOSS](https://github.com/ttoss) project. We hope this framework helps a lot of developers deploying AWS cloud resources. We're heavily using it in your projects at [Triângulos Tecnologia](https://triangulostecnologia.com).
 
 We also would love feedbacks from community. We'll appreciate a lot if you want to give a try and send feedbacks to us of how might we improve the framework.
+
+## Should I use <Carlin /> in production?
+
+The short answer is **no**. To long answer is **it depends**. We've been using it for a long time and it suits very well for us. We recommend using it if you have these two conditions:
+
+1. **You know all <Carlin /> algorithms.**
+
+2. **You know how to fix a deployment manually if some error occur.**

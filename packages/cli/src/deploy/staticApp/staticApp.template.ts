@@ -8,6 +8,8 @@ import {
   getPackageVersion,
 } from '../../utils';
 
+import { formatCode } from '../../utils/formatCode';
+
 import { getOriginShieldRegion } from './getOriginShieldRegion';
 
 const PACKAGE_VERSION = getPackageVersion();
@@ -35,7 +37,7 @@ const CACHE_POLICY_ID = '658327ea-f89d-4fab-a63d-7e88639e58f6';
  */
 const ORIGIN_REQUEST_POLICY_ID = '88a5eaf4-2fd4-4709-b370-b4c650ea3fcf';
 
-const LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID = 'LambdaEdgeIAMRole';
+export const LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID = 'LambdaEdgeIAMRole';
 
 const PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID = 'PublishLambdaVersionRole';
 
@@ -44,7 +46,7 @@ const PUBLISH_LAMBDA_VERSION_LOGICAL_ID = 'PublishLambdaVersion';
 /**
  * Some implementation ideas were taken from [this Gist](https://gist.github.com/jed/56b1f58297d374572bc51c59394c7e7f).
  */
-const PUBLISH_LAMBDA_VERSION_ZIP_FILE = `
+const PUBLISH_LAMBDA_VERSION_ZIP_FILE = formatCode(`
 const {Lambda} = require('aws-sdk')
 const {send, SUCCESS, FAILED} = require('cfn-response')
 const lambda = new Lambda()
@@ -57,27 +59,7 @@ exports.handler = (event, context) => {
       : send(event, context, SUCCESS, {FunctionArn})
   })
 }
-`.trim();
-
-const LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID = 'LambdaEdgeViewerRequest';
-
-const LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID =
-  'LambdaEdgeVersionViewerRequest';
-
-export const LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE = `
-'use strict';
-exports.handler = async (event, context) => {
-  const request = event.Records[0].cf.request;
-
-  if (request.uri.endsWith('/')) {
-    request.uri += 'index.html';
-  } else if (!request.uri.includes('.')) {
-    request.uri += '.html';
-  }
-
-  return request;
-};
-`.trim();
+`);
 
 export type CSP = { [key: string]: string | string[] };
 
@@ -148,6 +130,7 @@ export const assignHeaders = ({
 }) => {
   return `
   const maxAge = ${maxAge};
+
   headers['cache-control'] = [
     {
       key: 'Cache-Control',
@@ -199,99 +182,128 @@ const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
   'LambdaEdgeVersionOriginRequest';
 
 /**
- * Created to allow Google Marketing Platform though Google Tag Manager.
- * {@link https://github.com/ttoss/carlin/issues/3}
+ * Created to allow [Google Marketing Platform](https://marketingplatform.google.com/about/) though
+ * [Google Tag Manager (GTM)](https://marketingplatform.google.com/about/tag-manager/) ([issue #3](https://github.com/ttoss/carlin/issues/3)).
+ * We've realized that most of our Apps need the GTM scripts due to our
+ * marketing team. They've also created some processes to create campaigns and
+ * monitoring them using GTM.
  *
- * It's not possible to change body from S3 origin thought Lambda@Edge. The
- * implementation was made considering this questions and responses.
- * - {@link https://stackoverflow.com/questions/62893845/how-can-i-modify-a-pages-html-with-aws-cloudfront-running-a-lambdaedge-functio}
- * - {@link https://stackoverflow.com/questions/51230768/aws-lambdaedge-how-to-read-html-file-from-s3-and-put-content-in-response-body}
+ * We've decided to add GTM scripts using [Lambda@Edge Origin Request](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-cloudfront-trigger-events.html) because it:
  *
- * When this Lambda@Edge is created, origin response is not created because
- * this function make a GET request to S3 and return the body.
+ * 1. adds the GTM header and the body scripts;
+ * 1. adds the [GTM CSP headers](https://developers.google.com/tag-manager/web/csp) properly;
+ * 1. handles the `nonce` values on scripts and CSP headers.
+ *
+ * It's not possible to change the HTML body from S3 origin thought Lambda@Edge
+ * response. The implementation was made considering this questions and
+ * responses:
+ *
+ * - [How can I modify a page's HTML with AWS Cloudfront running a Lambda@Edge function?](https://stackoverflow.com/questions/62893845/how-can-i-modify-a-pages-html-with-aws-cloudfront-running-a-lambdaedge-functio)
+ * - [AWS Lambda@edge. How to read HTML file from S3 and put content in response body](https://stackoverflow.com/questions/51230768/aws-lambdaedge-how-to-read-html-file-from-s3-and-put-content-in-response-body)
+ *
+ * ## Algorithm
+ *
+ * 1. Add `.html` or `/index.html` to URL if needed.
+ * 1. If the URL doesn't ends with `.html`, the request is forwarded to origin.
+ * 1. Add CSP headers, including the `nonce` value to `script-src` and `frame-src`.
+ * 1. Get the `.html` file using [S3 API `getObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html).
+ * 1. If the file doesn't exist, forward the request to origin.
+ * 1. Add [GTM scripts](https://developers.google.com/tag-manager/quickstart) to the `.html`:
+ *  1. Append the header script before `</header>` string.
+ *  1. Append the body script after `<body>` string.
+ * 1. Return the response with the new body and headers.
  */
+
 export const getLambdaEdgeOriginRequestZipFile = ({
   gtmId,
   region,
   csp = {},
 }: {
-  gtmId: string;
+  gtmId?: string;
   region: string;
   csp?: CSP;
 }) => {
-  /**
-   * Add CSP to allow Google Marketing Platform words.
-   * {@link https://developers.google.com/tag-manager/web/csp}
-   */
   const fullCsp = [
     getDefaultCsp(),
     csp,
     /**
-     * 'script-src' and 'img-src' must have 'self' default because when
-     * Lambda@Edge will append the policies, these values will have values and
-     * it won't have 'self'. This way self scripts and images won't work.
-     * Issue #17 https://github.com/ttoss/carlin/issues/17.
+     * Add CSP to allow Google Marketing Platform works.
+     * {@link https://developers.google.com/tag-manager/web/csp}
      */
-    {
-      'script-src': "'self'",
-      'img-src': "'self'",
-    },
-    {
-      'frame-src': "'self'",
-    },
-    /**
-     * https://developers.google.com/tag-manager/web/csp#enabling_the_google_tag_manager_snippet
-     */
-    {
-      'img-src': 'www.googletagmanager.com',
-    },
-    /**
-     * https://developers.google.com/tag-manager/web/csp#preview_mode
-     */
-    {
-      'script-src': 'https://tagmanager.google.com',
-      'style-src': 'https://tagmanager.google.com https://fonts.googleapis.com',
-      'img-src':
-        'https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com data:',
-      'font-src': 'data:',
-    },
-    /**
-     * https://developers.google.com/tag-manager/web/csp#universal_analytics_google_analytics
-     */
-    {
-      'script-src':
-        'https://www.google-analytics.com https://ssl.google-analytics.com',
-      'img-src': 'https://www.google-analytics.com',
-      'connect-src': 'https://www.google-analytics.com',
-    },
-    /**
-     * https://developers.google.com/tag-manager/web/csp#google_optimize
-     */
-    {
-      'script-src': 'https://www.google-analytics.com',
-    },
-    /**
-     * https://developers.google.com/tag-manager/web/csp#google_ads_conversions
-     */
-    {
-      'script-src': 'https://www.googleadservices.com https://www.google.com',
-      'img-src': 'https://googleads.g.doubleclick.net https://www.google.com',
-    },
-    /**
-     * https://developers.google.com/tag-manager/web/csp#google_ads_remarketing
-     */
-    {
-      'script-src':
-        'https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com',
-      'img-src': 'https://www.google.com',
-      'frame-src': 'https://bid.g.doubleclick.net',
-    },
+    ...(gtmId
+      ? [
+          /**
+           * 'script-src' and 'img-src' must have 'self' default because when
+           * Lambda@Edge will append the policies, these values will have values and
+           * it won't have 'self'. This way self scripts and images won't work.
+           * Issue #17 https://github.com/ttoss/carlin/issues/17.
+           */
+          {
+            'script-src': "'self'",
+            'img-src': "'self'",
+          },
+          {
+            'frame-src': "'self'",
+          },
+          /**
+           * https://developers.google.com/tag-manager/web/csp#enabling_the_google_tag_manager_snippet
+           */
+          {
+            'img-src': 'www.googletagmanager.com',
+          },
+          /**
+           * https://developers.google.com/tag-manager/web/csp#preview_mode
+           */
+          {
+            'script-src': 'https://tagmanager.google.com',
+            'style-src':
+              'https://tagmanager.google.com https://fonts.googleapis.com',
+            'img-src':
+              'https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com data:',
+            'font-src': 'data:',
+          },
+          /**
+           * https://developers.google.com/tag-manager/web/csp#universal_analytics_google_analytics
+           */
+          {
+            'script-src':
+              'https://www.google-analytics.com https://ssl.google-analytics.com',
+            'img-src': 'https://www.google-analytics.com',
+            'connect-src': 'https://www.google-analytics.com',
+          },
+          /**
+           * https://developers.google.com/tag-manager/web/csp#google_optimize
+           */
+          {
+            'script-src': 'https://www.google-analytics.com',
+          },
+          /**
+           * https://developers.google.com/tag-manager/web/csp#google_ads_conversions
+           */
+          {
+            'script-src':
+              'https://www.googleadservices.com https://www.google.com',
+            'img-src':
+              'https://googleads.g.doubleclick.net https://www.google.com',
+          },
+          /**
+           * https://developers.google.com/tag-manager/web/csp#google_ads_remarketing
+           */
+          {
+            'script-src':
+              'https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com',
+            'img-src': 'https://www.google.com',
+            'frame-src': 'https://bid.g.doubleclick.net',
+          },
+        ]
+      : []),
   ].reduce(
     (acc, curCsp) => updateCspObject({ csp: curCsp, currentCsp: acc }),
     {},
   );
 
-  return `
+  return formatCode(
+    `
 'use strict';
 
 const { S3 } = require('aws-sdk');
@@ -299,72 +311,105 @@ const crypto = require('crypto');
 
 const s3 = new S3({ region: "${region}" });
 
-const nonce = crypto.randomBytes(16).toString('base64');
-
-// https://developers.google.com/tag-manager/web/csp
-const gtmScriptHead = \`
-<script nonce="\${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');
-n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${gtmId}');</script>
-\`.replace(/\\n/g, '');
-
-const gtmScriptBody = \`
-<noscript><iframe nonce='\${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}'${' '}
-height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript>
-\`.replace(/\\n/g, '');
-
 exports.handler = async (event, context) => {
   const request = { ...event.Records[0].cf.request };
 
+  const { origin } = request;
+
+  const bucket = origin.s3.domainName.split(".")[0];
+
+  const getKey = (requestUri) => {
+    return origin.s3.path.replace(new RegExp("^/"), '') + requestUri;
+  }
+
+  request.uri = await (async() => {
+    if (request.uri.endsWith('/')) {
+      return request.uri + 'index.html';
+    }
+    
+    if (request.uri.includes('.')) {
+      return request.uri;
+    }
+
+    /**
+     *  Fixes #24 https://github.com/ttoss/carlin/issues/24.
+     */
+    try {
+      await s3.headObject({
+        Bucket: bucket,
+        Key: getKey(request.uri + ".html"),
+      }).promise();
+
+      return request.uri + ".html";
+    } catch (err) {
+      return request.uri + "/index.html";
+    }
+  })()
+
   if (!request.uri.endsWith(".html")) {
     return request;
-  }  
+  }
 
   let headers = { };
 
+  let body = undefined;
+
   ${assignHeaders({ csp: fullCsp })}
 
-  const cspValue = headers['content-security-policy'][0]
+  ${
+    gtmId
+      ? `
+    const nonce = crypto.randomBytes(16).toString('base64');
+
+    // https://developers.google.com/tag-manager/quickstart
+    const gtmScriptHead = \`
+    <script nonce="\${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');
+    n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','${gtmId}');</script>
+    \`.replace(/\\n/g, '');
+    
+    const gtmScriptBody = \`
+    <noscript><iframe nonce='\${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}'${' '}
+    height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript>
+    \`.replace(/\\n/g, '');
+
+    const cspValue = headers['content-security-policy'][0]
     .value
     .replace("script-src", \`script-src 'nonce-\${nonce}'\`)
     .replace("frame-src", \`frame-src 'nonce-\${nonce}'\`);
 
-  headers['content-security-policy'][0].value = cspValue;
+    headers['content-security-policy'][0].value = cspValue;
 
-  const body = await (async () => {
-    try {
-      const { origin } = request;
+    await (async () => {
+      try {
+        const {
+          Body,
+          ContentType
+        } = await s3.getObject({
+          Bucket: bucket,
+          Key: getKey(request.uri),
+        }).promise();
 
-      const bucket = origin.s3.domainName.split(".")[0];
+        headers["content-type"] = [
+          {
+            key: "Content-Type",
+            value: ContentType
+          }
+        ];      
 
-      const key = origin.s3.path.replace(new RegExp("^/"), '') + request.uri;
-
-      const {
-        Body,
-        ContentType
-      } = await s3.getObject({
-        Bucket: bucket,
-        Key: key,
-      }).promise();
-
-      headers["content-type"] = [
-        {
-          key: "Content-Type",
-          value: ContentType
-        }
-      ];      
-
-      return Body
-        .toString()
-        .replace("</head>", gtmScriptHead + "</head>")
-        .replace("<body>", "<body>" + gtmScriptBody);
-    } catch {
+        body = Body
+          .toString()
+          .replace("</head>", gtmScriptHead + "</head>")
+          .replace("<body>", "<body>" + gtmScriptBody);
+    } catch (err) {
       return undefined;
     }
-  })();
+  })();`
+      : ''
+  }
 
   if(!body) {
     return request;
@@ -377,7 +422,8 @@ exports.handler = async (event, context) => {
     body
   };
 };
-`.trim();
+`,
+  );
 };
 
 const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
@@ -395,7 +441,7 @@ const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
 export const getLambdaEdgeOriginResponseZipFile = ({
   csp = {},
 }: { csp?: CSP } = {}) => {
-  return `
+  return formatCode(`
 'use strict';
 exports.handler = async (event, context) => {
   const request = event.Records[0].cf.request;
@@ -408,7 +454,7 @@ exports.handler = async (event, context) => {
   
   return response;
 };
-`.trim();
+`);
 };
 
 const getBaseTemplate = ({
@@ -498,14 +544,12 @@ const getCloudFrontEdgeLambdas = ({
   gtmId,
   region,
   csp,
-  spa,
 }: {
   gtmId?: string;
   region: string;
   csp?: CSP;
-  spa?: boolean;
 }) => {
-  let lambdaEdgeResources: { [key: string]: Resource } = {
+  const lambdaEdgeResources: { [key: string]: Resource } = {
     [PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID]: {
       Type: 'AWS::IAM::Role',
       Properties: {
@@ -580,7 +624,7 @@ const getCloudFrontEdgeLambdas = ({
               Statement: [
                 {
                   Effect: 'Allow',
-                  Action: 's3:GetObject',
+                  Action: ['s3:GetObject', 's3:HeadObject'],
                   Resource: {
                     'Fn::Join': [
                       '',
@@ -599,34 +643,32 @@ const getCloudFrontEdgeLambdas = ({
         ],
       },
     },
-    ...(gtmId && {
-      [LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]: {
-        Type: 'AWS::Lambda::Function',
-        Properties: {
-          Code: {
-            ZipFile: getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
-          },
-          Description: 'Lambda@Edge function serving as origin request.',
-          Handler: 'index.handler',
-          MemorySize: 128,
-          Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
-          Runtime: 'nodejs12.x',
-          Timeout: 5,
+    [LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]: {
+      Type: 'AWS::Lambda::Function',
+      Properties: {
+        Code: {
+          ZipFile: getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
+        },
+        Description: 'Lambda@Edge function serving as origin request.',
+        Handler: 'index.handler',
+        MemorySize: 128,
+        Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
+        Runtime: 'nodejs12.x',
+        Timeout: 5,
+      },
+    },
+    [LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID]: {
+      Type: 'Custom::LatestLambdaVersion',
+      Properties: {
+        FunctionName: {
+          Ref: LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
+        },
+        Nonce: `${Date.now()}`,
+        ServiceToken: {
+          'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
         },
       },
-      [LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID]: {
-        Type: 'Custom::LatestLambdaVersion',
-        Properties: {
-          FunctionName: {
-            Ref: LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
-          },
-          Nonce: `${Date.now()}`,
-          ServiceToken: {
-            'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
-          },
-        },
-      },
-    }),
+    },
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
@@ -652,40 +694,6 @@ const getCloudFrontEdgeLambdas = ({
       },
     },
   };
-
-  /**
-   * If not SPA, then add Lambda@Edge viewer request, which handle the received
-   * URI and convert to final files to be retrieved from AWS S3.
-   */
-  if (!spa) {
-    lambdaEdgeResources = {
-      ...lambdaEdgeResources,
-      [LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID]: {
-        Type: 'AWS::Lambda::Function',
-        Properties: {
-          Code: { ZipFile: LAMBDA_EDGE_VIEWER_REQUEST_ZIP_FILE },
-          Description: 'Lambda@Edge function serving as viewer request.',
-          Handler: 'index.handler',
-          MemorySize: 128,
-          Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
-          Runtime: 'nodejs12.x',
-          Timeout: 5,
-        },
-      },
-      [LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID]: {
-        Type: 'Custom::LatestLambdaVersion',
-        Properties: {
-          FunctionName: {
-            Ref: LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID,
-          },
-          Nonce: `${Date.now()}`,
-          ServiceToken: {
-            'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
-          },
-        },
-      },
-    };
-  }
 
   return lambdaEdgeResources;
 };
@@ -715,7 +723,6 @@ const getCloudFrontTemplate = ({
     gtmId,
     region,
     csp,
-    spa,
   });
 
   const cloudFrontResources: { [key: string]: Resource } = {
@@ -775,16 +782,6 @@ const getCloudFrontTemplate = ({
              */
             CachePolicyId: CACHE_POLICY_ID,
             LambdaFunctionAssociations: [
-              ...(cloudFrontEdgeLambdas[LAMBDA_EDGE_VIEWER_REQUEST_LOGICAL_ID]
-                ? [
-                    {
-                      EventType: 'viewer-request',
-                      LambdaFunctionARN: {
-                        'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_VIEWER_REQUEST_LOGICAL_ID}.FunctionArn`,
-                      },
-                    },
-                  ]
-                : []),
               ...(cloudFrontEdgeLambdas[LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID]
                 ? [
                     {

@@ -11,6 +11,17 @@ import Template from '../../src/components/Template';
 
 import carlin from '../../.docusaurus/carlin/default/carlin.json';
 
+export const OriginPath = () => {
+  return (
+    <code>
+      {carlin.templates.staticAppCloudFront.Resources.CloudFrontDistribution.Properties.DistributionConfig.Origins[0].OriginPath.replace(
+        '/',
+        '',
+      )}
+    </code>
+  );
+};
+
 ## Overview
 
 ```
@@ -27,8 +38,8 @@ This command deploys static apps to [AWS](https://aws.amazon.com/) using [Amazon
 
 ## Versioning
 
-For every deploy, <Carlin /> uses the current version of the package as key on S3 bucket. For instance, if the version of the package is `2.3.11`, the App files will be uploaded inside `2.3.11/` folder on bucket.
-This feature comes in hand when you need to rollback a version. In this case, if [cloudfront](#cloudfront) is enabled, you just need to change the [Origin Path](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesOriginPath)
+For every [CloudFront deployment](#CloudFront), <Carlin /> uses the current version of the package as key on S3 bucket. For instance, if the version of the package is <OriginPath />, the App files will be uploaded inside <OriginPath /> folder on bucket.
+This feature comes in hand when you need to rollback a version. In this case, you just need to change the [CloudFront Origin Path](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesOriginPath)
 to the required version.
 
 ## Security
@@ -38,6 +49,10 @@ to the required version.
 The differences among all deployments occurs at the template level. Each option adds a piece of instructions on the final CloudFormation template, that we'll present to you.
 
 ### Only S3
+
+```
+carlin deploy static-app
+```
 
 This is the most basic deployment. <Carlin /> only deploys the application in a S3 bucket.
 
@@ -53,11 +68,17 @@ This kind of deployment is good to use to deploy an application to the QA team v
 
 ### CloudFront
 
+```
+carlin deploy static-app --cloudfront
+```
+
 :::info
 
 <InnerHTML html={carlin.comments.publishLambdaVersionZipFile} />
 
 :::
+
+#### CloudFormation Template
 
 <Template json={carlin.templates.staticAppCloudFront} />
 
@@ -71,3 +92,37 @@ The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) t
       .Properties.PolicyDocument
   }
 />
+
+- It creates `CloudFrontDistribution` that uses the bucket and the [version](#versioning) (<OriginPath />) as origin.
+
+<Template
+  json={
+    carlin.templates.staticAppCloudFront.Resources.CloudFrontDistribution
+      .Properties
+  }
+/>
+
+### Google Tag Manager
+
+```
+carlin deploy static-app --gtm-id GTM-XXXX
+```
+
+<InnerHTML html={carlin.comments.staticAppLambdaEdgeOriginRequestDescription} />
+
+#### Lamdba@Edge Origin Request code
+
+:::note Algorithm
+
+<Algorithm
+  algorithm={carlin.comments.staticAppLambdaEdgeOriginRequestAlgorithm}
+/>
+
+:::
+
+<CodeBlock className="javascript">
+  {
+    carlin.templates.staticAppGtmId.Resources.LambdaEdgeOriginRequest.Properties
+      .Code.ZipFile
+  }
+</CodeBlock>

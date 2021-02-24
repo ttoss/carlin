@@ -16,7 +16,7 @@ export const options = {
   },
   aliases: {
     describe:
-      'The aliases that will be associated with the CloudFront. https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html',
+      'The aliases that will be associated with the CloudFront. See https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html',
     type: 'array',
   },
   'build-folder': {

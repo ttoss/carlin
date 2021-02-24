@@ -1,4 +1,6 @@
 /* eslint-disable global-require */
+const config = require('carlin/dist/config');
+
 const cli = require('carlin/dist/cli').default;
 
 const {
@@ -63,6 +65,18 @@ module.exports = () => {
               'CAUTION!!!',
             )[1],
           ),
+          staticAppLambdaEdgeOriginRequestDescription: toHtml(
+            getComment([
+              'deploy/staticApp/staticApp.template.js',
+              'getLambdaEdgeOriginRequestZipFile',
+            ]).split('## Algorithm')[0],
+          ),
+          staticAppLambdaEdgeOriginRequestAlgorithm: toHtml(
+            getComment([
+              'deploy/staticApp/staticApp.template.js',
+              'getLambdaEdgeOriginRequestZipFile',
+            ]).split('## Algorithm')[1],
+          ),
         },
         examples: {
           deploy: require('carlin/dist/deploy/command').examples,
@@ -70,11 +84,18 @@ module.exports = () => {
         options: {
           cli: require('carlin/dist/cli').options,
           deploy: require('carlin/dist/deploy/command').options,
+          deployStaticApp: require('carlin/dist/deploy/staticApp/command')
+            .options,
         },
         templates: {
           baseStack: baseStackTemplate,
           staticAppOnlyS3: getStaticAppTemplate({}),
           staticAppCloudFront: getStaticAppTemplate({ cloudfront: true }),
+          staticAppGtmId: getStaticAppTemplate({
+            region: config.AWS_DEFAULT_REGION,
+            cloudfront: true,
+            gtmId: 'GTM-XXXX',
+          }),
         },
       };
     },
