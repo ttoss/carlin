@@ -377,9 +377,9 @@ exports.handler = async (event, context) => {
     \`.replace(/\\n/g, '');
 
     const cspValue = headers['content-security-policy'][0]
-    .value
-    .replace("script-src", \`script-src 'nonce-\${nonce}'\`)
-    .replace("frame-src", \`frame-src 'nonce-\${nonce}'\`);
+      .value
+      .replace("script-src", \`script-src 'nonce-\${nonce}'\`)
+      .replace("frame-src", \`frame-src 'nonce-\${nonce}'\`);
 
     headers['content-security-policy'][0].value = cspValue;
 
