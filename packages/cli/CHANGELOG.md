@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.5](https://github.com/ttoss/carlin/compare/v0.12.4...v0.12.5) (2021-02-25)
+
+### Bug Fixes
+
+- add prettier ([e4d13f5](https://github.com/ttoss/carlin/commit/e4d13f508d3703fffa4cc42dab30bda3c6a8dae7))
+
 ## [0.12.4](https://github.com/ttoss/carlin/compare/v0.12.3...v0.12.4) (2021-02-24)
 
 ### Bug Fixes
