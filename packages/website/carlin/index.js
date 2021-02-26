@@ -54,6 +54,10 @@ module.exports = () => {
               'PUBLISH_LAMBDA_VERSION_ZIP_FILE',
             ],
             readObjectFile: ['utils/readObjectFile.js', 'readObjectFile'],
+            assignSecurityHeaders: [
+              'deploy/staticApp/staticApp.template.js',
+              'assignSecurityHeaders',
+            ],
           }),
           stackName: toHtml(
             getComment(['deploy/stackName.js', 'getStackName']).split(

@@ -3,6 +3,8 @@
 
 import * as faker from 'faker';
 
+const region = faker.random.word();
+
 /**
  * Mock to snapshots don't fail.
  */
@@ -55,10 +57,10 @@ jest.mock('crypto', () => ({
 import {
   getStaticAppTemplate,
   generateCspString,
-  getLambdaEdgeOriginResponseZipFile,
   getLambdaEdgeOriginRequestZipFile,
   CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
   LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID,
+  LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID,
 } from './staticApp.template';
 
 const defaultCspString =
@@ -66,7 +68,6 @@ const defaultCspString =
 
 describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   const gtmId = faker.random.word();
-  const region = faker.random.word();
   const bucketName = faker.random.word();
   const s3Path = `${faker.random.word()}/`;
   const uri = `${faker.random.word()}.html`;
@@ -144,6 +145,71 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   };
 
   const defaultEvent = { Records: [record] };
+
+  describe('handling headers', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { 'cache-control': _, ...requestHeaders } = record.cf.request.headers;
+
+    const securityHeaders = {
+      'content-security-policy': [
+        {
+          key: 'Content-Security-Policy',
+          value:
+            "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'",
+        },
+      ],
+      'referrer-policy': [{ key: 'Referrer-Policy', value: 'same-origin' }],
+      'strict-transport-security': [
+        {
+          key: 'Strict-Transport-Security',
+          value: 'max-age=63072000; includeSubdomains; preload',
+        },
+      ],
+      'x-content-type-options': [
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+      ],
+      'x-frame-options': [{ key: 'X-Frame-Options', value: 'DENY' }],
+      'x-xss-protection': [{ key: 'X-XSS-Protection', value: '1; mode=block' }],
+    };
+
+    const cachingHeaders = {
+      'cache-control': [{ key: 'Cache-Control', value: 'max-age=30' }],
+    };
+
+    const handler = (event: any = defaultEvent) =>
+      eval(
+        getLambdaEdgeOriginRequestZipFile({ region }).replace(
+          'let body = undefined;',
+          'let body = "<html />";',
+        ),
+      )(event);
+
+    const assertions = (response: any) => {
+      expect(response.headers).toEqual(expect.objectContaining(requestHeaders));
+      expect(response.headers).toEqual(
+        expect.objectContaining(securityHeaders),
+      );
+      expect(response.headers).toEqual(expect.objectContaining(cachingHeaders));
+    };
+
+    test('request (without body) should forward the headers', async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const newUri = '/script.js';
+      newRecord.cf.request.uri = newUri;
+      const response = await handler({ Records: [newRecord] });
+      expect(response.body).toBeUndefined();
+      assertions(response);
+    });
+
+    test('response (with body) should forward the headers', async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const newUri = `/${faker.random.word()}/`;
+      newRecord.cf.request.uri = newUri;
+      const response = await handler({ Records: [newRecord] });
+      expect(response.body).toBeDefined();
+      assertions(response);
+    });
+  });
 
   describe('Issue #24 https://github.com/ttoss/carlin/issues/11. It tests requestUri method.', () => {
     const handler = (event: any = {}) =>
@@ -276,6 +342,24 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
       );
     });
   });
+
+  test('getLambdaEdgeOriginRequestZipFile should have been added to CloudFormation template', () => {
+    expect(
+      getStaticAppTemplate({ region, cloudfront: true }).Resources[
+        CLOUDFRONT_DISTRIBUTION_LOGICAL_ID
+      ].Properties.DistributionConfig.DefaultCacheBehavior
+        .LambdaFunctionAssociations,
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          EventType: 'origin-request',
+          LambdaFunctionARN: {
+            'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID}.FunctionArn`,
+          },
+        },
+      ]),
+    );
+  });
 });
 
 describe("fix issue 'Filter CSP directives' #11 https://github.com/ttoss/carlin/issues/11", () => {
@@ -291,16 +375,17 @@ describe("fix issue 'Filter CSP directives' #11 https://github.com/ttoss/carlin/
   });
 });
 
-describe("fix issue 'Add default CSP to Lambda@Edge origin response' #10 https://github.com/ttoss/carlin/issues/10", () => {
-  test('should add csp to Lambda@Edge Origin response', () => {
-    expect(getLambdaEdgeOriginResponseZipFile({ csp: {} })).toContain(
+describe("fix issue 'Add default CSP to Lambda@Edge origin request' #10 https://github.com/ttoss/carlin/issues/10", () => {
+  test('should add csp to Lambda@Edge Origin request', () => {
+    expect(getLambdaEdgeOriginRequestZipFile({ csp: {}, region })).toContain(
       `"${defaultCspString}"`,
     );
   });
 
-  test('should add csp to Lambda@Edge Origin response when a directive is passed', () => {
-    const code = getLambdaEdgeOriginResponseZipFile({
+  test('should add csp to Lambda@Edge Origin request when a directive is passed', () => {
+    const code = getLambdaEdgeOriginRequestZipFile({
       csp: { 'new-directive-src': "'some text'" },
+      region,
     });
 
     defaultCspString.split('; ').forEach((csp) => expect(code).toContain(csp));
@@ -336,8 +421,8 @@ describe("fix issue 'Add Google Marketing Platform to CSP' #3 https://github.com
     ).toContain("default-src 'some text'");
   });
 
-  test('should add csp to Lambda@Edge Origin response', () => {
-    expect(getLambdaEdgeOriginResponseZipFile()).toContain(
+  test('should add csp to Lambda@Edge Origin request', () => {
+    expect(getLambdaEdgeOriginRequestZipFile({ region })).toContain(
       `"${defaultCspString}"`,
     );
   });
@@ -346,7 +431,7 @@ describe("fix issue 'Add Google Marketing Platform to CSP' #3 https://github.com
 describe("fix issue 'PWA doesn't redirect correctly when browser URL has a path' #1 https://github.com/ttoss/carlin/issues/1", () => {
   test('cloudfront', () => {
     expect(
-      getStaticAppTemplate({ cloudfront: true, region: 'us-east-1' }).Resources[
+      getStaticAppTemplate({ cloudfront: true, region }).Resources[
         CLOUDFRONT_DISTRIBUTION_LOGICAL_ID
       ].Properties.DistributionConfig.Origins[0].OriginPath,
     ).toEqual(`/${PACKAGE_VERSION}`);
@@ -376,9 +461,9 @@ describe("fix issue 'PWA doesn't redirect correctly when browser URL has a path'
 
   test('cloudfront CustomErrorResponses, spa=true', () => {
     expect(
-      getStaticAppTemplate({ cloudfront: true, spa: true, region: 'us-east-1' })
-        .Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].Properties
-        .DistributionConfig.CustomErrorResponses,
+      getStaticAppTemplate({ cloudfront: true, spa: true, region }).Resources[
+        CLOUDFRONT_DISTRIBUTION_LOGICAL_ID
+      ].Properties.DistributionConfig.CustomErrorResponses,
     ).toEqual([
       expect.objectContaining({
         ErrorCode: 403,

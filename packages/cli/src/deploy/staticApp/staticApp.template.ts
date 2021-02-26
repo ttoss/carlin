@@ -118,16 +118,15 @@ export const generateCspString = ({
   );
 };
 
+const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
+
+export const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
+  'LambdaEdgeVersionOriginRequest';
+
 /**
  *
  */
-export const assignHeaders = ({
-  csp,
-  maxAge = 30,
-}: {
-  csp?: CSP;
-  maxAge?: number;
-}) => {
+export const assignCachingHeaders = ({ maxAge = 30 }: { maxAge?: number }) => {
   return `
   const maxAge = ${maxAge};
 
@@ -137,6 +136,25 @@ export const assignHeaders = ({
       value: \`max-age=\${maxAge}\`
     }
   ];
+  `;
+};
+
+/**
+ * Security headers are implemented by default using [Lambda@Edge](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html).
+ * We've used [this tutorial](https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/) as a guide to add the following headers:
+ *
+ * - [Strict Transport Security](https://infosec.mozilla.org/guidelines/web_security#http-strict-transport-security)
+ * - [Content-Security-Policy](https://infosec.mozilla.org/guidelines/web_security#content-security-policy)
+ * - [X-Content-Type-Options](https://infosec.mozilla.org/guidelines/web_security#x-content-type-options)
+ * - [X-Frame-Options](https://infosec.mozilla.org/guidelines/web_security#x-frame-options)
+ * - [X-XSS-Protection](https://infosec.mozilla.org/guidelines/web_security#x-xss-protection)
+ * - [Referrer-Policy](https://infosec.mozilla.org/guidelines/web_security#referrer-policy)
+ *
+ * The Lambda code may be seen [here](http://localhost:3000/docs/commands/deploy-static-app#lamdbaedge-origin-request-code) and if you want more information about the
+ * security headers, you may want to check [this link](https://infosec.mozilla.org/guidelines/web_security).
+ */
+const assignSecurityHeaders = ({ csp }: { csp?: CSP }) => {
+  return `
   headers['strict-transport-security'] = [
     {
       key: 'Strict-Transport-Security',
@@ -176,11 +194,6 @@ export const assignHeaders = ({
   `;
 };
 
-const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
-
-const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
-  'LambdaEdgeVersionOriginRequest';
-
 /**
  * Created to allow [Google Marketing Platform](https://marketingplatform.google.com/about/) though
  * [Google Tag Manager (GTM)](https://marketingplatform.google.com/about/tag-manager/) ([issue #3](https://github.com/ttoss/carlin/issues/3)).
@@ -213,7 +226,6 @@ const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
  *  1. Append the body script after `<body>` string.
  * 1. Return the response with the new body and headers.
  */
-
 export const getLambdaEdgeOriginRequestZipFile = ({
   gtmId,
   region,
@@ -314,6 +326,12 @@ const s3 = new S3({ region: "${region}" });
 exports.handler = async (event, context) => {
   const request = { ...event.Records[0].cf.request };
 
+  const headers = request.headers;
+
+  ${assignSecurityHeaders({ csp: fullCsp })}
+
+  ${assignCachingHeaders({})}
+
   const { origin } = request;
 
   const bucket = origin.s3.domainName.split(".")[0];
@@ -350,11 +368,7 @@ exports.handler = async (event, context) => {
     return request;
   }
 
-  let headers = { };
-
   let body = undefined;
-
-  ${assignHeaders({ csp: fullCsp })}
 
   ${
     gtmId
@@ -424,37 +438,6 @@ exports.handler = async (event, context) => {
 };
 `,
   );
-};
-
-const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
-
-const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
-  'LambdaEdgeVersionOriginResponse';
-
-/**
- * This method is only triggered if origin request is not created, because
- * origin request return a "body".
- *
- * Add some headers to improve security
- * {@link https://aws.amazon.com/blogs/networking-and-content-delivery/adding-http-security-headers-using-lambdaedge-and-amazon-cloudfront/}.
- */
-export const getLambdaEdgeOriginResponseZipFile = ({
-  csp = {},
-}: { csp?: CSP } = {}) => {
-  return formatCode(`
-'use strict';
-exports.handler = async (event, context) => {
-  const request = event.Records[0].cf.request;
-  const response = event.Records[0].cf.response;
-  const headers = response.headers;
-  
-  ${assignHeaders({
-    csp: updateCspObject({ csp, currentCsp: getDefaultCsp() }),
-  })}
-  
-  return response;
-};
-`);
 };
 
 const getBaseTemplate = ({
@@ -669,30 +652,6 @@ const getCloudFrontEdgeLambdas = ({
         },
       },
     },
-    [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
-      Type: 'AWS::Lambda::Function',
-      Properties: {
-        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ csp }) },
-        Description: 'Lambda@Edge function serving as origin response.',
-        Handler: 'index.handler',
-        MemorySize: 128,
-        Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
-        Runtime: 'nodejs12.x',
-        Timeout: 5,
-      },
-    },
-    [LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID]: {
-      Type: 'Custom::LatestLambdaVersion',
-      Properties: {
-        FunctionName: {
-          Ref: LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID,
-        },
-        Nonce: `${Date.now()}`,
-        ServiceToken: {
-          'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
-        },
-      },
-    },
   };
 
   return lambdaEdgeResources;
@@ -792,12 +751,6 @@ const getCloudFrontTemplate = ({
                     },
                   ]
                 : []),
-              {
-                EventType: 'origin-response',
-                LambdaFunctionARN: {
-                  'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID}.FunctionArn`,
-                },
-              },
             ],
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
