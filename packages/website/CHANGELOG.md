@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.6](https://github.com/ttoss/carlin/compare/v0.12.5...v0.12.6) (2021-02-26)
+
+### Features
+
+- add headers to lambda@edge request origin only ([477a278](https://github.com/ttoss/carlin/commit/477a278a706134e3d6fe502c9674001570e0a348))
+
 ## [0.12.5](https://github.com/ttoss/carlin/compare/v0.12.4...v0.12.5) (2021-02-25)
 
 **Note:** Version bump only for package carlin-website
