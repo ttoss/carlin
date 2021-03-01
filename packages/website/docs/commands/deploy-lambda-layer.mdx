@@ -1,0 +1,66 @@
+---
+title: deploy lambda-layer
+---
+
+import Carlin from '../../src/components/Carlin';
+import CodeBlock from '../../src/components/CodeBlock';
+import InnerHTML from '../../src/components/InnerHTML';
+import OptionAliasesInline from '../../src/components/OptionAliasesInline';
+import Template from '../../src/components/Template';
+
+import carlin from '../../.docusaurus/carlin/default/carlin.json';
+
+## Overview
+
+```
+carlin deploy lambda-layer --packages moment@2.29.1 dayjs@1.9.7
+```
+
+This command creates a [Lambda layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) for each package passes as argument to the option <OptionAliasesInline options={carlin.options.deployLambdaLayer} option="packages" to="/docs/api-reference/deploy-lambda-layer#packages" />.
+
+## On Background
+
+<Carlin /> performs some tasks to create the Lambda layers.
+
+### 1. Create an AWS CodeBuild Project
+
+<Carlin /> creates an <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/create-project.html">
+  AWS CodeBuild project
+</a> to create the node_modules zip file that will be used by Lambda layer. The
+project will perform these commands:
+
+<CodeBlock className="yaml">{carlin.lambdaLayer.buildspecCommands}</CodeBlock>
+
+The instalation files will be uploaded to [base-stack bucket](/docs/commands/deploy-base-stack) following [these rules](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path) as [artifacts](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html#build-spec.artifacts).
+
+The final [buildspec file](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html) for each execution is:
+
+<CodeBlock className="yaml">{carlin.lambdaLayer.buildspec}</CodeBlock>
+
+The CloudFormation template of the CodeBuild project is:
+
+<Template json={carlin.lambdaLayer.codeBuildProjectTemplate} />
+
+### 2. Create the Lambda Layer
+
+Once the package was zipped and uploaded to S3, <Carlin /> creates a Lambda layer for that package. The CloudFormation template of the Lambda Layer is:
+
+<Template json={carlin.lambdaLayer.lambdaLayerTemplate} />
+
+<InnerHTML html={carlin.comments.getPackageLambdaLayerStackName} />
+
+:::tip
+
+Note that the template exports the Lambda layer ARN as the same name as Stack. This is very useful if you want to pass the layer to Lambda using the intrinsic function [Fn::ImportValue](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html), for instance:
+
+```yaml
+Layers:
+  - !ImportValue CarlinLambdaLayerDayjs1dot9dot7
+  - !ImportValue CarlinLambdaLayerMoment2dot29dot1
+```
+
+:::
+
+## Use Cases:
+
+- _[POC - AWS Serverless REST API](https://github.com/ttoss/poc-aws-serverless-rest-api/tree/0e6fd6e5cc7d67e19fd2c2f312d9c40116aa8d16)_

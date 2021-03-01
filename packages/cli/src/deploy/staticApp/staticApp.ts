@@ -4,13 +4,13 @@ import log from 'npmlog';
 
 import { getPackageVersion } from '../../utils';
 
-import { cloudFormation, deploy } from '../cloudFormation';
+import { cloudFormation, deploy } from '../cloudFormation.core';
 import {
   uploadDirectoryToS3,
   emptyS3Directory,
   getAllFilesInsideADirectory,
 } from '../s3';
-import { getStackName } from '../stackName';
+import { handleDeployError, handleDeployInitialization } from '../utils';
 
 import { getStaticAppTemplate, CSP } from './staticApp.template';
 
@@ -197,11 +197,8 @@ export const deployStaticApp = async ({
   region: string;
   skipUpload?: boolean;
 }) => {
-  log.info(logPrefix, `Starting static app deploy...`);
   try {
-    const stackName = await getStackName();
-
-    log.info(logPrefix, `stackName: ${stackName}`);
+    const { stackName } = await handleDeployInitialization({ logPrefix });
 
     const params = { StackName: stackName };
 
@@ -245,9 +242,7 @@ export const deployStaticApp = async ({
 
       await uploadBuiltAppToS3({ buildFolder, bucket: newBucket, cloudfront });
     }
-  } catch (err) {
-    log.error(logPrefix, 'An error occurred. Cannot deploy static app.');
-    log.error(logPrefix, 'Error message: %j', err.message);
-    process.exit(1);
+  } catch (error) {
+    handleDeployError({ error, logPrefix });
   }
 };

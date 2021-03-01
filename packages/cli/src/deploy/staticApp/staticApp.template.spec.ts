@@ -12,6 +12,7 @@ Date.now = jest.fn(() => 1487076708000);
 const PACKAGE_VERSION = '10.40.23';
 
 jest.mock('../../utils', () => ({
+  ...(jest.requireActual('../../utils') as any),
   getPackageVersion: jest.fn().mockReturnValue(PACKAGE_VERSION),
 }));
 

@@ -6,7 +6,7 @@
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy",
+    "deploy": "rm -rf build && yarn build && carlin deploy static-app",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear"
   },

@@ -20,7 +20,7 @@ export type Output = {
   Description?: string;
   Value: string | any;
   Export?: {
-    Name: string;
+    Name: string | any;
   };
 };
 

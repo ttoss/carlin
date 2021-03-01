@@ -2,7 +2,13 @@ import { CloudFormation } from 'aws-sdk';
 
 import { BASE_STACK_NAME, BASE_STACK_BUCKET_LOGICAL_NAME } from './config';
 
+let baseBucketName = '';
+
 export const getBaseStackBucketName = async (): Promise<string> => {
+  if (baseBucketName) {
+    return baseBucketName;
+  }
+
   const cloudFormation = new CloudFormation();
 
   const Stacks = await (async () => {
@@ -41,5 +47,7 @@ export const getBaseStackBucketName = async (): Promise<string> => {
     );
   }
 
-  return bucketName.OutputValue;
+  baseBucketName = bucketName.OutputValue;
+
+  return baseBucketName;
 };

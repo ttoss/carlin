@@ -6,6 +6,7 @@ export * from './fileTemplate';
 export * from './formatCode';
 export * from './getAwsAccountId';
 export * from './getCurrentBranch';
+export * from './getIamPath';
 export * from './getProjectName';
 export * from './packageJson';
 export * from './readCloudFormationTemplate';

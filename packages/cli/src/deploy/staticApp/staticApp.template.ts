@@ -1,11 +1,11 @@
 /* eslint-disable no-template-curly-in-string */
 
-import { NAME } from '../../config';
 import {
   CloudFormationTemplate,
   Resource,
   Output,
   getPackageVersion,
+  getIamPath,
 } from '../../utils';
 
 import { formatCode } from '../../utils/formatCode';
@@ -548,7 +548,7 @@ const getCloudFrontEdgeLambdas = ({
             },
           ],
         },
-        Path: `/${NAME}/`,
+        Path: getIamPath(),
         Policies: [
           {
             PolicyName: `${PUBLISH_LAMBDA_VERSION_ROLE_LOGICAL_ID}Policy`,
@@ -598,7 +598,7 @@ const getCloudFrontEdgeLambdas = ({
         ManagedPolicyArns: [
           'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
         ],
-        Path: `/${NAME}/`,
+        Path: getIamPath(),
         Policies: [
           {
             PolicyName: 'LambdaEdgeIAMRolePolicyName',

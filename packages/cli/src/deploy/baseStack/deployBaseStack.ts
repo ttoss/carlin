@@ -1,8 +1,7 @@
-import log from 'npmlog';
-
 import { CloudFormationTemplate } from '../../utils';
 
-import { deploy } from '../cloudFormation';
+import { deploy } from '../cloudFormation.core';
+import { handleDeployError, handleDeployInitialization } from '../utils';
 
 import {
   BASE_STACK_BUCKET_LOGICAL_NAME,
@@ -11,7 +10,7 @@ import {
   BASE_STACK_NAME,
 } from './config';
 
-const logPrefix = 'baseStack';
+const logPrefix = 'base-stack';
 
 export const baseStackTemplate: CloudFormationTemplate = {
   AWSTemplateFormatVersion: '2010-09-09',
@@ -71,15 +70,17 @@ export const baseStackTemplate: CloudFormationTemplate = {
  */
 export const deployBaseStack = async () => {
   try {
-    log.info(logPrefix, 'Creating base stack...');
+    const { stackName } = await handleDeployInitialization({
+      logPrefix,
+      stackName: BASE_STACK_NAME,
+    });
+
     await deploy({
       template: baseStackTemplate,
-      params: { StackName: BASE_STACK_NAME },
+      params: { StackName: stackName },
       terminationProtection: true,
     });
-  } catch (err) {
-    log.error(logPrefix, 'Cannot deploy base stack.');
-    log.error(logPrefix, 'Error message: %j', err.message);
-    process.exit();
+  } catch (error) {
+    handleDeployError({ error, logPrefix });
   }
 };
