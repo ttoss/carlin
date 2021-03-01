@@ -136,7 +136,7 @@ const deployLambdaLayers = async ({
     return `${le}@${semver}`;
   });
 
-  await deployLambdaLayer({ packages, createIfExists: false });
+  await deployLambdaLayer({ packages, deployIfExists: false });
 };
 
 /**

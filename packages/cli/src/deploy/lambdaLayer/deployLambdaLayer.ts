@@ -200,13 +200,13 @@ const getPackagesThatAreNotDeployed = async ({
 
 export const deployLambdaLayer = async ({
   packages,
-  createIfExists = true,
+  deployIfExists = true,
 }: {
-  createIfExists: boolean;
+  deployIfExists: boolean;
   packages: string[];
 }) => {
   try {
-    const packagesToBeDeployed = createIfExists
+    const packagesToBeDeployed = deployIfExists
       ? packages
       : await getPackagesThatAreNotDeployed({ packages });
 

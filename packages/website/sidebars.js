@@ -10,6 +10,7 @@ module.exports = {
     'API Reference': [
       'api-reference/deploy',
       'api-reference/deploy-static-app',
+      'api-reference/deploy-lambda-layer',
     ],
   },
 };
