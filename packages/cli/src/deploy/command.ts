@@ -6,12 +6,9 @@ import { AWS_DEFAULT_REGION } from '../config';
 import { addGroupToOptions, getAwsAccountId } from '../utils';
 
 import { deployBaseStackCommand } from './baseStack/command';
-import {
-  deployCloudFormation,
-  destroyCloudFormation,
-  printStackOutputsAfterDeploy,
-} from './cloudFormation';
-import { deployLambdaLayer } from './lambdaLayer';
+import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
+import { printStackOutputsAfterDeploy } from './cloudFormation.core';
+import { deployLambdaLayerCommand } from './lambdaLayer/command';
 import { deployStaticAppCommand } from './staticApp/command';
 import { getStackName, setPreDefinedStackName } from './stackName';
 
@@ -158,11 +155,7 @@ export const deployCommand: CommandModule<
           }
         },
       )
-      .command({
-        command: 'lambda-layer',
-        describe: 'Deploy Lambda Layer.',
-        handler: deployLambdaLayer,
-      })
+      .command(deployLambdaLayerCommand)
       .command(describeDeployCommand)
       .command(deployBaseStackCommand)
       .command(deployStaticAppCommand);

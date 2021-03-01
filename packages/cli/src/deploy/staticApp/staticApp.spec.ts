@@ -46,8 +46,8 @@ jest.mock('aws-sdk', () => ({
   })),
 }));
 
-jest.mock('../cloudFormation', () => ({
-  ...(jest.requireActual('../cloudFormation') as any),
+jest.mock('../cloudFormation.core', () => ({
+  ...(jest.requireActual('../cloudFormation.core') as any),
   deploy: jest.fn().mockResolvedValue({ Outputs: [] }),
 }));
 

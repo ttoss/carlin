@@ -5,9 +5,9 @@ import log from 'npmlog';
 import path from 'path';
 import webpack from 'webpack';
 
-import { uploadFileToS3 } from './s3';
-
 import { getBaseStackBucketName } from './baseStack/getBaseStackBucketName';
+import { deployLambdaLayer } from './lambdaLayer/deployLambdaLayer';
+import { uploadFileToS3 } from './s3';
 
 const logPrefix = 'lambda';
 
@@ -101,6 +101,44 @@ const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
   });
 };
 
+const deployLambdaLayers = async ({
+  lambdaExternals = [],
+}: {
+  lambdaExternals: string[];
+}) => {
+  if (lambdaExternals.length === 0) {
+    return;
+  }
+
+  log.info(
+    logPrefix,
+    `--lambda-externals (${lambdaExternals.join(
+      ', ',
+    )}) was found. Creating Lambda Layers...`,
+  );
+
+  const { dependencies } = (() => {
+    try {
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      return require(path.resolve(process.cwd(), 'package.json')) || {};
+    } catch (err) {
+      log.error(
+        logPrefix,
+        'Cannot read package.json. Error message: %j',
+        err.message,
+      );
+      return {};
+    }
+  })();
+
+  const packages = lambdaExternals.map((le) => {
+    const semver = dependencies[le].replace(/(~|\^)/g, '');
+    return `${le}@${semver}`;
+  });
+
+  await deployLambdaLayer({ packages, createIfExists: false });
+};
+
 /**
  * 1. Build Lambda code using Webpack. The build process create a single file.
  *  1. If packages is passed to `lambda-externals` option, Webpack will ignore
@@ -120,7 +158,8 @@ export const deployLambdaCode = async ({
   if (!fs.existsSync(lambdaInput)) {
     return undefined;
   }
-  log.info(logPrefix, 'Deploy Lambda code.');
+  log.info(logPrefix, 'Deploying Lambda code...');
+  await deployLambdaLayers({ lambdaExternals });
   await buildLambdaSingleFile({ lambdaExternals, lambdaInput });
   const { bucket, key, versionId } = await uploadCodeToS3({ stackName });
   return { bucket, key, versionId };

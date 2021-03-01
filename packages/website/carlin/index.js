@@ -1,3 +1,5 @@
+const yaml = require('js-yaml');
+
 /* eslint-disable global-require */
 const config = require('carlin/dist/config');
 
@@ -12,6 +14,15 @@ const { defaultTemplatePaths } = require('carlin/dist/deploy/cloudFormation');
 const {
   getStaticAppTemplate,
 } = require('carlin/dist/deploy/staticApp/staticApp.template');
+
+const {
+  getBuildSpec,
+  getCodeBuildTemplate,
+} = require('carlin/dist/deploy/lambdaLayer/codebuild.template');
+
+const {
+  getLambdaLayerTemplate,
+} = require('carlin/dist/deploy/lambdaLayer/deployLambdaLayer');
 
 const { getComment, getComments, toHtml } = require('./comments');
 
@@ -31,6 +42,7 @@ module.exports = () => {
         api: {
           deploy: await cliApi('deploy'),
           deployStaticApp: await cliApi('deploy static-app'),
+          deployLambdaLayer: await cliApi('deploy lambda-layer'),
         },
         comments: {
           ...getComments({
@@ -57,6 +69,10 @@ module.exports = () => {
             assignSecurityHeaders: [
               'deploy/staticApp/staticApp.template.js',
               'assignSecurityHeaders',
+            ],
+            getPackageLambdaLayerStackName: [
+              'deploy/lambdaLayer/deployLambdaLayer.js',
+              'getPackageLambdaLayerStackName',
             ],
           }),
           stackName: toHtml(
@@ -85,10 +101,27 @@ module.exports = () => {
         examples: {
           deploy: require('carlin/dist/deploy/command').examples,
         },
+        lambdaLayer: {
+          buildspec: getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' }),
+          buildspecCommands: yaml.dump(
+            yaml.safeLoad(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
+              .install.commands,
+          ),
+          codeBuildProjectTemplate: getCodeBuildTemplate({
+            baseBucketName: 'BASE_BUCKET_NAME',
+          }),
+          lambdaLayerTemplate: getLambdaLayerTemplate({
+            bucket: 'BASE_BUCKET_NAME',
+            key: 'lambda-layer/packages/PACKAGE@X.Y.Z.zip',
+            packageName: 'PACKAGE@X.Y.Z.zip',
+          }),
+        },
         options: {
           cli: require('carlin/dist/cli').options,
           deploy: require('carlin/dist/deploy/command').options,
           deployStaticApp: require('carlin/dist/deploy/staticApp/command')
+            .options,
+          deployLambdaLayer: require('carlin/dist/deploy/lambdaLayer/command')
             .options,
         },
         templates: {

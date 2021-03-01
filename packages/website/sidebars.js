@@ -5,6 +5,7 @@ module.exports = {
       'commands/deploy',
       'commands/deploy-base-stack',
       'commands/deploy-static-app',
+      'commands/deploy-lambda-layer',
     ],
     'API Reference': [
       'api-reference/deploy',
