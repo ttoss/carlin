@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.13.0](https://github.com/ttoss/carlin/compare/v0.12.6...v0.13.0) (2021-03-01)
+
+### Features
+
+- add lambda layer ([#25](https://github.com/ttoss/carlin/issues/25)) ([d5f68ea](https://github.com/ttoss/carlin/commit/d5f68eaec44b9f7b4f7ae4a2d854c1d27b31588e))
+
 ## [0.12.6](https://github.com/ttoss/carlin/compare/v0.12.5...v0.12.6) (2021-02-26)
 
 ### Features
