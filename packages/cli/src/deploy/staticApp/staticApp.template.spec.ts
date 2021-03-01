@@ -59,13 +59,205 @@ import {
   getStaticAppTemplate,
   generateCspString,
   getLambdaEdgeOriginRequestZipFile,
+  getLambdaEdgeOriginResponseZipFile,
   CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
   LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID,
   LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID,
+  LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID,
 } from './staticApp.template';
 
 const defaultCspString =
   "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'";
+
+const securityHeaders = {
+  'content-security-policy': [
+    {
+      key: 'Content-Security-Policy',
+      value:
+        "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'",
+    },
+  ],
+  'referrer-policy': [{ key: 'Referrer-Policy', value: 'same-origin' }],
+  'strict-transport-security': [
+    {
+      key: 'Strict-Transport-Security',
+      value: 'max-age=63072000; includeSubdomains; preload',
+    },
+  ],
+  'x-content-type-options': [
+    { key: 'X-Content-Type-Options', value: 'nosniff' },
+  ],
+  'x-frame-options': [{ key: 'X-Frame-Options', value: 'DENY' }],
+  'x-xss-protection': [{ key: 'X-XSS-Protection', value: '1; mode=block' }],
+};
+
+const cachingHeaders = {
+  'cache-control': [{ key: 'Cache-Control', value: 'max-age=30' }],
+};
+
+describe('Issue #26 https://github.com/ttoss/carlin/issues/26', () => {
+  /**
+   * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html#lambda-event-structure-response-origin
+   */
+  const event = {
+    Records: [
+      {
+        cf: {
+          config: {
+            distributionDomainName: 'd111111abcdef8.cloudfront.net',
+            distributionId: 'EDFDVBD6EXAMPLE',
+            eventType: 'origin-response',
+            requestId:
+              '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+          },
+          request: {
+            clientIp: '203.0.113.178',
+            headers: {
+              'x-forwarded-for': [
+                {
+                  key: 'X-Forwarded-For',
+                  value: '203.0.113.178',
+                },
+              ],
+              'user-agent': [
+                {
+                  key: 'User-Agent',
+                  value: 'Amazon CloudFront',
+                },
+              ],
+              via: [
+                {
+                  key: 'Via',
+                  value:
+                    '2.0 8f22423015641505b8c857a37450d6c0.cloudfront.net (CloudFront)',
+                },
+              ],
+              host: [
+                {
+                  key: 'Host',
+                  value: 'example.org',
+                },
+              ],
+              'cache-control': [
+                {
+                  key: 'Cache-Control',
+                  value: 'no-cache, cf-no-cache',
+                },
+              ],
+            },
+            method: 'GET',
+            origin: {
+              custom: {
+                customHeaders: {},
+                domainName: 'example.org',
+                keepaliveTimeout: 5,
+                path: '',
+                port: 443,
+                protocol: 'https',
+                readTimeout: 30,
+                sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2'],
+              },
+            },
+            querystring: '',
+            uri: '/',
+          },
+          response: {
+            headers: {
+              'access-control-allow-credentials': [
+                {
+                  key: 'Access-Control-Allow-Credentials',
+                  value: 'true',
+                },
+              ],
+              'access-control-allow-origin': [
+                {
+                  key: 'Access-Control-Allow-Origin',
+                  value: '*',
+                },
+              ],
+              date: [
+                {
+                  key: 'Date',
+                  value: 'Mon, 13 Jan 2020 20:12:38 GMT',
+                },
+              ],
+              'referrer-policy': [
+                {
+                  key: 'Referrer-Policy',
+                  value: 'no-referrer-when-downgrade',
+                },
+              ],
+              server: [
+                {
+                  key: 'Server',
+                  value: 'ExampleCustomOriginServer',
+                },
+              ],
+              'x-content-type-options': [
+                {
+                  key: 'X-Content-Type-Options',
+                  value: 'nosniff',
+                },
+              ],
+              'x-frame-options': [
+                {
+                  key: 'X-Frame-Options',
+                  value: 'DENY',
+                },
+              ],
+              'x-xss-protection': [
+                {
+                  key: 'X-XSS-Protection',
+                  value: '1; mode=block',
+                },
+              ],
+              'content-type': [
+                {
+                  key: 'Content-Type',
+                  value: 'text/html; charset=utf-8',
+                },
+              ],
+              'content-length': [
+                {
+                  key: 'Content-Length',
+                  value: '9593',
+                },
+              ],
+            },
+            status: '200',
+            statusDescription: 'OK',
+          },
+        },
+      },
+    ],
+  };
+
+  const handler = () => eval(getLambdaEdgeOriginResponseZipFile())(event);
+
+  test('headers should be added properly', async () => {
+    const response = await handler();
+    expect(response.headers).toEqual(expect.objectContaining(securityHeaders));
+    expect(response.headers).toEqual(expect.objectContaining(cachingHeaders));
+  });
+
+  test('getLambdaEdgeOriginResponseZipFile should have been added to CloudFormation template', () => {
+    expect(
+      getStaticAppTemplate({ region, cloudfront: true }).Resources[
+        CLOUDFRONT_DISTRIBUTION_LOGICAL_ID
+      ].Properties.DistributionConfig.DefaultCacheBehavior
+        .LambdaFunctionAssociations,
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          EventType: 'origin-response',
+          LambdaFunctionARN: {
+            'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID}.FunctionArn`,
+          },
+        },
+      ]),
+    );
+  });
+});
 
 describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   const gtmId = faker.random.word();
@@ -150,32 +342,6 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
   describe('handling headers', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { 'cache-control': _, ...requestHeaders } = record.cf.request.headers;
-
-    const securityHeaders = {
-      'content-security-policy': [
-        {
-          key: 'Content-Security-Policy',
-          value:
-            "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/; font-src 'self' https://fonts.gstatic.com/; object-src 'none'",
-        },
-      ],
-      'referrer-policy': [{ key: 'Referrer-Policy', value: 'same-origin' }],
-      'strict-transport-security': [
-        {
-          key: 'Strict-Transport-Security',
-          value: 'max-age=63072000; includeSubdomains; preload',
-        },
-      ],
-      'x-content-type-options': [
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-      ],
-      'x-frame-options': [{ key: 'X-Frame-Options', value: 'DENY' }],
-      'x-xss-protection': [{ key: 'X-XSS-Protection', value: '1; mode=block' }],
-    };
-
-    const cachingHeaders = {
-      'cache-control': [{ key: 'Cache-Control', value: 'max-age=30' }],
-    };
 
     const handler = (event: any = defaultEvent) =>
       eval(

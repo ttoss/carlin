@@ -324,7 +324,7 @@ const crypto = require('crypto');
 const s3 = new S3({ region: "${region}" });
 
 exports.handler = async (event, context) => {
-  const request = { ...event.Records[0].cf.request };
+  const request = event.Records[0].cf.request;
 
   const headers = request.headers;
 
@@ -438,6 +438,36 @@ exports.handler = async (event, context) => {
 };
 `,
   );
+};
+
+const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
+
+export const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
+  'LambdaEdgeVersionOriginResponse';
+
+/**
+ * This method is only triggered if origin request doesn't return a body.
+ */
+export const getLambdaEdgeOriginResponseZipFile = ({
+  csp = {},
+}: { csp?: CSP } = {}) => {
+  return formatCode(`
+'use strict';
+
+exports.handler = async (event, context) => {
+  const request = event.Records[0].cf.request;
+  const response = event.Records[0].cf.response;
+  const headers = response.headers;
+
+  ${assignSecurityHeaders({
+    csp: updateCspObject({ csp, currentCsp: getDefaultCsp() }),
+  })}
+
+  ${assignCachingHeaders({})}
+  
+  return response;
+};
+`);
 };
 
 const getBaseTemplate = ({
@@ -652,6 +682,30 @@ const getCloudFrontEdgeLambdas = ({
         },
       },
     },
+    [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
+      Type: 'AWS::Lambda::Function',
+      Properties: {
+        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ csp }) },
+        Description: 'Lambda@Edge function serving as origin response.',
+        Handler: 'index.handler',
+        MemorySize: 128,
+        Role: { 'Fn::GetAtt': `${LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID}.Arn` },
+        Runtime: 'nodejs12.x',
+        Timeout: 5,
+      },
+    },
+    [LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID]: {
+      Type: 'Custom::LatestLambdaVersion',
+      Properties: {
+        FunctionName: {
+          Ref: LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID,
+        },
+        Nonce: `${Date.now()}`,
+        ServiceToken: {
+          'Fn::GetAtt': `${PUBLISH_LAMBDA_VERSION_LOGICAL_ID}.Arn`,
+        },
+      },
+    },
   };
 
   return lambdaEdgeResources;
@@ -751,6 +805,12 @@ const getCloudFrontTemplate = ({
                     },
                   ]
                 : []),
+              {
+                EventType: 'origin-response',
+                LambdaFunctionARN: {
+                  'Fn::GetAtt': `${LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID}.FunctionArn`,
+                },
+              },
             ],
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
