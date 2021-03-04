@@ -46,7 +46,7 @@ module.exports = () => {
         },
         comments: {
           ...getComments({
-            deploy: ['deploy/cloudFormation.js', 'deploy'],
+            deploy: ['deploy/cloudFormation.core.js', 'deploy'],
             deployCloudFormationDeployLambdaCode: [
               'deploy/cloudFormation.js',
               'deployCloudFormation~deployCloudFormationDeployLambdaCode',

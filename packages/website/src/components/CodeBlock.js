@@ -8,6 +8,7 @@ const Template = (props) => {
       style={{
         marginBottom: '32px',
         marginTop: '32px',
+        fontSize: '0.9em',
       }}
     >
       <ThemeCodeBlock {...props} />
