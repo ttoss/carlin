@@ -3,119 +3,13 @@
 import { S3 } from 'aws-sdk';
 import fs from 'fs';
 import glob from 'glob';
+import mime from 'mime-types';
 import log from 'npmlog';
 import path from 'path';
 
 const logPrefix = 's3';
 
 const s3 = new S3({ apiVersion: '2006-03-01' });
-
-type ContentType =
-  | 'application/manifest+json'
-  | 'application/octet-stream'
-  | 'text/css'
-  | 'text/html'
-  | 'text/javascript'
-  | 'image/vnd.microsoft.icon'
-  | 'image/jpeg'
-  | 'image/webp'
-  | 'application/javascript'
-  | 'application/json'
-  | 'binary/octet-stream'
-  | 'image/png'
-  | 'image/svg+xml'
-  | 'text/plain'
-  | 'text/yaml'
-  | 'font/woff'
-  | 'font/woff2';
-
-export const getContentMetadata = (
-  file: string,
-): {
-  ContentDisposition?: string;
-  ContentEncoding?: BufferEncoding;
-  ContentType?: ContentType;
-} => {
-  // const filename = file.split('/').pop();
-
-  const extension = file.split('.').pop();
-
-  switch (extension) {
-    case 'css':
-      return {
-        ContentType: 'text/css',
-        ContentEncoding: 'utf8',
-      };
-    case 'html':
-      return {
-        ContentType: 'text/html',
-        ContentEncoding: 'utf8',
-      };
-    case 'ico':
-      return {
-        ContentType: 'image/vnd.microsoft.icon',
-        ContentEncoding: 'binary',
-      };
-    case 'jpeg':
-    case 'jpg':
-      return {};
-    case 'mjs':
-    case 'js':
-      return {
-        ContentType: 'application/javascript',
-        ContentEncoding: 'utf8',
-      };
-    case 'json':
-      return {
-        ContentType: 'application/json',
-        ContentEncoding: 'utf8',
-      };
-    case 'LICENSE':
-    case 'txt':
-      return {
-        ContentType: 'text/plain',
-        ContentEncoding: 'utf8',
-      };
-    case 'map':
-      return {
-        ContentType: 'binary/octet-stream',
-        ContentEncoding: 'utf8',
-      };
-    case 'png':
-      return {
-        ContentType: 'image/png',
-        ContentEncoding: 'binary',
-      };
-    case 'svg':
-      return {
-        ContentType: 'image/svg+xml',
-        ContentEncoding: 'binary',
-      };
-    case 'webmanifest':
-      return {
-        ContentType: 'application/manifest+json',
-        ContentEncoding: 'utf8',
-      };
-    case 'webp':
-      return {
-        ContentType: 'image/webp',
-        ContentEncoding: 'binary',
-      };
-    case 'woff':
-    case 'woff2':
-      return {};
-    case 'yml':
-    case 'yaml':
-      return {
-        ContentType: 'text/yaml',
-        ContentEncoding: 'utf8',
-      };
-    default: {
-      log.warn(logPrefix, `Content metadata for file ${file} does not exist.`);
-      return {};
-    }
-  }
-};
 
 export const getBucketKeyUrl = ({
   bucket,
@@ -146,18 +40,19 @@ export const uploadFileToS3 = async ({
 
   let params: S3.PutObjectRequest = {
     Bucket: bucket,
-    Key: key,
+    Key: key.split(path.sep).join('/'),
   };
 
   if (file) {
     params.ContentType = contentType;
     params.Body = file;
   } else if (filePath) {
-    const contentMetadata = getContentMetadata(filePath);
-    const readFile = await fs.promises.readFile(filePath, {
-      encoding: contentMetadata.ContentEncoding,
-    });
-    params = { ...params, ...contentMetadata };
+    const readFile = await fs.promises.readFile(filePath);
+    params = {
+      ...params,
+      ContentType:
+        contentType || mime.contentType(path.extname(filePath)) || undefined,
+    };
     params.Body = Buffer.from(readFile);
   }
 
