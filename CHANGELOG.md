@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.2](https://github.com/ttoss/carlin/compare/v0.13.1...v0.13.2) (2021-03-04)
+
+### Bug Fixes
+
+- s3 windows upload ([86f785f](https://github.com/ttoss/carlin/commit/86f785f4a609689e7683678ff815971351ec51aa))
+
 ## [0.13.1](https://github.com/ttoss/carlin/compare/v0.13.0...v0.13.1) (2021-03-01)
 
 ### Bug Fixes
