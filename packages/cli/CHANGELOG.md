@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.3](https://github.com/ttoss/carlin/compare/v0.13.2...v0.13.3) (2021-03-07)
+
+### Bug Fixes
+
+- deploy static-app lambdaedge function limit ([db03725](https://github.com/ttoss/carlin/commit/db03725705858fbc6edbfad3106b752b1f4a55c8))
+
 ## [0.13.2](https://github.com/ttoss/carlin/compare/v0.13.1...v0.13.2) (2021-03-04)
 
 ### Bug Fixes
