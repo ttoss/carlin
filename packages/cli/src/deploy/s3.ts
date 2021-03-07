@@ -9,7 +9,7 @@ import path from 'path';
 
 const logPrefix = 's3';
 
-const s3 = new S3({ apiVersion: '2006-03-01' });
+export const s3 = new S3({ apiVersion: '2006-03-01' });
 
 export const getBucketKeyUrl = ({
   bucket,
@@ -211,9 +211,27 @@ export const emptyS3Directory = async ({
       await emptyS3Directory({ bucket, directory });
     }
 
-    log.info(logPrefix, `${bucket}/${directory} is empty`);
+    log.info(logPrefix, `${bucket}/${directory} is empty.`);
   } catch (err) {
-    log.error(logPrefix, `Cannot empty ${bucket}/${directory}`);
+    log.error(logPrefix, `Cannot empty ${bucket}/${directory}.`);
     throw err;
+  }
+};
+
+export const deleteS3Directory = async ({
+  bucket,
+  directory = '',
+}: {
+  bucket: string;
+  directory?: string;
+}) => {
+  try {
+    log.info(logPrefix, `${bucket}/${directory} is being deleted...`);
+    await emptyS3Directory({ bucket, directory });
+    await s3.deleteObject({ Bucket: bucket, Key: directory }).promise();
+    log.info(logPrefix, `${bucket}/${directory} was deleted.`);
+  } catch (error) {
+    log.error(logPrefix, `Cannot delete ${bucket}/${directory}.`);
+    throw error;
   }
 };

@@ -351,21 +351,13 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
         ),
       )(event);
 
-    const assertions = (response: any) => {
-      expect(response.headers).toEqual(expect.objectContaining(requestHeaders));
-      expect(response.headers).toEqual(
-        expect.objectContaining(securityHeaders),
-      );
-      expect(response.headers).toEqual(expect.objectContaining(cachingHeaders));
-    };
-
     test('request (without body) should forward the headers', async () => {
       const newRecord = JSON.parse(JSON.stringify(record));
       const newUri = '/script.js';
       newRecord.cf.request.uri = newUri;
       const response = await handler({ Records: [newRecord] });
       expect(response.body).toBeUndefined();
-      assertions(response);
+      expect(response.headers).toEqual(expect.objectContaining(requestHeaders));
     });
 
     test('response (with body) should forward the headers', async () => {
@@ -374,7 +366,17 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
       newRecord.cf.request.uri = newUri;
       const response = await handler({ Records: [newRecord] });
       expect(response.body).toBeDefined();
-      assertions(response);
+      expect(response.headers).toEqual(
+        expect.objectContaining(securityHeaders),
+      );
+      expect(response.headers).toEqual(expect.objectContaining(cachingHeaders));
+      /**
+       * Lambda@Edge cannot forward these headers
+       * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-header-restrictions.
+       */
+      expect(response.headers).toEqual(
+        expect.not.objectContaining(requestHeaders),
+      );
     });
   });
 

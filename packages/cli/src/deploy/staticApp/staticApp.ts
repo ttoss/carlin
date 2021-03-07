@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 import { CloudFormation, CloudFront } from 'aws-sdk';
 import log from 'npmlog';
+import semver from 'semver';
 
 import { getPackageVersion } from '../../utils';
 
@@ -8,7 +9,9 @@ import { cloudFormation, deploy } from '../cloudFormation.core';
 import {
   uploadDirectoryToS3,
   emptyS3Directory,
+  deleteS3Directory,
   getAllFilesInsideADirectory,
+  s3,
 } from '../s3';
 import { handleDeployError, handleDeployInitialization } from '../utils';
 
@@ -114,6 +117,41 @@ export const uploadBuiltAppToS3 = async ({
   );
 };
 
+const removeOldVersions = async ({ bucket }: { bucket: string }) => {
+  try {
+    log.info(logPrefix, 'Removing old versions...');
+
+    const { CommonPrefixes = [] } = await s3
+      .listObjectsV2({ Bucket: bucket, Delimiter: '/' })
+      .promise();
+
+    const versions = CommonPrefixes?.map(({ Prefix }) =>
+      Prefix?.replace('/', ''),
+    )
+      .filter((version) => !!version)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      .sort((a, b) => (semver.gt(a!, b!) ? -1 : 1));
+
+    /**
+     * Keep the 3 most recent versions.
+     */
+    versions.shift();
+    versions.shift();
+    versions.shift();
+
+    await Promise.all(
+      versions.map((version) =>
+        deleteS3Directory({ bucket, directory: `${version}` }),
+      ),
+    );
+  } catch (error) {
+    log.info(
+      logPrefix,
+      `Cannot remove older versions from "${bucket}" bucket.`,
+    );
+  }
+};
+
 export const invalidateCloudFront = async ({
   outputs,
 }: {
@@ -173,6 +211,7 @@ export const invalidateCloudFront = async ({
  *    the options, for instance, only S3, SPA, with hosted zone...
  * 1. Create AWS resources using the templated created.
  * 1. Upload static files to the host bucket S3.
+ * 1. Remove old deployment versions. Keep only the 3 most recent ones.
  */
 export const deployStaticApp = async ({
   acm,
@@ -185,6 +224,7 @@ export const deployStaticApp = async ({
   hostedZoneName,
   region,
   skipUpload,
+  invalidate = false,
 }: {
   acm?: string;
   aliases?: string[];
@@ -196,6 +236,7 @@ export const deployStaticApp = async ({
   hostedZoneName?: string;
   region: string;
   skipUpload?: boolean;
+  invalidate?: boolean;
 }) => {
   try {
     const { stackName } = await handleDeployInitialization({ logPrefix });
@@ -222,11 +263,15 @@ export const deployStaticApp = async ({
     if (bucket) {
       if (!skipUpload) {
         await uploadBuiltAppToS3({ buildFolder, bucket, cloudfront });
+        await removeOldVersions({ bucket });
       }
 
       const { Outputs } = await deploy({ params, template });
 
-      await invalidateCloudFront({ outputs: Outputs });
+      if (invalidate) {
+        await invalidateCloudFront({ outputs: Outputs });
+      }
+
       /**
        * Stack doesn't exist. Deploy CloudFormation first, get the bucket name,
        * and upload files to S3.

@@ -27,10 +27,16 @@ import cli from './cli';
 
 import { deployStaticApp } from './deploy/staticApp/staticApp';
 
+const parse = (arg: any, context: any) => {
+  return cli().strict(false).parse(arg, context);
+};
+
 describe('handle merge config correctly', () => {
   describe('Config merging errors when default values is present #16 https://github.com/ttoss/carlin/issues/16', () => {
     test('deploy static-app --region should not be the default', async () => {
-      await cli().parse('deploy static-app', { environment: 'Production' });
+      await parse('deploy static-app', {
+        environment: 'Production',
+      });
       expect(deployStaticApp).toHaveBeenCalledWith(
         expect.objectContaining({ region }),
       );
@@ -41,13 +47,13 @@ describe('handle merge config correctly', () => {
     const options = {
       region: faker.random.word(),
     };
-    const argv = await cli().parse('print-args', options);
+    const argv = await parse('print-args', options);
     expect(argv.environment).toBeUndefined();
     expect(argv).toMatchObject(options);
   });
 
   test('argv must have the environment option', async () => {
-    const argv = await cli().parse('print-args', { environment: 'Production' });
+    const argv = await parse('print-args', { environment: 'Production' });
     expect(argv.environment).toBe('Production');
     expect(argv.optionEnv).toEqual(
       optionsFromConfigFiles.environments.Production.optionEnv,
@@ -56,7 +62,7 @@ describe('handle merge config correctly', () => {
 
   test('argv must have the CLI optionEnv', async () => {
     const newOptionEnv = faker.random.word();
-    const argv = await cli().parse('print-args', {
+    const argv = await parse('print-args', {
       environment: 'Production',
       optionEnv: newOptionEnv,
     });

@@ -8,7 +8,7 @@ import {
   getIamPath,
 } from '../../utils';
 
-import { formatCode } from '../../utils/formatCode';
+import { formatCode, uglify } from '../../utils/formatCode';
 
 import { getOriginShieldRegion } from './getOriginShieldRegion';
 
@@ -326,7 +326,7 @@ const s3 = new S3({ region: "${region}" });
 exports.handler = async (event, context) => {
   const request = event.Records[0].cf.request;
 
-  const headers = request.headers;
+  const headers = { };
 
   ${assignSecurityHeaders({ csp: fullCsp })}
 
@@ -376,19 +376,9 @@ exports.handler = async (event, context) => {
     const nonce = crypto.randomBytes(16).toString('base64');
 
     // https://developers.google.com/tag-manager/quickstart
-    const gtmScriptHead = \`
-    <script nonce="\${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');
-    n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','${gtmId}');</script>
-    \`.replace(/\\n/g, '');
+    const gtmScriptHead = \`<script nonce="\${nonce}">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.querySelector('[nonce]');n&&j.setAttribute('nonce',n.nonce||n.getAttribute('nonce'));f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');</script>\`;
     
-    const gtmScriptBody = \`
-    <noscript><iframe nonce='\${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}'${' '}
-    height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript>
-    \`.replace(/\\n/g, '');
+    const gtmScriptBody = \`<noscript><iframe nonce='\${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}' height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript>\`;
 
     const cspValue = headers['content-security-policy'][0]
       .value
@@ -660,7 +650,9 @@ const getCloudFrontEdgeLambdas = ({
       Type: 'AWS::Lambda::Function',
       Properties: {
         Code: {
-          ZipFile: getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
+          ZipFile: uglify(
+            getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
+          ),
         },
         Description: 'Lambda@Edge function serving as origin request.',
         Handler: 'index.handler',
@@ -685,7 +677,7 @@ const getCloudFrontEdgeLambdas = ({
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
-        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ csp }) },
+        Code: { ZipFile: uglify(getLambdaEdgeOriginResponseZipFile({ csp })) },
         Description: 'Lambda@Edge function serving as origin response.',
         Handler: 'index.handler',
         MemorySize: 128,

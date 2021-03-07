@@ -7,9 +7,11 @@ const getComment = ([pathFromDist, longname]) => {
   const res = jsdoc.explainSync({
     files: path.resolve(process.cwd(), '../cli/dist', pathFromDist),
   });
+
   const { description } = res.find(
     (p) => p.longname === longname && p.undocumented !== true,
   ) || { description: '***DESCRIPTION NOT FOUND***' };
+
   return description;
 };
 

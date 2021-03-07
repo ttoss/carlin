@@ -30,7 +30,7 @@ export const limitStackName = (stackName: string) =>
  *
  * 1. The second part will be defined by, whichever is defined first:
  *  1. environment,
- *  1. branch name in param-case,
+ *  1. [branch name](https://carlin.ttoss.dev/docs/CLI#branchbranch_name) in param-case,
  *  1. `undefined`.
  *
  * Example:

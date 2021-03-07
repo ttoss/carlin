@@ -74,6 +74,8 @@ module.exports = () => {
               'deploy/lambdaLayer/deployLambdaLayer.js',
               'getPackageLambdaLayerStackName',
             ],
+            cliEnv: ['cli.js', 'getEnv'],
+            getCurrentBranch: ['utils/getCurrentBranch.js', 'getCurrentBranch'],
           }),
           stackName: toHtml(
             getComment(['deploy/stackName.js', 'getStackName']).split(

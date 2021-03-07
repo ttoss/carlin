@@ -1,9 +1,12 @@
+import InnerHTML from '../src/components/InnerHTML';
 import OptionAliasesInline from '../src/components/OptionAliasesInline';
 import OptionHeader from '../src/components/OptionHeader';
 
 import carlin from '../.docusaurus/carlin/default/carlin.json';
 
-## environment
+## Common Options
+
+### environment
 
 <OptionHeader option="environment" options={carlin.options.cli} />
 
@@ -14,7 +17,7 @@ Deployments with an environment commonly tends to be a deploy with permanent res
 
 On the other hand, not defining an environment generally means that the resources are ephemeral. These kind of deploy is used to create parts of applications to be tested by the QA team.
 
-## environments
+### environments
 
 <OptionHeader option="environments" options={carlin.options.cli} />
 
@@ -44,3 +47,11 @@ The `region` value will be, for each command:
 \* `environment` is case sensitive.
 
 :::
+
+## process.env
+
+<InnerHTML html={carlin.comments.cliEnv} />
+
+### `BRANCH`/`BRANCH_NAME`
+
+<InnerHTML html={carlin.comments.getCurrentBranch} />

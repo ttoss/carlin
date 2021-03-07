@@ -31,6 +31,16 @@ export const options = {
 } as const;
 
 /**
+ * All options my be passed as environment variables matching the prefix
+ * "CARLIN". See [Yargs reference](https://yargs.js.org/docs/#api-reference-envprefix).
+ * Example, we may use `carlin deploy --stack-name StackName` or
+ * `CARLIN_STACK_NAME=StackName carlin deploy`.
+ */
+const getEnv = () => {
+  return constantCase(NAME);
+};
+
+/**
  * Transformed to method because finalConfig was failing the tests.
  */
 const cli = () => {
@@ -68,8 +78,9 @@ const cli = () => {
   };
 
   return yargs
+    .strict()
     .scriptName(NAME)
-    .env(constantCase(NAME))
+    .env(getEnv())
     .options(addGroupToOptions(options, 'Common Options'))
     .middleware(((argv: any, { parsed }: any) => {
       const { environment, environments } = argv;
@@ -135,6 +146,9 @@ const cli = () => {
       handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
     })
     .command(deployCommand)
+    .epilogue(
+      'For more information, find our manual at https://carlin.ttoss.dev',
+    )
     .help();
 };
 
