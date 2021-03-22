@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.4](https://github.com/ttoss/carlin/compare/v0.13.3...v0.13.4) (2021-03-22)
+
+### Bug Fixes
+
+- remove noEnv and add typescript to dependencies ([aacde98](https://github.com/ttoss/carlin/commit/aacde989037a82dff7b951cfc9e71fbb4ae890b1))
+
 ## [0.13.3](https://github.com/ttoss/carlin/compare/v0.13.2...v0.13.3) (2021-03-07)
 
 ### Bug Fixes
