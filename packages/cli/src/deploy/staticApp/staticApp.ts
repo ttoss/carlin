@@ -47,7 +47,7 @@ export const getStaticAppBucket = async ({
 /**
  * Fixes #20 https://github.com/ttoss/carlin/issues/20
  */
-export const defaultBuildFolders = ['build', 'out'];
+export const defaultBuildFolders = ['build', 'out', 'storybook-static'];
 
 const findDefaultBuildFolder = async () => {
   /**

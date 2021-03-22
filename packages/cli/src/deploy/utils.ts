@@ -24,6 +24,9 @@ export const handleDeployError = ({
   process.exit(1);
 };
 
+/**
+ * @param param.stackName acts as a default stack name.
+ */
 export const handleDeployInitialization = async ({
   logPrefix,
   stackName: preDefinedStackName,

@@ -5,6 +5,7 @@ interface Parameter {
   Default?: string | number;
   Description?: string;
   Type: string;
+  NoEcho?: boolean;
 }
 
 export interface Resource {

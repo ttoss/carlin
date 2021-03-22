@@ -26,7 +26,7 @@ const addDefaultsParametersAndTagsToParams = async (
 ): Promise<CloudFormationParams> => {
   const [
     branchName,
-    environment = 'NoEnv',
+    environment,
     packageName,
     packageVersion,
     projectName,
@@ -42,13 +42,15 @@ const addDefaultsParametersAndTagsToParams = async (
     ...params,
     Parameters: [
       ...(params.Parameters || []),
-      { ParameterKey: 'Environment', ParameterValue: environment },
+      ...(environment
+        ? [{ ParameterKey: 'Environment', ParameterValue: environment }]
+        : []),
       { ParameterKey: 'Project', ParameterValue: projectName },
     ],
     Tags: [
       ...(params.Tags || []),
       { Key: 'Branch', Value: branchName },
-      { Key: 'Environment', Value: environment },
+      ...(environment ? [{ Key: 'Environment', Value: environment }] : []),
       { Key: 'Package', Value: packageName },
       { Key: 'Project', Value: projectName },
       { Key: 'Version', Value: packageVersion },
@@ -64,13 +66,17 @@ const addDefaultParametersToTemplate = async (
     getProjectName(),
   ]);
 
+  const newParameters: any = {
+    Project: { Default: projectName, Type: 'String' },
+  };
+
+  if (environment) {
+    newParameters.Environment = { Default: environment, Type: 'String' };
+  }
+
   const newTemplate = {
     ...template,
-    Parameters: {
-      Environment: { Default: environment, Type: 'String' },
-      Project: { Default: projectName, Type: 'String' },
-      ...template.Parameters,
-    },
+    Parameters: { ...newParameters, ...template.Parameters },
   };
 
   return newTemplate;
@@ -140,12 +146,18 @@ const addEnvironmentsToLambdaResources = (
         return;
       }
 
+      if (!environment) {
+        return;
+      }
+
       if (!Properties.Environment) {
         Properties.Environment = {};
       }
+
       if (!Properties.Environment.Variables) {
         Properties.Environment.Variables = {};
       }
+
       Properties.Environment.Variables.ENVIRONMENT = environment;
     }
   });
@@ -163,8 +175,10 @@ export const addDefaults = async ({
     addEnvironmentsToLambdaResources,
   ].reduce(async (acc, addFn) => addFn(await acc), Promise.resolve(template));
 
-  return {
+  const response = {
     params: await addDefaultsParametersAndTagsToParams(params),
     template: newTemplate,
   };
+
+  return response;
 };

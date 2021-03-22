@@ -6,6 +6,7 @@ import { AWS_DEFAULT_REGION } from '../config';
 import { addGroupToOptions, getAwsAccountId } from '../utils';
 
 import { deployBaseStackCommand } from './baseStack/command';
+import { deployCicdCommand } from './cicd/command';
 import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
 import { printStackOutputsAfterDeploy } from './cloudFormation.core';
 import { deployLambdaLayerCommand } from './lambdaLayer/command';
@@ -158,7 +159,8 @@ export const deployCommand: CommandModule<
       .command(deployLambdaLayerCommand)
       .command(describeDeployCommand)
       .command(deployBaseStackCommand)
-      .command(deployStaticAppCommand);
+      .command(deployStaticAppCommand)
+      .command(deployCicdCommand);
 
     return yargsBuilder;
   },
