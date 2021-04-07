@@ -20,7 +20,7 @@ phases:
     runtime-versions:
       nodejs: 12.x
     commands:
-      - npm i --no-package-lock --no-optional --only=prod ${packageName}
+      - npm i --no-bin-links --no-optional --no-package-lock --no-save --no-shrinkwrap ${packageName}
       - mkdir nodejs
       - mv node_modules nodejs/node_modules
 artifacts:

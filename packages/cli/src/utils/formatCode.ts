@@ -1,5 +1,5 @@
-import prettier from 'prettier';
-import UglifyJS from 'uglify-js';
+import * as prettier from 'prettier';
+import * as UglifyJS from 'uglify-js';
 
 export const formatCode = (code: string) => {
   return prettier.format(code, { parser: 'babel' });

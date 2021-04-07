@@ -1,5 +1,5 @@
 module.exports = {
-  someSidebar: {
+  docs: {
     'Getting Started': ['overview', 'installation', 'CLI'],
     Commands: [
       'commands/deploy',
@@ -7,6 +7,8 @@ module.exports = {
       'commands/deploy-static-app',
       'commands/deploy-lambda-layer',
     ],
+  },
+  api: {
     'API Reference': [
       'api-reference/deploy',
       'api-reference/deploy-static-app',

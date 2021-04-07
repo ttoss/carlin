@@ -1,10 +1,15 @@
+import * as findUp from 'find-up';
 import fs from 'fs';
-import path from 'path';
 
-const readPackageJson = () =>
-  JSON.parse(
-    fs.readFileSync(path.resolve(process.cwd(), 'package.json')).toString(),
-  );
+const readPackageJson = () => {
+  const packageJsonDir = findUp.sync('package.json');
+
+  if (!packageJsonDir) {
+    return {};
+  }
+
+  return JSON.parse(fs.readFileSync(packageJsonDir).toString());
+};
 
 const getPackageJsonProperty = ({
   env,
@@ -13,10 +18,11 @@ const getPackageJsonProperty = ({
   env?: string;
   property: string;
 }) => {
-  if (env && process.env[env]) {
-    return process.env[env];
-  }
   try {
+    if (env && process.env[env]) {
+      return process.env[env] as string;
+    }
+
     return readPackageJson()[property];
   } catch {
     return '';

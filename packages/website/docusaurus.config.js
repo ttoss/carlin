@@ -8,8 +8,8 @@ module.exports = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'TTOSS', // Usually your GitHub org/user name.
-  projectName: 'carlin', // Usually your repo name.
+  organizationName: 'ttoss',
+  projectName: 'carlin',
   themeConfig: {
     navbar: {
       title: 'carlin',
@@ -19,12 +19,17 @@ module.exports = {
       },
       items: [
         {
-          to: 'docs/',
-          activeBasePath: 'docs',
-          label: 'Docs',
+          type: 'doc',
           position: 'left',
+          docId: 'overview',
+          label: 'Docs',
         },
-        // { to: 'blog', label: 'Blog', position: 'left' },
+        {
+          type: 'doc',
+          position: 'left',
+          docId: 'api-reference/deploy',
+          label: 'API',
+        },
         {
           href: 'https://github.com/ttoss/carlin',
           label: 'GitHub',
@@ -41,6 +46,10 @@ module.exports = {
             {
               label: 'Deploy',
               to: 'docs/Commands/deploy',
+            },
+            {
+              label: 'API',
+              to: 'docs/api-reference/deploy',
             },
           ],
         },

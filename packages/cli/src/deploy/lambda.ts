@@ -82,7 +82,7 @@ export const buildLambdaSingleFile = async ({
   });
 };
 
-const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
+export const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
   const zip = new AdmZip();
   const code = fs.readFileSync(
     path.join(process.cwd(), outFolder, webpackOutputFilename),
@@ -101,7 +101,7 @@ const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
   });
 };
 
-const deployLambdaLayers = async ({
+export const deployLambdaLayers = async ({
   lambdaExternals = [],
 }: {
   lambdaExternals: string[];
@@ -139,6 +139,21 @@ const deployLambdaLayers = async ({
   await deployLambdaLayer({ packages, deployIfExists: false });
 };
 
+export const uploadCodeToECR = async ({
+  bucket,
+  key,
+  versionId,
+  lambdaExternals,
+}: {
+  bucket: string;
+  key: string;
+  versionId: string;
+  lambdaExternals: string[];
+}) => {
+  const imageUri = JSON.stringify([bucket, key, versionId, ...lambdaExternals]);
+  return { imageUri };
+};
+
 /**
  * 1. Build Lambda code using Webpack. The build process create a single file.
  *  1. If packages is passed to `lambda-externals` option, Webpack will ignore
@@ -148,19 +163,36 @@ const deployLambdaLayers = async ({
  */
 export const deployLambdaCode = async ({
   lambdaExternals,
+  lambdaImage,
   lambdaInput,
   stackName,
 }: {
   lambdaExternals: string[];
+  lambdaImage?: boolean;
   lambdaInput: string;
   stackName: string;
 }) => {
   if (!fs.existsSync(lambdaInput)) {
     return undefined;
   }
+
   log.info(logPrefix, 'Deploying Lambda code...');
-  await deployLambdaLayers({ lambdaExternals });
+
   await buildLambdaSingleFile({ lambdaExternals, lambdaInput });
+
   const { bucket, key, versionId } = await uploadCodeToS3({ stackName });
-  return { bucket, key, versionId };
+
+  if (!lambdaImage) {
+    await deployLambdaLayers({ lambdaExternals });
+    return { bucket, key, versionId };
+  }
+
+  const { imageUri } = await uploadCodeToECR({
+    bucket,
+    key,
+    versionId,
+    lambdaExternals,
+  });
+
+  return { imageUri };
 };

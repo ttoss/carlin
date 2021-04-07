@@ -47,6 +47,7 @@ const findAndReadCloudFormationTemplate = ({
         if (acc) {
           return acc;
         }
+
         return fs.existsSync(path.resolve(process.cwd(), cur)) ? cur : acc;
       }, '');
 
@@ -72,12 +73,14 @@ const findAndReadCloudFormationTemplate = ({
 
 export const deployCloudFormation = async ({
   lambdaInput,
+  lambdaImage,
   lambdaExternals = [],
   parameters,
   template,
   templatePath,
 }: {
   lambdaInput: string;
+  lambdaImage?: boolean;
   lambdaExternals?: string[];
   parameters?: CloudFormation.Parameters;
   templatePath?: string;
@@ -88,7 +91,7 @@ export const deployCloudFormation = async ({
 
     const cloudFormationTemplate: CloudFormationTemplate = (() => {
       if (template) {
-        return template;
+        return { ...template };
       }
 
       return findAndReadCloudFormationTemplate({ templatePath });
@@ -107,57 +110,77 @@ export const deployCloudFormation = async ({
 
     /**
      * 1. If Lambda code exists, build and upload the code to base stack bucket.
-     * 2. Retrieve the `bucket`, `key` and `version` of the uploaded code and pass
-     * to CloudFormation template as [parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html).
+     *
+     *     1. If `lambdaImage` is `false`, retrieve the `bucket`, `key`, and
+     *     `version` of the uploaded code and pass to CloudFormation template
+     *     as [parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html).
+     *
+     *     1. If `lambdaImage` is `true`, a Lambda image will be created and the
+     *     image URI will be passed to CloudFormation as parameter.
      */
     const deployCloudFormationDeployLambdaCode = async () => {
       const response = await deployLambdaCode({
         lambdaExternals,
         lambdaInput,
+        lambdaImage,
         stackName,
       });
 
       if (response) {
-        const { bucket, key, versionId } = response;
-        /**
-         * Add Parameters to CloudFormation template.
-         */
-        cloudFormationTemplate.Parameters = {
-          LambdaS3Bucket: { Type: 'String' },
-          LambdaS3Key: { Type: 'String' },
-          LambdaS3Version: { Type: 'String' },
-          LambdaS3ObjectVersion: { Type: 'String' },
-          ...cloudFormationTemplate.Parameters,
-        };
-        /**
-         * Add S3Bucket and S3Key to params.
-         */
-        params.Parameters.push(
-          {
-            ParameterKey: 'LambdaS3Bucket',
-            ParameterValue: bucket,
-          },
-          {
-            ParameterKey: 'LambdaS3Key',
-            ParameterValue: key,
-          },
+        const { bucket, key, versionId, imageUri } = response;
+
+        if (imageUri) {
+          cloudFormationTemplate.Parameters = {
+            LambdaImageUri: { Type: 'String' },
+            ...cloudFormationTemplate.Parameters,
+          };
+
+          params.Parameters.push({
+            ParameterKey: 'LambdaImageUri',
+            ParameterValue: imageUri,
+          });
+        } else if (bucket && key && versionId) {
           /**
-           * Used by CloudFormation AWS::Lambda::Function
-           * @see {@link https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html}
+           * Add Parameters to CloudFormation template.
            */
-          {
-            ParameterKey: 'LambdaS3ObjectVersion',
-            ParameterValue: versionId,
-          },
+          cloudFormationTemplate.Parameters = {
+            LambdaS3Bucket: { Type: 'String' },
+            LambdaS3Key: { Type: 'String' },
+            LambdaS3Version: { Type: 'String' },
+            LambdaS3ObjectVersion: { Type: 'String' },
+            ...cloudFormationTemplate.Parameters,
+          };
+
           /**
-           * Used by CloudFormation AWS::Serverless::Function
-           * @see {@link https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-functioncode.html}
+           * Add S3Bucket and S3Key to params.
            */
-          {
-            ParameterKey: 'LambdaS3Version',
-            ParameterValue: versionId,
-          },
-        );
+          params.Parameters.push(
+            {
+              ParameterKey: 'LambdaS3Bucket',
+              ParameterValue: bucket,
+            },
+            {
+              ParameterKey: 'LambdaS3Key',
+              ParameterValue: key,
+            },
+            /**
+             * Used by CloudFormation AWS::Lambda::Function
+             * @see {@link https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html}
+             */
+            {
+              ParameterKey: 'LambdaS3ObjectVersion',
+              ParameterValue: versionId,
+            },
+            /**
+             * Used by CloudFormation AWS::Serverless::Function
+             * @see {@link https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-functioncode.html}
+             */
+            {
+              ParameterKey: 'LambdaS3Version',
+              ParameterValue: versionId,
+            },
+          );
+        }
       }
     };
 

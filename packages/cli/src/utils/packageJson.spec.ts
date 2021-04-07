@@ -5,6 +5,10 @@ import { getPackageName } from './packageJson';
 
 const name = `@${faker.random.word()}/${faker.random.word()}`;
 
+jest.mock('find-up', () => ({
+  sync: jest.fn().mockReturnValue(faker.random.word()),
+}));
+
 jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
