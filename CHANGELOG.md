@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.14.0](https://github.com/ttoss/carlin/compare/v0.13.4...v0.14.0) (2021-04-08)
+
+### Features
+
+- deploy lambda image first implementation ([27702e1](https://github.com/ttoss/carlin/commit/27702e1253b83d6d794713bd4603b73304cd121d))
+- first implementation of lambda image done, but not finished yet ([81562ea](https://github.com/ttoss/carlin/commit/81562ea795f217de4d4221a843e308755b9c7c96))
+
 ## [0.13.4](https://github.com/ttoss/carlin/compare/v0.13.3...v0.13.4) (2021-03-22)
 
 ### Bug Fixes
