@@ -27,7 +27,7 @@ log.addLevel('event', 10000, { fg: 'yellow' });
 log.addLevel('output', 10000, { fg: 'blue' });
 
 export const defaultTemplatePaths = ['ts', 'js', 'yaml', 'yml', 'json'].map(
-  (extension) => `src/cloudformation.${extension}`,
+  (extension) => `./cloudformation.${extension}`,
 );
 
 const findAndReadCloudFormationTemplate = ({
@@ -72,6 +72,7 @@ const findAndReadCloudFormationTemplate = ({
 };
 
 export const deployCloudFormation = async ({
+  lambdaDockerfile,
   lambdaInput,
   lambdaImage,
   lambdaExternals = [],
@@ -79,6 +80,7 @@ export const deployCloudFormation = async ({
   template,
   templatePath,
 }: {
+  lambdaDockerfile: string;
   lambdaInput: string;
   lambdaImage?: boolean;
   lambdaExternals?: string[];
@@ -120,6 +122,7 @@ export const deployCloudFormation = async ({
      */
     const deployCloudFormationDeployLambdaCode = async () => {
       const response = await deployLambdaCode({
+        lambdaDockerfile,
         lambdaExternals,
         lambdaInput,
         lambdaImage,

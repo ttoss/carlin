@@ -8,7 +8,7 @@ const Template = ({ json }) => {
   return (
     <div
       style={{
-        fontSize: '0.75em',
+        fontSize: '1em',
         maxHeight: '800px',
         overflowY: 'auto',
         marginBottom: '32px',

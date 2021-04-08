@@ -46,6 +46,12 @@ jest.mock('aws-sdk', () => ({
   })),
 }));
 
+const readFileSyncMock = jest.fn();
+
+jest.mock('fs', () => ({
+  readFileSync: readFileSyncMock,
+}));
+
 jest.mock('../cloudFormation.core', () => ({
   ...(jest.requireActual('../cloudFormation.core') as any),
   deploy: jest.fn().mockResolvedValue({ Outputs: [] }),
@@ -88,6 +94,12 @@ describe('Fixes #23 https://github.com/ttoss/carlin/issues/23', () => {
   test('uploadDirectoryToS3 bucket key must not be undefined if cloudfront is true', async () => {
     const cloudfront = true;
 
+    const version = '2.4.7';
+
+    readFileSyncMock.mockReturnValue({
+      toString: () => JSON.stringify({ version }),
+    });
+
     await staticAppModule.deployStaticApp({
       buildFolder,
       cloudfront,
@@ -96,7 +108,7 @@ describe('Fixes #23 https://github.com/ttoss/carlin/issues/23', () => {
 
     expect(s3Module.uploadDirectoryToS3).toHaveBeenCalledWith(
       expect.objectContaining({
-        bucketKey: expect.any(String),
+        bucketKey: version,
       }),
     );
   });

@@ -1,44 +1,39 @@
-import { CloudFormationTemplate, getIamPath } from '../../utils';
+import { getIamPath } from '../../utils';
 
-const CODE_BUILD_PROJECT_LOGICAL_ID = 'LambdaLayerCodeBuildProject';
+import {
+  BASE_STACK_BUCKET_LOGICAL_NAME,
+  BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME,
+} from './config';
 
-const CODE_BUILD_PROJECT_LOGS_GROUP_LOGICAL_ID = `${CODE_BUILD_PROJECT_LOGICAL_ID}LogsLogGroup`;
+const CODE_BUILD_PROJECT_LOGS_GROUP_LOGICAL_ID = `${BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME}LogsLogGroup`;
 
-const CODE_BUILD_PROJECT_IAM_ROLE_LOGICAL_ID =
-  'LambdaLayerCodeBuildProjectRole';
-
-export const PROJECT_NAME_OUTPUT_KEY = 'ProjectName';
+const CODE_BUILD_PROJECT_IAM_ROLE_LOGICAL_ID = `${BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME}Role`;
 
 /**
  * https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
  */
-export const getBuildSpec = ({ packageName }: { packageName: string }) =>
+export const getBuildSpec = () =>
   `
 version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 12.x
+      nodejs: 12
     commands:
-      - npm i --no-bin-links --no-optional --no-package-lock --no-save --no-shrinkwrap ${packageName}
+      - npm i --no-bin-links --no-optional --no-package-lock --no-save --no-shrinkwrap $PACKAGE_NAME
       - mkdir nodejs
       - mv node_modules nodejs/node_modules
 artifacts:
   files:
     - nodejs/**/*
-  name: ${packageName}.zip
+  name: $PACKAGE_NAME.zip
 `.trim();
 
 /**
  * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codebuild-project.html
  */
-export const getCodeBuildTemplate = ({
-  baseBucketName,
-}: {
-  baseBucketName: string;
-}): CloudFormationTemplate => {
+export const getLambdaLayerBuilderTemplate = () => {
   return {
-    AWSTemplateFormatVersion: '2010-09-09',
     Resources: {
       [CODE_BUILD_PROJECT_IAM_ROLE_LOGICAL_ID]: {
         Type: 'AWS::IAM::Role',
@@ -71,8 +66,28 @@ export const getCodeBuildTemplate = ({
                     Effect: 'Allow',
                     Action: ['s3:*'],
                     Resource: [
-                      `arn:aws:s3:::${baseBucketName}`,
-                      `arn:aws:s3:::${baseBucketName}/*`,
+                      {
+                        'Fn::Sub': [
+                          // eslint-disable-next-line no-template-curly-in-string
+                          'arn:aws:s3:::${BucketName}',
+                          {
+                            BucketName: {
+                              Ref: BASE_STACK_BUCKET_LOGICAL_NAME,
+                            },
+                          },
+                        ],
+                      },
+                      {
+                        'Fn::Sub': [
+                          // eslint-disable-next-line no-template-curly-in-string
+                          'arn:aws:s3:::${BucketName}/*',
+                          {
+                            BucketName: {
+                              Ref: BASE_STACK_BUCKET_LOGICAL_NAME,
+                            },
+                          },
+                        ],
+                      },
                     ],
                   },
                 ],
@@ -86,11 +101,11 @@ export const getCodeBuildTemplate = ({
         DeletionPolicy: 'Delete',
         Properties: {},
       },
-      [CODE_BUILD_PROJECT_LOGICAL_ID]: {
+      [BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME]: {
         Type: 'AWS::CodeBuild::Project',
         Properties: {
           Artifacts: {
-            Location: baseBucketName,
+            Location: { Ref: BASE_STACK_BUCKET_LOGICAL_NAME },
             NamespaceType: 'NONE',
             OverrideArtifactName: true,
             Packaging: 'ZIP',
@@ -114,15 +129,15 @@ export const getCodeBuildTemplate = ({
             'Fn::GetAtt': `${CODE_BUILD_PROJECT_IAM_ROLE_LOGICAL_ID}.Arn`,
           },
           Source: {
-            BuildSpec: getBuildSpec({ packageName: '' }),
+            BuildSpec: getBuildSpec(),
             Type: 'NO_SOURCE',
           },
         },
       },
     },
     Outputs: {
-      [PROJECT_NAME_OUTPUT_KEY]: {
-        Value: { Ref: CODE_BUILD_PROJECT_LOGICAL_ID },
+      [BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME]: {
+        Value: { Ref: BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME },
       },
     },
   };

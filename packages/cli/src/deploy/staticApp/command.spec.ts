@@ -1,17 +1,21 @@
+/* eslint-disable import/first */
 import faker from 'faker';
 import yargs from 'yargs';
 
+const destroyCloudFormationMock = jest.fn();
+
+jest.mock('../cloudFormation', () => ({
+  destroyCloudFormation: destroyCloudFormationMock,
+}));
+
+const deployStaticAppMock = jest.fn();
+
+jest.mock('./staticApp', () => ({
+  ...(jest.requireActual('./staticApp') as any),
+  deployStaticApp: deployStaticAppMock,
+}));
+
 import { deployStaticAppCommand } from './command';
-
-// import { destroyCloudFormation } from '../cloudFormation';
-
-// import { deployStaticApp } from './staticApp';
-
-jest.mock('../cloudFormation');
-
-jest.mock('./staticApp');
-
-const randomString = faker.random.word();
 
 const cli = yargs.command(deployStaticAppCommand);
 
@@ -25,6 +29,54 @@ const parse = (options: any) =>
       resolve(argv);
     });
   });
+
+describe('aliases implies acm', () => {
+  test('should throw because alias is defined and acm not', () => {
+    return expect(parse({ aliases: ['some alias'] })).rejects.toThrow();
+  });
+
+  test('should not throw because amc and alias are defined', () => {
+    const options = { acm: 'some-acm', aliases: ['some alias'] };
+    return expect(parse(options)).resolves.toEqual(
+      expect.objectContaining(options),
+    );
+  });
+});
+
+describe('handling methods', () => {
+  test('should call deployStaticApp', async () => {
+    const options = {
+      acm: faker.random.word(),
+      aliases: [faker.random.word()],
+      cloudfront: true,
+      csp: {},
+      gtmId: faker.random.word(),
+      spa: true,
+    };
+
+    await parse(options);
+
+    expect(deployStaticAppMock).toHaveBeenCalledWith(
+      expect.objectContaining(options),
+    );
+  });
+
+  test('should call destroyCloudFormation', async () => {
+    const options = {
+      destroy: true,
+      acm: faker.random.word(),
+      aliases: [faker.random.word()],
+      cloudfront: true,
+      csp: {},
+      gtmId: faker.random.word(),
+      spa: true,
+    };
+
+    await parse(options);
+
+    expect(destroyCloudFormationMock).toHaveBeenCalled();
+  });
+});
 
 describe('should set cloudfront', () => {
   const testHelper = async (optionsArray: any[], every: boolean) => {
@@ -44,8 +96,8 @@ describe('should set cloudfront', () => {
         acm: 'some string',
       },
       {
-        acm: randomString,
-        aliases: [randomString],
+        acm: faker.random.word(),
+        aliases: [faker.random.word()],
       },
       {
         cloudfront: true,
@@ -54,7 +106,7 @@ describe('should set cloudfront', () => {
         csp: {},
       },
       {
-        gtmId: randomString,
+        gtmId: faker.random.word(),
       },
       {
         spa: true,
@@ -67,7 +119,7 @@ describe('should set cloudfront', () => {
   test('cloudfront must be false', () => {
     const options = [
       {
-        buildFolder: randomString,
+        buildFolder: faker.random.word(),
       },
       {
         cloudfront: false,

@@ -34,6 +34,7 @@ const mockS3HeadObject = jest.fn().mockReturnValue({
  * Mocked to test Lambda@Edge origin request.
  */
 jest.mock('aws-sdk', () => ({
+  ...(jest.requireActual('aws-sdk') as any),
   S3: jest.fn(() => ({
     getObject: mockS3GetObject,
     headObject: mockS3HeadObject,

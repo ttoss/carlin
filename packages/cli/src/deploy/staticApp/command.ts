@@ -17,12 +17,13 @@ export const options = {
   aliases: {
     describe:
       'The aliases that will be associated with the CloudFront. See https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html',
+    implies: ['acm'],
     type: 'array',
   },
   'build-folder': {
-    describe: `The folder that will be uploaded. If not provided, it'll search for the folders ${defaultBuildFolders.join(
+    describe: `The folder that will be uploaded. If not provided, it'll search for the folders "${defaultBuildFolders.join(
       ', ',
-    )}.`,
+    )}."`,
     type: 'string',
   },
   cloudfront: {
@@ -76,13 +77,6 @@ export const deployStaticAppCommand: CommandModule<
         );
         if (someDefined) {
           argv.cloudfront = true;
-        }
-      })
-      .check(({ aliases, acm }) => {
-        if (aliases && !acm) {
-          throw new Error('"acm" must be defined when "aliases" is defined.');
-        } else {
-          return true;
         }
       }),
   handler: ({ destroy, ...rest }) => {

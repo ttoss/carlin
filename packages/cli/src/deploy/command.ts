@@ -1,5 +1,7 @@
 import AWS from 'aws-sdk';
+import * as fs from 'fs';
 import log from 'npmlog';
+import * as path from 'path';
 import yargs, { CommandModule } from 'yargs';
 
 import { AWS_DEFAULT_REGION } from '../config';
@@ -42,6 +44,17 @@ const describeDeployCommand: CommandModule = {
   },
 };
 
+/**
+ * This method was created because fs.readFileSync cannot be mocked.
+ */
+export const readDockerfile = (dockerfilePath: string) => {
+  try {
+    return fs.readFileSync(path.join(process.cwd(), dockerfilePath), 'utf8');
+  } catch {
+    return '';
+  }
+};
+
 export const options = {
   'aws-account-id': {
     description: 'AWS account id associated with the deployment.',
@@ -51,6 +64,17 @@ export const options = {
     default: false,
     description:
       'Destroy the deployment. You cannot destroy a deploy with "environment" is defined.',
+    type: 'boolean',
+  },
+  'lambda-dockerfile': {
+    coerce: (arg: string) => readDockerfile(arg),
+    default: 'Dockerfile',
+    describe: 'Instructions to create the Lambda image.',
+    type: 'string',
+  },
+  'lambda-image': {
+    default: false,
+    describe: 'A Lambda image will be created instead using S3.',
     type: 'boolean',
   },
   'lambda-externals': {
@@ -132,10 +156,19 @@ export const deployCommand: CommandModule<
         AWS.config.region = region;
       })
       /**
-       * Set stack name,
+       * Set stack name.
        */
       .middleware(({ stackName }) => {
         if (stackName) setPreDefinedStackName(stackName);
+      })
+      /**
+       * Set lambdaImage if lambdaDockerfile exists.
+       */
+      .middleware((argv) => {
+        if (argv.lambdaDockerfile) {
+          // eslint-disable-next-line no-param-reassign
+          argv.lambdaImage = true;
+        }
       })
       /**
        * Check AWS account id.
@@ -151,6 +184,7 @@ export const deployCommand: CommandModule<
               ? environments[environment].awsAccountId
               : undefined;
           })();
+
           if (defaultAwsAccountId || envAwsAccountId) {
             await checkAwsAccountId(defaultAwsAccountId || envAwsAccountId);
           }

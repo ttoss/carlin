@@ -18,6 +18,13 @@ jest.mock('deepmerge', () => ({
   all: jest.fn().mockReturnValue(optionsFromConfigFiles),
 }));
 
+jest.mock('find-up', () => ({
+  sync: jest
+    .fn()
+    .mockReturnValueOnce('./some-dir')
+    .mockReturnValueOnce(undefined),
+}));
+
 jest.mock('./deploy/staticApp/staticApp', () => ({
   ...(jest.requireActual('./deploy/staticApp/staticApp') as any),
   deployStaticApp: jest.fn(),

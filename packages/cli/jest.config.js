@@ -2,10 +2,10 @@ module.exports = {
   collectCoverage: true,
   coverageThreshold: {
     global: {
-      branches: 30,
-      functions: 30,
-      lines: 30,
-      statements: 30,
+      branches: 25,
+      functions: 35,
+      lines: 45,
+      statements: 50,
     },
   },
   preset: 'ts-jest',

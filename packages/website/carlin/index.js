@@ -17,8 +17,8 @@ const {
 
 const {
   getBuildSpec,
-  getCodeBuildTemplate,
-} = require('carlin/dist/deploy/lambdaLayer/codebuild.template');
+  getLambdaLayerBuilderTemplate,
+} = require('carlin/dist/deploy/baseStack/getLambdaLayerBuilder.template');
 
 const {
   getLambdaLayerTemplate,
@@ -104,14 +104,12 @@ module.exports = () => {
           deploy: require('carlin/dist/deploy/command').examples,
         },
         lambdaLayer: {
-          buildspec: getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' }),
+          buildspec: getBuildSpec(),
           buildspecCommands: yaml.dump(
             yaml.safeLoad(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
               .install.commands,
           ),
-          codeBuildProjectTemplate: getCodeBuildTemplate({
-            baseBucketName: 'BASE_BUCKET_NAME',
-          }),
+          codeBuildProjectTemplate: getLambdaLayerBuilderTemplate(),
           lambdaLayerTemplate: getLambdaLayerTemplate({
             bucket: 'BASE_BUCKET_NAME',
             key: 'lambda-layer/packages/PACKAGE@X.Y.Z.zip',

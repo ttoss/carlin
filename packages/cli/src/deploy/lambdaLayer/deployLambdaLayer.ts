@@ -3,48 +3,15 @@ import log from 'npmlog';
 import { CodeBuild } from 'aws-sdk';
 import { pascalCase } from 'change-case';
 
-import { NAME, AWS_DEFAULT_REGION } from '../../config';
+import { NAME } from '../../config';
 
-import { getBaseStackBucketName } from '../baseStack/getBaseStackBucketName';
+import { getBaseStackResource } from '../baseStack/getBaseStackResource';
 import { deploy, doesStackExist } from '../cloudFormation.core';
-import {
-  deployErrorLogs,
-  handleDeployError,
-  handleDeployInitialization,
-} from '../utils';
+import { handleDeployError } from '../utils';
 
-import {
-  getBuildSpec,
-  getCodeBuildTemplate,
-  PROJECT_NAME_OUTPUT_KEY,
-} from './codebuild.template';
-import { CloudFormationTemplate } from '../../utils';
-
-const codeBuild = new CodeBuild({ region: AWS_DEFAULT_REGION });
+import { CloudFormationTemplate, waitCodeBuildFinish } from '../../utils';
 
 const logPrefix = 'lambda-layer';
-
-const LAMBDA_LAYER_CODE_BUILD_STACK_NAME = pascalCase(
-  `${NAME}LambdaLayerCodeBuildProject`,
-);
-
-const deployCodeBuildProject = async () => {
-  const { stackName } = await handleDeployInitialization({
-    logPrefix,
-    stackName: LAMBDA_LAYER_CODE_BUILD_STACK_NAME,
-  });
-
-  const template = getCodeBuildTemplate({
-    baseBucketName: await getBaseStackBucketName(),
-  });
-
-  const params = { StackName: stackName };
-
-  const { Outputs } = await deploy({ params, template });
-
-  return Outputs?.find(({ OutputKey }) => OutputKey === PROJECT_NAME_OUTPUT_KEY)
-    ?.OutputValue;
-};
 
 const createLambdaLayerZipFile = async ({
   codeBuildProjectName,
@@ -55,9 +22,16 @@ const createLambdaLayerZipFile = async ({
 }) => {
   log.info(logPrefix, `Creating zip file for package ${packageName}...`);
 
+  const codeBuild = new CodeBuild();
+
   const { build } = await codeBuild
     .startBuild({
-      buildspecOverride: getBuildSpec({ packageName }),
+      environmentVariablesOverride: [
+        {
+          name: 'PACKAGE_NAME',
+          value: packageName,
+        },
+      ],
       projectName: codeBuildProjectName,
     })
     .promise();
@@ -66,62 +40,25 @@ const createLambdaLayerZipFile = async ({
     throw new Error('Cannot start build.');
   }
 
-  let artifactBucket;
+  const result = await waitCodeBuildFinish({
+    buildId: build.id,
+    name: packageName,
+  });
 
-  const checkIfBuildIsFinished = async (buildId: string) => {
-    const { builds } = await codeBuild
-      .batchGetBuilds({ ids: [buildId] })
-      .promise();
+  if (result.artifacts?.location) {
+    const location = result.artifacts.location.split('/');
 
-    return new Promise<CodeBuild.Build | undefined>((resolve, reject) => {
-      setTimeout(() => {
-        const executedBuild = builds?.find(({ id }) => id === buildId);
+    const bucket = location.shift()?.replace('arn:aws:s3:::', '');
 
-        log.info(
-          logPrefix,
-          `Build status for package ${packageName}: ${executedBuild?.buildStatus}`,
-        );
-
-        if (executedBuild && executedBuild.currentPhase === 'COMPLETED') {
-          if (executedBuild.buildStatus === 'SUCCEEDED') {
-            resolve(executedBuild);
-          } else if (executedBuild.buildStatus === 'FAILURE') {
-            reject(
-              new Error(`Cannot execute build for package ${packageName}.`),
-            );
-          }
-        }
-
-        resolve(undefined);
-      }, 5000);
-    });
-  };
-
-  while (!artifactBucket) {
-    // eslint-disable-next-line no-await-in-loop
-    const result = await checkIfBuildIsFinished(build.id);
-
-    if (result) {
-      if (result.artifacts?.location) {
-        const location = result.artifacts.location.split('/');
-
-        const bucket = location.shift()?.replace('arn:aws:s3:::', '');
-
-        if (!bucket) {
-          throw new Error('Cannot retrieve bucket name.');
-        }
-
-        const key = location.join('/');
-        artifactBucket = { bucket, key };
-      } else {
-        throw new Error(
-          `Cannot get artifact location for package ${packageName}`,
-        );
-      }
+    if (!bucket) {
+      throw new Error('Cannot retrieve bucket name.');
     }
+
+    const key = location.join('/');
+    return { bucket, key };
   }
 
-  return artifactBucket;
+  throw new Error(`Cannot get artifact location for package ${packageName}`);
 };
 
 /**
@@ -214,7 +151,9 @@ export const deployLambdaLayer = async ({
       return;
     }
 
-    const codeBuildProjectName = await deployCodeBuildProject();
+    const codeBuildProjectName = await getBaseStackResource(
+      'BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME',
+    );
 
     if (!codeBuildProjectName) {
       throw new Error(
@@ -241,7 +180,7 @@ export const deployLambdaLayer = async ({
           params: { StackName: getPackageLambdaLayerStackName(packageName) },
         });
       } catch (error) {
-        deployErrorLogs({ error, logPrefix });
+        handleDeployError({ error, logPrefix });
       }
     };
 

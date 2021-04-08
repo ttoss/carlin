@@ -1,13 +1,19 @@
 import AdmZip from 'adm-zip';
+import { CodeBuild } from 'aws-sdk';
 import builtins from 'builtin-modules';
 import fs from 'fs';
 import log from 'npmlog';
 import path from 'path';
 import webpack from 'webpack';
 
-import { getBaseStackBucketName } from './baseStack/getBaseStackBucketName';
+import { AWS_DEFAULT_REGION } from '../config';
+import { waitCodeBuildFinish, getPackageVersion } from '../utils';
+
+import { getBaseStackResource } from './baseStack/getBaseStackResource';
 import { deployLambdaLayer } from './lambdaLayer/deployLambdaLayer';
 import { uploadFileToS3 } from './s3';
+
+const codeBuild = new CodeBuild({ region: AWS_DEFAULT_REGION });
 
 const logPrefix = 'lambda';
 
@@ -83,16 +89,26 @@ export const buildLambdaSingleFile = async ({
 };
 
 export const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
+  log.info(logPrefix, `Uploading code to S3...`);
+
   const zip = new AdmZip();
+
   const code = fs.readFileSync(
     path.join(process.cwd(), outFolder, webpackOutputFilename),
   );
+
   zip.addFile('index.js', code);
+
   if (!fs.existsSync('dist')) {
     fs.mkdirSync('dist');
   }
+
   zip.writeZip('dist/lambda.zip');
-  const bucketName = await getBaseStackBucketName();
+
+  const bucketName = await getBaseStackResource(
+    'BASE_STACK_BUCKET_LOGICAL_NAME',
+  );
+
   return uploadFileToS3({
     bucket: bucketName,
     contentType: 'application/zip' as any,
@@ -112,9 +128,9 @@ export const deployLambdaLayers = async ({
 
   log.info(
     logPrefix,
-    `--lambda-externals (${lambdaExternals.join(
+    `--lambda-externals [${lambdaExternals.join(
       ', ',
-    )}) was found. Creating Lambda Layers...`,
+    )}] was found. Creating other layers...`,
   );
 
   const { dependencies } = (() => {
@@ -131,9 +147,9 @@ export const deployLambdaLayers = async ({
     }
   })();
 
-  const packages = lambdaExternals.map((le) => {
-    const semver = dependencies[le].replace(/(~|\^)/g, '');
-    return `${le}@${semver}`;
+  const packages = lambdaExternals.map((lambdaExternal) => {
+    const semver = dependencies[lambdaExternal].replace(/(~|\^)/g, '');
+    return `${lambdaExternal}@${semver}`;
   });
 
   await deployLambdaLayer({ packages, deployIfExists: false });
@@ -142,15 +158,67 @@ export const deployLambdaLayers = async ({
 export const uploadCodeToECR = async ({
   bucket,
   key,
-  versionId,
   lambdaExternals,
+  lambdaDockerfile,
 }: {
   bucket: string;
   key: string;
   versionId: string;
+  lambdaDockerfile: string;
   lambdaExternals: string[];
 }) => {
-  const imageUri = JSON.stringify([bucket, key, versionId, ...lambdaExternals]);
+  const TEMP = 1;
+
+  if (TEMP) {
+    throw new Error('uploadCodeToECR not finished yet.');
+  }
+
+  const lambdaBuilder = await getBaseStackResource(
+    'BASE_STACK_LAMBDA_IMAGE_BUILDER_LOGICAL_NAME',
+  );
+
+  const defaultDockerfile = [
+    'FROM public.ecr.aws/lambda/nodejs:14',
+    // eslint-disable-next-line no-template-curly-in-string
+    'COPY . ${LAMBDA_TASK_ROOT}',
+    'RUN npm install',
+  ].join('\n');
+
+  const { build } = await codeBuild
+    .startBuild({
+      environmentVariablesOverride: [
+        {
+          name: 'DOCKERFILE',
+          value: lambdaDockerfile || defaultDockerfile,
+        },
+        {
+          name: 'LAMBDA_EXTERNALS',
+          value: lambdaExternals.join(' '),
+        },
+        {
+          name: 'IMAGE_TAG',
+          value: getPackageVersion(),
+        },
+        {
+          name: 'REPOSITORY_ECR_REPOSITORY',
+          value: 'testtesteste',
+        },
+      ],
+      projectName: lambdaBuilder,
+      sourceLocationOverride: `${bucket}/${key}`,
+      sourceTypeOverride: 'S3',
+    })
+    .promise();
+
+  if (!build?.id) {
+    throw new Error('Cannot start build.');
+  }
+
+  await waitCodeBuildFinish({ buildId: build.id, name: 'lambda-builder' });
+
+  const imageUri =
+    '178804353523.dkr.ecr.us-east-1.amazonaws.com/testtesteste:0.0.1';
+
   return { imageUri };
 };
 
@@ -162,11 +230,13 @@ export const uploadCodeToECR = async ({
  * 1. Upload the zipped code to base stack bucket.
  */
 export const deployLambdaCode = async ({
+  lambdaDockerfile,
   lambdaExternals,
   lambdaImage,
   lambdaInput,
   stackName,
 }: {
+  lambdaDockerfile: string;
   lambdaExternals: string[];
   lambdaImage?: boolean;
   lambdaInput: string;
@@ -191,6 +261,7 @@ export const deployLambdaCode = async ({
     bucket,
     key,
     versionId,
+    lambdaDockerfile,
     lambdaExternals,
   });
 

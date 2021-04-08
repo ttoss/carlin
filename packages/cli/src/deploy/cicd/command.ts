@@ -32,7 +32,6 @@ export const deployCicdCommand: CommandModule<
     if (destroy) {
       log.info(logPrefix, `${NAME} doesn't destroy CICD stack.`);
     } else {
-      // console.log(rest);
       deployCicd(rest as any);
     }
   },

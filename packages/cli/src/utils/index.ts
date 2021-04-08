@@ -1,4 +1,5 @@
 export * from './addGroupToOptions';
+export * from './codeBuild';
 export * from './cloudFormationTemplate';
 export * from './environment';
 export * from './exec';
