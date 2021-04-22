@@ -2,7 +2,7 @@ module.exports = {
   collectCoverage: true,
   coverageThreshold: {
     global: {
-      branches: 25,
+      branches: 27,
       functions: 35,
       lines: 45,
       statements: 50,
@@ -10,4 +10,5 @@ module.exports = {
   },
   preset: 'ts-jest',
   setupFiles: ['<rootDir>/setupTests.js'],
+  silent: true,
 };

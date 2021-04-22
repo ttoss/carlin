@@ -60,6 +60,10 @@ module.exports = () => {
               'deploy/staticApp/staticApp.js',
               'deployStaticApp',
             ],
+            removeOldVersions: [
+              'deploy/staticApp/staticApp.js',
+              'removeOldVersions',
+            ],
             destroy: ['deploy/cloudFormation.js', 'destroy'],
             publishLambdaVersionZipFile: [
               'deploy/staticApp/staticApp.template.js',
@@ -75,7 +79,10 @@ module.exports = () => {
               'getPackageLambdaLayerStackName',
             ],
             cliEnv: ['cli.js', 'getEnv'],
+            cliGetConfig: ['cli.js', 'cli~getConfig'],
+            cliGetPkgConfig: ['cli.js', 'getPkgConfig'],
             getCurrentBranch: ['utils/getCurrentBranch.js', 'getCurrentBranch'],
+            getProjectName: ['utils/getProjectName.js', 'getProjectName'],
           }),
           stackName: toHtml(
             getComment(['deploy/stackName.js', 'getStackName']).split(

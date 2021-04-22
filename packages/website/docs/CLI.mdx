@@ -6,6 +6,24 @@ import carlin from '../.docusaurus/carlin/default/carlin.json';
 
 ## Common Options
 
+The options below, if defined, is passed to all commands, but a command might not need to use them.
+
+<InnerHTML html={carlin.comments.cliEnv} />
+
+<InnerHTML html={carlin.comments.cliGetPkgConfig} />
+
+### branch
+
+<OptionHeader option="branch" options={carlin.options.cli} />
+
+<InnerHTML html={carlin.comments.getCurrentBranch} />
+
+### config
+
+<OptionHeader option="config" options={carlin.options.cli} />
+
+<InnerHTML html={carlin.comments.cliGetConfig} />
+
 ### environment
 
 <OptionHeader option="environment" options={carlin.options.cli} />
@@ -48,10 +66,8 @@ The `region` value will be, for each command:
 
 :::
 
-## process.env
+### project
 
-<InnerHTML html={carlin.comments.cliEnv} />
+<OptionHeader option="project" options={carlin.options.cli} />
 
-### `BRANCH`/`BRANCH_NAME`
-
-<InnerHTML html={carlin.comments.getCurrentBranch} />
+<InnerHTML html={carlin.comments.getProjectName} />

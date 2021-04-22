@@ -8,6 +8,12 @@ const getComment = ([pathFromDist, longname]) => {
     files: path.resolve(process.cwd(), '../cli/dist', pathFromDist),
   });
 
+  // if (pathFromDist === 'cli.js') {
+  //   // eslint-disable-next-line no-console
+  //   console.log(res);
+  //   process.exit(0);
+  // }
+
   const { description } = res.find(
     (p) => p.longname === longname && p.undocumented !== true,
   ) || { description: '***DESCRIPTION NOT FOUND***' };

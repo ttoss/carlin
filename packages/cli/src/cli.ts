@@ -8,31 +8,56 @@ import * as yargs from 'yargs';
 import { NAME } from './config';
 
 import { deployCommand } from './deploy/command';
-import { addGroupToOptions, setEnvironment, readObjectFile } from './utils';
+import {
+  addGroupToOptions,
+  EnvironmentVariables,
+  setEnvVar,
+  readObjectFile,
+} from './utils';
+
+const coerce = (env: EnvironmentVariables) => (value: any) => {
+  console.log({ env, value });
+  if (value) {
+    setEnvVar(env, value);
+  }
+  return value;
+};
 
 export const options = {
+  branch: {
+    coerce: coerce('BRANCH'),
+    require: false,
+    type: 'string',
+  },
   config: {
     alias: 'c',
-    describe: 'Path to config file.',
+    describe:
+      'Path to config file. You can create a config file and set all options there. Valid extensions: .js, .json, .ts, .yml, or .yaml.',
     require: false,
     type: 'string',
   },
   environment: {
     alias: ['e', 'env'],
-    coerce: (environment: string) => {
-      if (environment) {
-        setEnvironment(environment);
-      }
-      return environment;
-    },
+    coerce: coerce('ENVIRONMENT'),
     type: 'string',
   },
   environments: {},
+  project: {
+    coerce: coerce('PROJECT'),
+    require: false,
+    type: 'string',
+  },
 } as const;
 
 /**
- * All options my be passed as environment variables matching the prefix
- * "CARLIN". See [Yargs reference](https://yargs.js.org/docs/#api-reference-envprefix).
+ * You can also provide the options creating a property name `carlin`
+ * inside your `package.json`. [See Yargs reference](https://yargs.js.org/docs/#api-reference-pkgconfkey-cwd).
+ */
+const getPkgConfig = () => NAME;
+
+/**
+ * All options can be passed as environment variables matching the prefix
+ * `CARLIN`. See [Yargs reference](https://yargs.js.org/docs/#api-reference-envprefix).
  * Example, we may use `carlin deploy --stack-name StackName` or
  * `CARLIN_STACK_NAME=StackName carlin deploy`.
  */
@@ -50,10 +75,49 @@ const cli = () => {
   let finalConfig: any;
 
   /**
-   * Get all carlin configs from directories.
+   * If `--config` isn't provided, the algorithm will search for any of these
+   * files and use it to retrieve the options:
+   *
+   * - `carlin.js`
+   * - `carlin.ts`
+   * - `carlin.yaml`
+   * - `carlin.yml`
+   * - `carlin.json`
+   *
+   * The algorithm also make a find up path to search for other config files
+   * that may exist in parent directories. If find more than one file, they'll
+   * be merged, in such a way that the files nearest from `process.cwd()` will
+   * take the precedence at the merging.
+   *
+   * This is useful if you have a monorepo and have shared and specific
+   * configuration. For instance, you may have a config inside `packages/app/`
+   * folder with the config below:
+   *
+   * ```yaml
+   * stackName: MyMonorepoApp
+   * region: us-east-2
+   * ```
+   *
+   * And on the root of your monorepo:
+   *
+   * ```yaml
+   * awsAccountId: 123456789012
+   * region: us-east-1
+   * ```
+   *
+   * The result options that will be passed to the commands executed on
+   * `packages/app/` will be:
+   *
+   * ```yaml
+   * awsAccountId: 123456789012
+   * stackName: MyMonorepoApp
+   * region: us-east-2
+   * ```
    */
   const getConfig = () => {
-    const names = ['js', 'yml', 'yaml', 'json'].map((ext) => `${NAME}.${ext}`);
+    const names = ['js', 'yml', 'yaml', 'json', 'ts'].map(
+      (ext) => `${NAME}.${ext}`,
+    );
     const paths = [];
     let currentPath = process.cwd();
     let findUpPath: string | undefined;
@@ -80,7 +144,7 @@ const cli = () => {
   return (
     yargs
       /**
-       * It can't be full strict because options may overlap among calin config
+       * It can't be full strict because options may overlap among carlin config
        * files.
        */
       .strictCommands()
@@ -144,7 +208,7 @@ const cli = () => {
           });
         }
       }) as any)
-      .pkgConf(NAME)
+      .pkgConf(getPkgConfig())
       .config(getConfig())
       .config('config', (configPath: string) =>
         readObjectFile({ path: configPath }),

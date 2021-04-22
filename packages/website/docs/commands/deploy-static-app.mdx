@@ -41,6 +41,8 @@ For every [CloudFront deployment](#CloudFront), <Carlin /> uses the current vers
 This feature comes in hand when you need to rollback a version. In this case, you just need to change the [CloudFront Origin Path](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesOriginPath)
 to the required version.
 
+<InnerHTML html={carlin.comments.removeOldVersions} />
+
 ## Security
 
 <InnerHTML html={carlin.comments.assignSecurityHeaders} />

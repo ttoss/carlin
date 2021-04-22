@@ -80,7 +80,7 @@ export const deployCloudFormation = async ({
   template,
   templatePath,
 }: {
-  lambdaDockerfile: string;
+  lambdaDockerfile?: string;
   lambdaInput: string;
   lambdaImage?: boolean;
   lambdaExternals?: string[];

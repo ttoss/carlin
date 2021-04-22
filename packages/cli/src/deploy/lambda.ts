@@ -164,7 +164,7 @@ export const uploadCodeToECR = async ({
   bucket: string;
   key: string;
   versionId: string;
-  lambdaDockerfile: string;
+  lambdaDockerfile?: string;
   lambdaExternals: string[];
 }) => {
   const TEMP = 1;
@@ -236,7 +236,7 @@ export const deployLambdaCode = async ({
   lambdaInput,
   stackName,
 }: {
-  lambdaDockerfile: string;
+  lambdaDockerfile?: string;
   lambdaExternals: string[];
   lambdaImage?: boolean;
   lambdaInput: string;

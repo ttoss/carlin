@@ -1,23 +1,26 @@
 import git from 'simple-git';
 
+import { getEnvVar, hasEnvVar } from './environmentVariables';
+
 export const BRANCH_UNDEFINED = '';
 
 /**
  * Git current branch is used to determine the name of the stack when deploying
- * resources. If we provide a `BRANCH` or `BRANCH_NAME` through `process.env`,
- * these values will be used instead of Git current branch. Example:
+ * resources. If we provide a `CARLIN_BRANCH` through `process.env` or by
+ * options, these values will be used instead of Git current branch. Example:
  *
  * ```
- * BRANCH=branch-name carlin deploy
- * BRANCH_NAME=branch-name carlin deploy
+ * CARLIN_BRANCH=branch-name carlin deploy --destroy
+ * carlin deploy --destroy --branch=branch-name
  * ```
+ *
+ * This parameters is useful when you need to delete a deployment related to
+ * some branch but such branch has already beed deleted.
  */
 export const getCurrentBranch = async () => {
   try {
-    const env = process.env.BRANCH || process.env.BRANCH_NAME;
-
-    if (env) {
-      return env;
+    if (hasEnvVar('BRANCH')) {
+      return getEnvVar('BRANCH');
     }
 
     const { current } = await git().branch();

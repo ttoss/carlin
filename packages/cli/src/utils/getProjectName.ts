@@ -1,10 +1,20 @@
 import { pascalCase } from 'change-case';
 
+import { getEnvVar, hasEnvVar } from './environmentVariables';
 import { getPackageName } from './packageJson';
 
+/**
+ * This variable is used to determine the name of the whole project. If the
+ * project is a monorepo, the project name is considered as the
+ * [scope](https://docs.npmjs.com/cli/v7/using-npm/scope) of the `package.json`
+ * name property. If isn't a monorepo, is considered the package name.
+ *
+ * This variable is used to set some properties on CloudFormation tags and
+ * defining the name of some stacks, for instance, the CICD stack.
+ */
 export const getProjectName = () => {
-  if (process.env.PROJECT_NAME) {
-    return process.env.PROJECT_NAME;
+  if (hasEnvVar('PROJECT')) {
+    return getEnvVar('PROJECT');
   }
 
   const name = getPackageName();

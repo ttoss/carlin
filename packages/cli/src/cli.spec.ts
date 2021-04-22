@@ -30,13 +30,69 @@ jest.mock('./deploy/staticApp/staticApp', () => ({
   deployStaticApp: jest.fn(),
 }));
 
+import { getCurrentBranch, getEnvironment, getProjectName } from './utils';
+
 import cli from './cli';
 
 import { deployStaticApp } from './deploy/staticApp/staticApp';
 
-const parse = (arg: any, context: any) => {
+const parse = async (arg: any, context: any) => {
   return cli().strict(false).parse(arg, context);
 };
+
+describe('validating environment variables', () => {
+  afterEach(() => {
+    delete process.env.CARLIN_BRANCH;
+    delete process.env.CARLIN_ENVIRONMENT;
+    delete process.env.CARLIN_PROJECT;
+  });
+
+  const generateRandomVariables = () => ({
+    branch: faker.random.word(),
+    environment: faker.random.word(),
+    project: faker.random.word(),
+  });
+
+  const testExpects = async ({ argv, branch, environment, project }: any) => {
+    expect(await getCurrentBranch()).toEqual(branch);
+    expect(argv.branch).toEqual(branch);
+
+    expect(getEnvironment()).toEqual(environment);
+    expect(argv.environment).toEqual(environment);
+
+    expect(getProjectName()).toEqual(project);
+    expect(argv.project).toEqual(project);
+  };
+
+  test('passing by options', async () => {
+    const { branch, environment, project } = generateRandomVariables();
+
+    /**
+     * Use options this way to coerce to work.
+     */
+    const options = [
+      `--branch=${branch}`,
+      `--environment=${environment}`,
+      `--project=${project}`,
+    ].join(' ');
+
+    const argv = await parse(`print-args ${options}`, {});
+
+    await testExpects({ argv, branch, environment, project });
+  });
+
+  test('passing by process.env', async () => {
+    const { branch, environment, project } = generateRandomVariables();
+
+    process.env.CARLIN_BRANCH = branch;
+    process.env.CARLIN_ENVIRONMENT = environment;
+    process.env.CARLIN_PROJECT = project;
+
+    const argv = await parse('print-args', {});
+
+    await testExpects({ argv, branch, environment, project });
+  });
+});
 
 describe('handle merge config correctly', () => {
   describe('Config merging errors when default values is present #16 https://github.com/ttoss/carlin/issues/16', () => {
