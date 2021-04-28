@@ -4,12 +4,22 @@ import Examples from '../../src/components/Examples';
 import InnerHTML from '../../src/components/InnerHTML';
 import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 
-import carlin from '../../.docusaurus/carlin/default/carlin.json';
+import { cliOptions } from '../../.docusaurus/carlin/default/cliOptions.json';
+import { defaultTemplatePaths } from '../../.docusaurus/carlin/default/defaultTemplatePaths.json';
+import { deployComment } from '../../.docusaurus/carlin/default/deployComment.json';
+import { deployCloudFormationDeployLambdaCodeComment } from '../../.docusaurus/carlin/default/deployCloudFormationDeployLambdaCodeComment.json';
+import { deployExamples } from '../../.docusaurus/carlin/default/deployExamples.json';
+import { deployLambdaCodeComment } from '../../.docusaurus/carlin/default/deployLambdaCodeComment.json';
+import { deployOptions } from '../../.docusaurus/carlin/default/deployOptions.json';
+import { destroyComment } from '../../.docusaurus/carlin/default/destroyComment.json';
+import { readObjectFileComment } from '../../.docusaurus/carlin/default/readObjectFileComment.json';
+import { stackNameComment } from '../../.docusaurus/carlin/default/stackNameComment.json';
+import { stackNameWarningComment } from '../../.docusaurus/carlin/default/stackNameWarningComment.json';
 
 export const DefaultTemplatePaths = () => {
   return (
     <ol>
-      {carlin.defaultTemplatePaths.map((path) => (
+      {defaultTemplatePaths.map((path) => (
         <li key={path}>
           <code>{path}</code>,
         </li>
@@ -24,7 +34,7 @@ export const DefaultTemplatePaths = () => {
 carlin deploy
 ```
 
-This command deploys the cloud resources. <Carlin /> takes the template defined by <OptionAliasesInline options={carlin.options.deploy} option="template-path" to="/docs/api-reference/deploy#template-path" /> option. If this option has no value, the algorithm will search for these files to be used as template:
+This command deploys the cloud resources. <Carlin /> takes the template defined by <OptionAliasesInline options={deployOptions} option="template-path" to="/docs/api-reference/deploy#template-path" /> option. If this option has no value, the algorithm will search for these files to be used as template:
 
 <DefaultTemplatePaths />
 
@@ -32,20 +42,20 @@ and deploy accordingly to the following algorithm:
 
 :::note Algorithm
 
-<Algorithm algorithm={carlin.comments.deploy} />
+<Algorithm algorithm={deployComment} />
 
 :::
 
 The files listed above must provide an object containing the [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-guide.html).
 
-<InnerHTML html={carlin.comments.readObjectFile} />
+<InnerHTML html={readObjectFileComment} />
 
 ### Stack Name
 
 <Carlin /> creates automatically the <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html">
   CloudFormation stack name
 </a>, unless it is already specified at the <OptionAliasesInline
-  options={carlin.options.deploy}
+  options={deployOptions}
   option="stack-name"
   to="/docs/api-reference/deploy#stack-name"
 /> option. This name is very important because it'll track the deployment when a
@@ -53,25 +63,25 @@ update or a delete is performed.
 
 :::caution
 
-<InnerHTML html={carlin.comments.stackNameWarning} />
+<InnerHTML html={stackNameWarningComment} />
 ::::
 
-<InnerHTML html={carlin.comments.stackName} />
+<InnerHTML html={stackNameComment} />
 
 ## Lambda
 
-If <code children={carlin.options.deploy['lambda-input'].default} /> or any file defined by <OptionAliasesInline options={carlin.options.deploy} option="lambda-input" to="/docs/api-reference/deploy#lambda-input" /> exists, <Carlin /> will deploy with the Lambda algorithm.
+If <code children={deployOptions['lambda-input'].default} /> or any file defined by <OptionAliasesInline options={deployOptions} option="lambda-input" to="/docs/api-reference/deploy#lambda-input" /> exists, <Carlin /> will deploy with the Lambda algorithm.
 
 :::note Algorithm
 
-<Algorithm algorithm={carlin.comments.deployCloudFormationDeployLambdaCode} />
+<Algorithm algorithm={deployCloudFormationDeployLambdaCodeComment} />
 :::
 
 The build and upload algorithm is:
 
 :::note Algorithm
 
-<Algorithm algorithm={carlin.comments.deployLambdaCode} />
+<Algorithm algorithm={deployLambdaCodeComment} />
 :::
 
 ### Use Cases:
@@ -80,7 +90,7 @@ The build and upload algorithm is:
 
 ## Destroy
 
-To destroy the stack, just pass the option <OptionAliasesInline options={carlin.options.deploy} option="destroy" to="/docs/api-reference/deploy#destroy" /> to the deploy command:
+To destroy the stack, just pass the option <OptionAliasesInline options={deployOptions} option="destroy" to="/docs/api-reference/deploy#destroy" /> to the deploy command:
 
 ```
 carlin deploy --destroy
@@ -90,14 +100,14 @@ When this option exists, the following algorithm is executed:
 
 :::note Algorithm
 
-<Algorithm algorithm={carlin.comments.destroy} />
+<Algorithm algorithm={destroyComment} />
 :::
 
 :::danger
 This operation is irreversible. You must pay attention because you may destroy resources that contains your App data, like DynamoDB, using this command.
-To overcome this problem, destroy will only delete the resources if termination protetion isn't enabled and if <OptionAliasesInline options={carlin.options.cli} option="environment" /> isn't defined.
+To overcome this problem, destroy will only delete the resources if termination protetion isn't enabled and if <OptionAliasesInline options={cliOptions} option="environment" /> isn't defined.
 :::
 
 ## Examples
 
-<Examples examples={carlin.examples.deploy} />
+<Examples examples={deployExamples} />

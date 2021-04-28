@@ -2,13 +2,15 @@ import Api from '../../src/components/Api';
 import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 import OptionHeader from '../../src/components/OptionHeader';
 
-import carlin from '../../.docusaurus/carlin/default/carlin.json';
+import { cliOptions } from '../../.docusaurus/carlin/default/cliOptions.json';
+import { deployApi } from '../../.docusaurus/carlin/default/deployApi.json';
+import { deployOptions } from '../../.docusaurus/carlin/default/deployOptions.json';
 
-<Api api={carlin.api.deploy} />
+<Api api={deployApi} />
 
 ## aws-account-id
 
-<OptionHeader option="aws-account-id" options={carlin.options.deploy} />
+<OptionHeader option="aws-account-id" options={deployOptions} />
 
 This option locks the deployment AWS accound id. As we work with many [environments](/docs/CLI#environments), sometimes we might perform some deploy with undesired credentials.
 For instance, we might run a deploy for staging environment but with production credentials.
@@ -25,7 +27,7 @@ aws-account-id: 111111111111
       aws-account-id: 333333333333
 ```
 
-Deploys with <OptionAliasesInline option="environment" options={carlin.options.cli} /> equals to, will only be performed if the credetial AWS accound id is:
+Deploys with <OptionAliasesInline option="environment" options={cliOptions} /> equals to, will only be performed if the credetial AWS accound id is:
 
 - **Production**: `333333333333`.
 - **Staging**: `222222222222`.
@@ -33,19 +35,19 @@ Deploys with <OptionAliasesInline option="environment" options={carlin.options.c
 
 ## destroy
 
-<OptionHeader option="destroy" options={carlin.options.deploy} />
+<OptionHeader option="destroy" options={deployOptions} />
 
 ## lambda-externals
 
-<OptionHeader option="lambda-externals" options={carlin.options.deploy} />
+<OptionHeader option="lambda-externals" options={deployOptions} />
 
 ## lambda-input
 
-<OptionHeader option="lambda-input" options={carlin.options.deploy} />
+<OptionHeader option="lambda-input" options={deployOptions} />
 
 ## parameters
 
-<OptionHeader option="parameters" options={carlin.options.deploy} />
+<OptionHeader option="parameters" options={deployOptions} />
 
 This option has the format, the same format as the paramters used by [aws cloudformation create-stack CLI command](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/create-stack.html):
 
@@ -70,12 +72,12 @@ parameters:
 
 ## region
 
-<OptionHeader option="region" options={carlin.options.deploy} />
+<OptionHeader option="region" options={deployOptions} />
 
 ## stack-name
 
-<OptionHeader option="stack-name" options={carlin.options.deploy} />
+<OptionHeader option="stack-name" options={deployOptions} />
 
 ## template-path
 
-<OptionHeader option="template-path" options={carlin.options.deploy} />
+<OptionHeader option="template-path" options={deployOptions} />

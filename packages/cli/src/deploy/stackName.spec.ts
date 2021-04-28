@@ -23,6 +23,7 @@ const environment = faker.random.word();
 const packageName = `@${faker.random.word()}/${faker.random.word()}`;
 
 jest.mock('../utils', () => ({
+  ...(jest.requireActual('../utils') as any),
   getCurrentBranch: jest.fn(),
   getEnvironment: jest.fn(),
   getPackageName: jest.fn(),

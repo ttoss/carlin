@@ -35,8 +35,5 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^2.0.0-alpha.70"
-  },
-  "resolutions": {
-    "terser": "4.8.0"
   }
 }

@@ -1,6 +1,6 @@
 import * as faker from 'faker';
 
-import { cache, setEnvVar, hasEnvVar, getEnvVar } from './environmentVariables';
+import { cache, setEnvVar, getEnvVar } from './environmentVariables';
 
 test('basic cache routines', () => {
   const key = faker.random.word();
@@ -19,11 +19,11 @@ test.each((['BRANCH', 'ENVIRONMENT', 'PROJECT'] as const).map((env) => [env]))(
   (key) => {
     const value = faker.random.word();
 
-    expect(hasEnvVar(key)).toBeFalsy();
+    expect(cache.has(key)).toBeFalsy();
 
     setEnvVar(key, value);
 
-    expect(hasEnvVar(key)).toBeTruthy();
+    expect(cache.has(key)).toBeTruthy();
     expect(getEnvVar(key)).toEqual(value);
   },
 );

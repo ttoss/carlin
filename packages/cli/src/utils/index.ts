@@ -3,7 +3,6 @@ export * from './codeBuild';
 export * from './cloudFormationTemplate';
 export * from './environmentVariables';
 export * from './exec';
-export * from './fileTemplate';
 export * from './formatCode';
 export * from './getAwsAccountId';
 export * from './getCurrentBranch';

@@ -1,14 +1,18 @@
 import { paramCase, pascalCase } from 'change-case';
 
-import { getCurrentBranch, getEnvironment, getPackageName } from '../utils';
-
-let preDefinedStackName = '';
+import {
+  getCurrentBranch,
+  getEnvironment,
+  getPackageName,
+  getEnvVar,
+  setEnvVar,
+} from '../utils';
 
 /**
  * Used by CLI set stack name when it is defined.
  */
-export const setPreDefinedStackName = (name: string) => {
-  preDefinedStackName = name;
+export const setPreDefinedStackName = (stackName: string) => {
+  setEnvVar('STACK_NAME', stackName);
 };
 
 /**
@@ -55,8 +59,8 @@ export const limitStackName = (stackName: string) =>
  *
  */
 export const getStackName = async () => {
-  if (preDefinedStackName) {
-    return preDefinedStackName;
+  if (getEnvVar('STACK_NAME')) {
+    return getEnvVar('STACK_NAME');
   }
 
   const [currentBranch, environment, packageName] = await Promise.all([

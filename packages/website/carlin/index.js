@@ -39,113 +39,115 @@ module.exports = () => {
     loadContent: async () => {
       return {
         defaultTemplatePaths,
-        api: {
-          deploy: await cliApi('deploy'),
-          deployStaticApp: await cliApi('deploy static-app'),
-          deployLambdaLayer: await cliApi('deploy lambda-layer'),
-        },
-        comments: {
-          ...getComments({
-            deploy: ['deploy/cloudFormation.core.js', 'deploy'],
-            deployCloudFormationDeployLambdaCode: [
-              'deploy/cloudFormation.js',
-              'deployCloudFormation~deployCloudFormationDeployLambdaCode',
-            ],
-            deployBaseStack: [
-              'deploy/baseStack/deployBaseStack.js',
-              'deployBaseStack',
-            ],
-            deployLambdaCode: ['deploy/lambda.js', 'deployLambdaCode'],
-            deployStaticApp: [
-              'deploy/staticApp/staticApp.js',
-              'deployStaticApp',
-            ],
-            removeOldVersions: [
-              'deploy/staticApp/staticApp.js',
-              'removeOldVersions',
-            ],
-            destroy: ['deploy/cloudFormation.js', 'destroy'],
-            publishLambdaVersionZipFile: [
-              'deploy/staticApp/staticApp.template.js',
-              'PUBLISH_LAMBDA_VERSION_ZIP_FILE',
-            ],
-            readObjectFile: ['utils/readObjectFile.js', 'readObjectFile'],
-            assignSecurityHeaders: [
-              'deploy/staticApp/staticApp.template.js',
-              'assignSecurityHeaders',
-            ],
-            getPackageLambdaLayerStackName: [
-              'deploy/lambdaLayer/deployLambdaLayer.js',
-              'getPackageLambdaLayerStackName',
-            ],
-            cliEnv: ['cli.js', 'getEnv'],
-            cliGetConfig: ['cli.js', 'cli~getConfig'],
-            cliGetPkgConfig: ['cli.js', 'getPkgConfig'],
-            getCurrentBranch: ['utils/getCurrentBranch.js', 'getCurrentBranch'],
-            getProjectName: ['utils/getProjectName.js', 'getProjectName'],
-          }),
-          stackName: toHtml(
-            getComment(['deploy/stackName.js', 'getStackName']).split(
-              'CAUTION!!!',
-            )[0],
-          ),
-          stackNameWarning: toHtml(
-            getComment(['deploy/stackName.js', 'getStackName']).split(
-              'CAUTION!!!',
-            )[1],
-          ),
-          staticAppLambdaEdgeOriginRequestDescription: toHtml(
-            getComment([
-              'deploy/staticApp/staticApp.template.js',
-              'getLambdaEdgeOriginRequestZipFile',
-            ]).split('## Algorithm')[0],
-          ),
-          staticAppLambdaEdgeOriginRequestAlgorithm: toHtml(
-            getComment([
-              'deploy/staticApp/staticApp.template.js',
-              'getLambdaEdgeOriginRequestZipFile',
-            ]).split('## Algorithm')[1],
-          ),
-        },
-        examples: {
-          deploy: require('carlin/dist/deploy/command').examples,
-        },
-        lambdaLayer: {
-          buildspec: getBuildSpec(),
-          buildspecCommands: yaml.dump(
-            yaml.safeLoad(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
-              .install.commands,
-          ),
-          codeBuildProjectTemplate: getLambdaLayerBuilderTemplate(),
-          lambdaLayerTemplate: getLambdaLayerTemplate({
-            bucket: 'BASE_BUCKET_NAME',
-            key: 'lambda-layer/packages/PACKAGE@X.Y.Z.zip',
-            packageName: 'PACKAGE@X.Y.Z.zip',
-          }),
-        },
-        options: {
-          cli: require('carlin/dist/cli').options,
-          deploy: require('carlin/dist/deploy/command').options,
-          deployStaticApp: require('carlin/dist/deploy/staticApp/command')
-            .options,
-          deployLambdaLayer: require('carlin/dist/deploy/lambdaLayer/command')
-            .options,
-        },
-        templates: {
-          baseStack: baseStackTemplate,
-          staticAppOnlyS3: getStaticAppTemplate({}),
-          staticAppCloudFront: getStaticAppTemplate({ cloudfront: true }),
-          staticAppGtmId: getStaticAppTemplate({
-            region: config.AWS_DEFAULT_REGION,
-            cloudfront: true,
-            gtmId: 'GTM-XXXX',
-          }),
-        },
+
+        deployApi: await cliApi('deploy'),
+        deployStaticAppApi: await cliApi('deploy static-app'),
+        deployLambdaLayerApi: await cliApi('deploy lambda-layer'),
+
+        ...getComments({
+          deployComment: ['deploy/cloudFormation.core.js', 'deploy'],
+          deployCloudFormationDeployLambdaCodeComment: [
+            'deploy/cloudFormation.js',
+            'deployCloudFormation~deployCloudFormationDeployLambdaCode',
+          ],
+          deployBaseStackComment: [
+            'deploy/baseStack/deployBaseStack.js',
+            'deployBaseStack',
+          ],
+          deployLambdaCodeComment: ['deploy/lambda.js', 'deployLambdaCode'],
+          deployStaticAppComment: [
+            'deploy/staticApp/staticApp.js',
+            'deployStaticApp',
+          ],
+          removeOldVersionsComment: [
+            'deploy/staticApp/staticApp.js',
+            'removeOldVersions',
+          ],
+          destroyComment: ['deploy/cloudFormation.js', 'destroy'],
+          publishLambdaVersionZipFileComment: [
+            'deploy/staticApp/staticApp.template.js',
+            'PUBLISH_LAMBDA_VERSION_ZIP_FILE',
+          ],
+          readObjectFileComment: ['utils/readObjectFile.js', 'readObjectFile'],
+          assignSecurityHeadersComment: [
+            'deploy/staticApp/staticApp.template.js',
+            'assignSecurityHeaders',
+          ],
+          getPackageLambdaLayerStackNameComment: [
+            'deploy/lambdaLayer/deployLambdaLayer.js',
+            'getPackageLambdaLayerStackName',
+          ],
+          cliEnvComment: ['cli.js', 'getEnv'],
+          cliGetConfigComment: ['cli.js', 'cli~getConfig'],
+          cliGetPkgConfigComment: ['cli.js', 'getPkgConfig'],
+          getCurrentBranchComment: [
+            'utils/getCurrentBranch.js',
+            'getCurrentBranch',
+          ],
+          getProjectNameComment: ['utils/getProjectName.js', 'getProjectName'],
+        }),
+        stackNameComment: toHtml(
+          getComment(['deploy/stackName.js', 'getStackName']).split(
+            'CAUTION!!!',
+          )[0],
+        ),
+        stackNameWarningComment: toHtml(
+          getComment(['deploy/stackName.js', 'getStackName']).split(
+            'CAUTION!!!',
+          )[1],
+        ),
+        staticAppLambdaEdgeOriginRequestDescriptionComment: toHtml(
+          getComment([
+            'deploy/staticApp/staticApp.template.js',
+            'getLambdaEdgeOriginRequestZipFile',
+          ]).split('## Algorithm')[0],
+        ),
+        staticAppLambdaEdgeOriginRequestAlgorithmComment: toHtml(
+          getComment([
+            'deploy/staticApp/staticApp.template.js',
+            'getLambdaEdgeOriginRequestZipFile',
+          ]).split('## Algorithm')[1],
+        ),
+
+        deployExamples: require('carlin/dist/deploy/command').examples,
+
+        lambdaLayerBuildspec: getBuildSpec(),
+        lambdaLayerBuildspecCommands: yaml.dump(
+          yaml.safeLoad(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
+            .install.commands,
+        ),
+        lambdaLayerCodeBuildProjectTemplate: getLambdaLayerBuilderTemplate(),
+        lambdaLayerTemplate: getLambdaLayerTemplate({
+          bucket: 'BASE_BUCKET_NAME',
+          key: 'lambda-layer/packages/PACKAGE@X.Y.Z.zip',
+          packageName: 'PACKAGE@X.Y.Z.zip',
+        }),
+
+        cliOptions: require('carlin/dist/cli').options,
+        deployOptions: require('carlin/dist/deploy/command').options,
+        deployStaticAppOptions: require('carlin/dist/deploy/staticApp/command')
+          .options,
+        deployLambdaLayerOptions: require('carlin/dist/deploy/lambdaLayer/command')
+          .options,
+
+        baseStackTemplate,
+        staticAppOnlyS3Template: getStaticAppTemplate({}),
+        staticAppCloudFrontTemplate: getStaticAppTemplate({
+          cloudfront: true,
+        }),
+        staticAppGtmIdTemplate: getStaticAppTemplate({
+          region: config.AWS_DEFAULT_REGION,
+          cloudfront: true,
+          gtmId: 'GTM-XXXX',
+        }),
       };
     },
     contentLoaded: async ({ actions, content }) => {
       const { createData } = actions;
-      await createData('carlin.json', JSON.stringify(content));
+
+      Object.entries(content).forEach(async ([key, value]) => {
+        await createData(`${key}.json`, JSON.stringify({ [key]: value }));
+      });
     },
   };
 };

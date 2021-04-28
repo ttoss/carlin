@@ -1,6 +1,6 @@
 import { pascalCase } from 'change-case';
 
-import { getEnvVar, hasEnvVar } from './environmentVariables';
+import { getEnvVar } from './environmentVariables';
 import { getPackageName } from './packageJson';
 
 /**
@@ -13,7 +13,7 @@ import { getPackageName } from './packageJson';
  * defining the name of some stacks, for instance, the CICD stack.
  */
 export const getProjectName = () => {
-  if (hasEnvVar('PROJECT')) {
+  if (getEnvVar('PROJECT')) {
     return getEnvVar('PROJECT');
   }
 

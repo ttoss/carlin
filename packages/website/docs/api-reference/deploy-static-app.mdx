@@ -6,45 +6,43 @@ import Api from '../../src/components/Api';
 import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 import OptionHeader from '../../src/components/OptionHeader';
 
-import carlin from '../../.docusaurus/carlin/default/carlin.json';
+import { deployStaticAppApi } from '../../.docusaurus/carlin/default/deployStaticAppApi.json';
+import { deployStaticAppOptions } from '../../.docusaurus/carlin/default/deployStaticAppOptions.json';
 
-<Api api={carlin.api.deployStaticApp} />
+<Api api={deployStaticAppApi} />
 
 ## acm
 
-<OptionHeader option="acm" options={carlin.options.deployStaticApp} />
+<OptionHeader option="acm" options={deployStaticAppOptions} />
 
 ## aliases
 
-<OptionHeader option="aliases" options={carlin.options.deployStaticApp} />
+<OptionHeader option="aliases" options={deployStaticAppOptions} />
 
 ## build-folder
 
-<OptionHeader option="build-folder" options={carlin.options.deployStaticApp} />
+<OptionHeader option="build-folder" options={deployStaticAppOptions} />
 
 ## cloudfront
 
-<OptionHeader option="cloudfront" options={carlin.options.deployStaticApp} />
+<OptionHeader option="cloudfront" options={deployStaticAppOptions} />
 
 ## csp
 
-<OptionHeader option="csp" options={carlin.options.deployStaticApp} />
+<OptionHeader option="csp" options={deployStaticAppOptions} />
 
 ## gtm-id
 
-<OptionHeader option="gtm-id" options={carlin.options.deployStaticApp} />
+<OptionHeader option="gtm-id" options={deployStaticAppOptions} />
 
 ## hosted-zone-name
 
-<OptionHeader
-  option="hosted-zone-name"
-  options={carlin.options.deployStaticApp}
-/>
+<OptionHeader option="hosted-zone-name" options={deployStaticAppOptions} />
 
 ## skip-upload
 
-<OptionHeader option="skip-upload" options={carlin.options.deployStaticApp} />
+<OptionHeader option="skip-upload" options={deployStaticAppOptions} />
 
 ## spa
 
-<OptionHeader option="spa" options={carlin.options.deployStaticApp} />
+<OptionHeader option="spa" options={deployStaticAppOptions} />

@@ -16,7 +16,6 @@ import {
 } from './utils';
 
 const coerce = (env: EnvironmentVariables) => (value: any) => {
-  console.log({ env, value });
   if (value) {
     setEnvVar(env, value);
   }

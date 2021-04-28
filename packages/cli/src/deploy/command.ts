@@ -159,6 +159,7 @@ export const deployCommand: CommandModule<
        * Set stack name.
        */
       .middleware(({ stackName }) => {
+        console.log('AAAAAAAAAAAa');
         if (stackName) setPreDefinedStackName(stackName);
       })
       /**

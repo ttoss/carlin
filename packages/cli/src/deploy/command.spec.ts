@@ -11,6 +11,10 @@ jest.mock('./cloudFormation', () => ({
   destroyCloudFormation: destroyCloudFormationMock,
 }));
 
+import { getEnvVar } from '../utils/environmentVariables';
+
+import { getStackName, setPreDefinedStackName } from './stackName';
+
 import * as commandModule from './command';
 
 const cli = yargs.command(commandModule.deployCommand);
@@ -25,6 +29,29 @@ const parse = (command: string, options: any = {}) =>
       resolve(argv);
     });
   });
+
+describe('stack name and cache', () => {
+  beforeEach(() => {
+    setPreDefinedStackName('');
+  });
+
+  afterAll(() => {
+    setPreDefinedStackName('');
+  });
+
+  test('should save stack name on cache', async () => {
+    const stackName = faker.random.word();
+    const argv = await parse('deploy', { stackName });
+    expect(argv.stackName).toEqual(stackName);
+    expect(await getStackName()).toEqual(stackName);
+  });
+
+  test('cache should not have stack name', async () => {
+    const argv = await parse('deploy');
+    expect(argv.stackName).toBeUndefined();
+    expect(getEnvVar('STACK_NAME')).toBeUndefined();
+  });
+});
 
 describe('lambda-dockerfile', () => {
   test("should return empty string if Dockerfile doesn't exists", async () => {

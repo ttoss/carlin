@@ -6,9 +6,10 @@ import CodeBlock from '../../src/components/CodeBlock';
 import InnerHTML from '../../src/components/InnerHTML';
 import Template from '../../src/components/Template';
 
-import carlin from '../../.docusaurus/carlin/default/carlin.json';
+import { baseStackTemplate } from '../../.docusaurus/carlin/default/baseStackTemplate.json';
+import { deployBaseStackComment } from '../../.docusaurus/carlin/default/deployBaseStackComment.json';
 
-<InnerHTML html={carlin.comments.deployBaseStack} />
+<InnerHTML html={deployBaseStackComment} />
 
 ## Deploying Base Stack
 
@@ -20,4 +21,4 @@ carlin deploy base-stack
 
 The command create a stack whose template is:
 
-<Template json={carlin.templates.baseStack} />
+<Template json={baseStackTemplate} />

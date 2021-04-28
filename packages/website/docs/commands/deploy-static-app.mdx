@@ -8,12 +8,20 @@ import CodeBlock from '../../src/components/CodeBlock';
 import InnerHTML from '../../src/components/InnerHTML';
 import Template from '../../src/components/Template';
 
-import carlin from '../../.docusaurus/carlin/default/carlin.json';
+import { assignSecurityHeadersComment } from '../../.docusaurus/carlin/default/assignSecurityHeadersComment.json';
+import { deployStaticAppComment } from '../../.docusaurus/carlin/default/deployStaticAppComment.json';
+import { publishLambdaVersionZipFileComment } from '../../.docusaurus/carlin/default/publishLambdaVersionZipFileComment.json';
+import { removeOldVersionsComment } from '../../.docusaurus/carlin/default/removeOldVersionsComment.json';
+import { staticAppCloudFrontTemplate } from '../../.docusaurus/carlin/default/staticAppCloudFrontTemplate.json';
+import { staticAppGtmIdTemplate } from '../../.docusaurus/carlin/default/staticAppGtmIdTemplate.json';
+import { staticAppLambdaEdgeOriginRequestAlgorithmComment } from '../../.docusaurus/carlin/default/staticAppLambdaEdgeOriginRequestAlgorithmComment.json';
+import { staticAppLambdaEdgeOriginRequestDescriptionComment } from '../../.docusaurus/carlin/default/staticAppLambdaEdgeOriginRequestDescriptionComment.json';
+import { staticAppOnlyS3Template } from '../../.docusaurus/carlin/default/staticAppOnlyS3Template.json';
 
 export const OriginPath = () => {
   return (
     <code>
-      {carlin.templates.staticAppCloudFront.Resources.CloudFrontDistribution.Properties.DistributionConfig.Origins[0].OriginPath.replace(
+      {staticAppCloudFrontTemplate.Resources.CloudFrontDistribution.Properties.DistributionConfig.Origins[0].OriginPath.replace(
         '/',
         '',
       )}
@@ -31,7 +39,7 @@ This command deploys static apps to [AWS](https://aws.amazon.com/) using [Amazon
 
 :::note Algorithm
 
-<Algorithm algorithm={carlin.comments.deployStaticApp} />
+<Algorithm algorithm={deployStaticAppComment} />
 
 :::
 
@@ -41,11 +49,11 @@ For every [CloudFront deployment](#CloudFront), <Carlin /> uses the current vers
 This feature comes in hand when you need to rollback a version. In this case, you just need to change the [CloudFront Origin Path](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesOriginPath)
 to the required version.
 
-<InnerHTML html={carlin.comments.removeOldVersions} />
+<InnerHTML html={removeOldVersionsComment} />
 
 ## Security
 
-<InnerHTML html={carlin.comments.assignSecurityHeaders} />
+<InnerHTML html={assignSecurityHeadersComment} />
 
 ## Deployments
 
@@ -67,7 +75,7 @@ This kind of deployment is good to use to deploy an application to the QA team v
 
 #### CloudFormation Template
 
-<Template json={carlin.templates.staticAppOnlyS3} />
+<Template json={staticAppOnlyS3Template} />
 
 ### CloudFront
 
@@ -77,13 +85,13 @@ carlin deploy static-app --cloudfront
 
 :::info
 
-<InnerHTML html={carlin.comments.publishLambdaVersionZipFile} />
+<InnerHTML html={publishLambdaVersionZipFileComment} />
 
 :::
 
 #### CloudFormation Template
 
-<Template json={carlin.templates.staticAppCloudFront} />
+<Template json={staticAppCloudFrontTemplate} />
 
 The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) templates.
 
@@ -91,18 +99,15 @@ The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) t
 
 <Template
   json={
-    carlin.templates.staticAppCloudFront.Resources.StaticBucketS3BucketPolicy
-      .Properties.PolicyDocument
+    staticAppCloudFrontTemplate.Resources.StaticBucketS3BucketPolicy.Properties
+      .PolicyDocument
   }
 />
 
 - It creates `CloudFrontDistribution` that uses the bucket and the [version](#versioning) (<OriginPath />) as origin.
 
 <Template
-  json={
-    carlin.templates.staticAppCloudFront.Resources.CloudFrontDistribution
-      .Properties
-  }
+  json={staticAppCloudFrontTemplate.Resources.CloudFrontDistribution.Properties}
 />
 
 ### Google Tag Manager
@@ -111,21 +116,19 @@ The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) t
 carlin deploy static-app --gtm-id GTM-XXXX
 ```
 
-<InnerHTML html={carlin.comments.staticAppLambdaEdgeOriginRequestDescription} />
+<InnerHTML html={staticAppLambdaEdgeOriginRequestDescriptionComment} />
 
 #### Lamdba@Edge Origin Request code
 
 :::note Algorithm
 
-<Algorithm
-  algorithm={carlin.comments.staticAppLambdaEdgeOriginRequestAlgorithm}
-/>
+<Algorithm algorithm={staticAppLambdaEdgeOriginRequestAlgorithmComment} />
 
 :::
 
 <CodeBlock className="javascript">
   {
-    carlin.templates.staticAppGtmId.Resources.LambdaEdgeOriginRequest.Properties
-      .Code.ZipFile
+    staticAppGtmIdTemplate.Resources.LambdaEdgeOriginRequest.Properties.Code
+      .ZipFile
   }
 </CodeBlock>

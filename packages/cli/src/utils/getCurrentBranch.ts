@@ -1,6 +1,6 @@
 import git from 'simple-git';
 
-import { getEnvVar, hasEnvVar } from './environmentVariables';
+import { getEnvVar } from './environmentVariables';
 
 export const BRANCH_UNDEFINED = '';
 
@@ -19,7 +19,7 @@ export const BRANCH_UNDEFINED = '';
  */
 export const getCurrentBranch = async () => {
   try {
-    if (hasEnvVar('BRANCH')) {
+    if (getEnvVar('BRANCH')) {
       return getEnvVar('BRANCH');
     }
 
