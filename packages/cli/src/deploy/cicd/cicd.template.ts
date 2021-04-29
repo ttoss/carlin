@@ -2,10 +2,80 @@ import yaml from 'js-yaml';
 
 import { CloudFormationTemplate, getIamPath } from '../../utils';
 
+export const API_LOGICAL_ID = 'ApiV1ServerlessApi';
+
+export const CODE_BUILD_PROJECT_LOGS_LOGICAL_ID =
+  'RepositoryImageCodeBuildProjectLogsLogGroup';
+
+export const CODE_BUILD_PROJECT_SERVICE_ROLE_LOGICAL_ID =
+  'RepositoryImageCodeBuildProjectIAMRole';
+
+export const ECR_REPOSITORY_LOGICAL_ID = 'RepositoryECRRepository';
+
+export const FUNCTION_IAM_ROLE_LOGICAL_ID = 'ApiV1ServerlessFunctionIAMRole';
+
+export const PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME =
+  'REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME';
+
+export const REPOSITORY_ECS_TASK_CONTAINER_NAME =
+  'RepositoryECSTaskContainerName';
+
+export const REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID =
+  'RepositoryECSTaskDefinition';
+
+export const REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID =
+  'RepositoryImageCodeBuildProject';
+
+export const REPOSITORY_TASKS_ECS_CLUSTER_LOGICAL_ID =
+  'RepositoryTasksECSCluster';
+
+export const REPOSITORY_TASKS_ECS_CLUSTER_LOGS_LOG_GROUP_LOGICAL_ID =
+  'RepositoryTasksECSClusterLogsLogGroup';
+
+export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID =
+  'RepositoryTasksECSTaskDefinitionExecutionRoleIAMRole';
+
+export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID =
+  'RepositoryTasksECSTaskDefinitionTaskRoleIAMRole';
+
+const apiProxyHandlerLambdaCode = `
+const AWS = require('aws-sdk');
+
+const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
+
+exports.proxyHandler =  async function(event, context) {
+  try {
+    const body = JSON.parse(event.body);
+
+    if(body.action === 'updateRepository') {
+      const startBuildResponse = await codebuild.startBuild({
+        projectName: process.env.${PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME}
+      }).promise();
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(startBuildResponse),
+      };  
+    }
+
+    return {
+      statusCode: 403,
+      body: 'Execute access forbidden',
+    };
+  } catch(err) {
+    return {
+      statusCode: 400,
+      body: err.message,
+    };
+  }
+}
+`;
+
 export const getCicdTemplate = (): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
-
-  const ECR_REPOSITORY_LOGICAL_ID = 'RepositoryECRRepository';
 
   /**
    * Elastic Container Registry
@@ -38,12 +108,6 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
    * CodeBuild
    */
   (() => {
-    const CODE_BUILD_PROJECT_LOGS_LOGICAL_ID =
-      'RepositoryImageCodeBuildProjectLogsLogGroup';
-
-    const CODE_BUILD_PROJECT_SERVICE_ROLE_LOGICAL_ID =
-      'RepositoryImageCodeBuildProjectIAMRole';
-
     resources[CODE_BUILD_PROJECT_LOGS_LOGICAL_ID] = {
       Type: 'AWS::Logs::LogGroup',
       DeletionPolicy: 'Delete',
@@ -102,7 +166,7 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
       },
     };
 
-    resources.RepositoryImageCodeBuildProject = {
+    resources[REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID] = {
       Type: 'AWS::CodeBuild::Project',
       Properties: {
         Artifacts: {
@@ -130,8 +194,25 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
               Value: {
                 'Fn::Sub': [
                   'FROM ubuntu:latest',
+
                   '# make sure apt is up to date',
                   'RUN apt-get update --fix-missing',
+
+                  '# Clean cache',
+                  'RUN apt-get clean',
+
+                  '# Configure git',
+                  'RUN git config --global user.name carlin',
+                  'RUN git config --global user.email carlin@ttoss.dev',
+
+                  '# Copy repository',
+                  'COPY . /home/monorepo',
+
+                  '# Go to repository directory',
+                  'WORKDIR /home/monorepo',
+
+                  '# Set Yarn cache',
+                  'RUN yarn config set cache-folder /home/monorepo/yarn-cache',
                 ].join('\n'),
               },
             },
@@ -148,8 +229,8 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
               Value: { Ref: 'SSHKey' },
             },
             {
-              Name: 'REPOSITORY',
-              Value: { Ref: 'Repository' },
+              Name: 'SSH_URL',
+              Value: { Ref: 'SSHUrl' },
             },
           ],
           Image: 'aws/codebuild/standard:3.0',
@@ -183,7 +264,7 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
                   `echo "$SSH_KEY" > ~/.ssh/id_rsa`,
                   'chmod 600 ~/.ssh/id_rsa',
                   'rm -rf repository',
-                  'git clone $REPOSITORY repository',
+                  'git clone $SSH_URL repository',
                   'npm install -g yarn',
                   'mkdir -p yarn-cache',
                   'yarn config set cache-folder ./yarn-cache',
@@ -225,16 +306,230 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
     };
   })();
 
+  /**
+   * API
+   */
+  (() => {
+    resources[API_LOGICAL_ID] = {
+      Type: 'AWS::Serverless::Api',
+      Properties: {
+        Auth: {
+          ApiKeyRequired: false,
+        },
+        StageName: 'v1',
+      },
+    };
+
+    resources[FUNCTION_IAM_ROLE_LOGICAL_ID] = {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: 'lambda.amazonaws.com',
+              },
+              Action: ['sts:AssumeRole'],
+            },
+          ],
+        },
+        ManagedPolicyArns: [
+          'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+        ],
+        Policies: [
+          {
+            PolicyName: `${FUNCTION_IAM_ROLE_LOGICAL_ID}Policy`,
+            PolicyDocument: {
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: ['codebuild:StartBuild'],
+                  Resource: {
+                    'Fn::GetAtt': [
+                      REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+                      'Arn',
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        Path: getIamPath(),
+      },
+    };
+
+    resources.ApiV1ServerlessFunction = {
+      Type: 'AWS::Serverless::Function',
+      Properties: {
+        Events: {
+          ApiEvent: {
+            Type: 'Api',
+            Properties: {
+              Method: 'POST',
+              Path: '/cicd',
+              RestApiId: { Ref: API_LOGICAL_ID },
+            },
+          },
+        },
+        Environment: {
+          Variables: {
+            [PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME]: {
+              Ref: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+            },
+          },
+        },
+        Handler: 'index.proxyHandler',
+        InlineCode: apiProxyHandlerLambdaCode,
+        Role: {
+          'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
+        },
+        Runtime: 'nodejs12.x',
+        Timeout: 60,
+      },
+    };
+  })();
+
+  /**
+   * ECS
+   */
+  (() => {
+    resources[REPOSITORY_TASKS_ECS_CLUSTER_LOGICAL_ID] = {
+      Type: 'AWS::ECS::Cluster',
+      Properties: {},
+    };
+
+    resources[REPOSITORY_TASKS_ECS_CLUSTER_LOGS_LOG_GROUP_LOGICAL_ID] = {
+      Type: 'AWS::Logs::LogGroup',
+      DeletionPolicy: 'Delete',
+      Properties: {},
+    };
+
+    /**
+     * Used to start the container.
+     */
+    resources[
+      REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID
+    ] = {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: 'ecs-tasks.amazonaws.com',
+              },
+              Action: 'sts:AssumeRole',
+            },
+          ],
+        },
+        ManagedPolicyArns: [
+          'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
+        ],
+        Path: getIamPath(),
+      },
+    };
+
+    /**
+     * Used inside de container execution.
+     */
+    resources[REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID] = {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: 'ecs-tasks.amazonaws.com',
+              },
+              Action: 'sts:AssumeRole',
+            },
+          ],
+        },
+        ManagedPolicyArns: [
+          'arn:aws:iam::aws:policy/job-function/ViewOnlyAccess',
+        ],
+        Path: getIamPath(),
+        // Policies: null,
+      },
+    };
+
+    resources[REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID] = {
+      Type: 'AWS::ECS::TaskDefinition',
+      Properties: {
+        ContainerDefinitions: [
+          {
+            Environment: [
+              {
+                /**
+                 * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-metadata.html#enable-metadata
+                 */
+                Name: 'ECS_ENABLE_CONTAINER_METADATA',
+                Value: 'true',
+              },
+            ],
+            Image: {
+              'Fn::Sub': [
+                // eslint-disable-next-line no-template-curly-in-string
+                '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryECR}:latest',
+                {
+                  RepositoryECR: { Ref: ECR_REPOSITORY_LOGICAL_ID },
+                },
+              ],
+            },
+            LogConfiguration: {
+              LogDriver: 'awslogs',
+              Options: {
+                'awslogs-group': {
+                  Ref: REPOSITORY_TASKS_ECS_CLUSTER_LOGS_LOG_GROUP_LOGICAL_ID,
+                },
+                'awslogs-region': { Ref: 'AWS::Region' },
+                'awslogs-stream-prefix': 'ecs',
+              },
+            },
+            Name: REPOSITORY_ECS_TASK_CONTAINER_NAME,
+          },
+        ],
+        Cpu: 1024,
+        ExecutionRoleArn: {
+          'Fn::GetAtt': [
+            REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID,
+            'Arn',
+          ],
+        },
+        Memory: 2048,
+        NetworkMode: 'awsvpc',
+        RequiresCompatibilities: ['FARGATE'],
+      },
+    };
+  })();
+
   return {
     AWSTemplateFormatVersion: '2010-09-09',
+    Transform: 'AWS::Serverless-2016-10-31',
     Resources: resources,
     Parameters: {
-      Repository: {
-        Type: 'String',
-      },
       SSHKey: {
         NoEcho: true,
         Type: 'String',
+      },
+      SSHUrl: {
+        Type: 'String',
+      },
+    },
+    Outputs: {
+      ApiV1Endpoint: {
+        Description: 'API v1 stage endpoint.',
+        Value: {
+          'Fn::Sub': `https://\${${API_LOGICAL_ID}}.execute-api.\${AWS::Region}.amazonaws.com/v1/`,
+        },
       },
     },
   };

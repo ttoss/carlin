@@ -20,6 +20,7 @@ test('should create base resources', async () => {
 
   expect(deployMock).toHaveBeenCalledWith({
     template: expect.objectContaining({
+      AWSTemplateFormatVersion: '2010-09-09',
       Resources: expect.objectContaining({
         [BASE_STACK_BUCKET_LOGICAL_NAME]: expect.anything(),
         [BASE_STACK_LAMBDA_IMAGE_BUILDER_LOGICAL_NAME]: expect.anything(),

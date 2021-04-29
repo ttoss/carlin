@@ -2,33 +2,29 @@ import { deploy } from '../cloudFormation.core';
 import { handleDeployError, handleDeployInitialization } from '../utils';
 
 import { getCicdTemplate } from './cicd.template';
-import { getStackName } from './getStackName';
+import { getCicdStackName } from './getCicdStackName';
 
 const logPrefix = 'cicd';
 
 export const deployCicd = async ({
-  repository,
   sshKey,
+  sshUrl,
 }: {
-  repository: string;
   sshKey: string;
+  sshUrl: string;
 }) => {
   try {
     const { stackName } = await handleDeployInitialization({
       logPrefix,
-      stackName: getStackName(),
+      stackName: getCicdStackName(),
     });
-
-    if (stackName) {
-      process.exit();
-    }
 
     await deploy({
       template: getCicdTemplate(),
       params: {
         StackName: stackName,
         Parameters: [
-          { ParameterKey: 'Repository', ParameterValue: repository },
+          { ParameterKey: 'SSHUrl', ParameterValue: sshUrl },
           { ParameterKey: 'SSHKey', ParameterValue: sshKey },
         ],
       },

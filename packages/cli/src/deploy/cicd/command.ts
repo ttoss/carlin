@@ -10,11 +10,18 @@ import { deployCicd } from './deployCicd';
 
 const logPrefix = 'deploy-cicd';
 
+/**
+ * Created to allow mocking.
+ */
+export const sshKeyCoerce = (dir: string) => fs.readFileSync(dir, 'utf-8');
+
 export const options = {
   'ssh-key': {
-    coerce: (dir: string) => {
-      return fs.readFileSync(dir).toString();
-    },
+    coerce: (dir: string) => sshKeyCoerce(dir),
+    demandOption: true,
+    type: 'string',
+  },
+  'ssh-url': {
     demandOption: true,
     type: 'string',
   },

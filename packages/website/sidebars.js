@@ -1,11 +1,12 @@
 module.exports = {
   docs: {
-    'Getting Started': ['overview', 'installation', 'CLI'],
+    'Getting Started': ['overview', 'history', 'installation', 'CLI'],
     Commands: [
       'commands/deploy',
       'commands/deploy-base-stack',
       'commands/deploy-static-app',
       'commands/deploy-lambda-layer',
+      'commands/deploy-cicd',
     ],
   },
   api: {

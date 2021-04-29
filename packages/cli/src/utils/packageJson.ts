@@ -11,18 +11,8 @@ const readPackageJson = () => {
   return JSON.parse(fs.readFileSync(packageJsonDir).toString());
 };
 
-const getPackageJsonProperty = ({
-  env,
-  property,
-}: {
-  env?: string;
-  property: string;
-}) => {
+const getPackageJsonProperty = ({ property }: { property: string }) => {
   try {
-    if (env && process.env[env]) {
-      return process.env[env] as string;
-    }
-
     return readPackageJson()[property];
   } catch {
     return '';
@@ -30,7 +20,7 @@ const getPackageJsonProperty = ({
 };
 
 export const getPackageName = (): string =>
-  getPackageJsonProperty({ env: 'PACKAGE_NAME', property: 'name' });
+  getPackageJsonProperty({ property: 'name' });
 
 export const getPackageVersion = (): string =>
-  getPackageJsonProperty({ env: 'PACKAGE_VERSION', property: 'version' });
+  getPackageJsonProperty({ property: 'version' });

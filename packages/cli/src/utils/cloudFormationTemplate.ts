@@ -10,7 +10,7 @@ interface Parameter {
 
 export interface Resource {
   Type: string;
-  DeletionPolicy?: string;
+  DeletionPolicy?: 'Delete' | 'Retain';
   Description?: string;
   DependsOn?: string[];
   Condition?: string;
@@ -27,6 +27,8 @@ export type Output = {
 
 export interface CloudFormationTemplate {
   AWSTemplateFormatVersion: '2010-09-09';
+  Transform?: 'AWS::Serverless-2016-10-31';
+  Mappings?: any;
   Conditions?: any;
   Parameters?: { [key: string]: Parameter };
   Resources: { [key: string]: Resource };

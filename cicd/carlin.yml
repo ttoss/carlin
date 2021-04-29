@@ -1,0 +1,2 @@
+sshKey: './ssh-key'
+sshUrl: git@github.com:ttoss/carlin.git

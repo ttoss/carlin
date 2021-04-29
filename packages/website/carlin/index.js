@@ -1,3 +1,4 @@
+const fs = require('fs');
 const yaml = require('js-yaml');
 
 /* eslint-disable global-require */
@@ -140,6 +141,9 @@ module.exports = () => {
           cloudfront: true,
           gtmId: 'GTM-XXXX',
         }),
+        carlinCicdConfig: yaml.safeLoad(
+          fs.readFileSync('../../cicd/carlin.yml', 'utf-8'),
+        ),
       };
     },
     contentLoaded: async ({ actions, content }) => {

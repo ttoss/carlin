@@ -3,9 +3,9 @@ module.exports = {
   coverageThreshold: {
     global: {
       branches: 28,
-      functions: 37,
-      lines: 50,
-      statements: 53,
+      functions: 40,
+      lines: 53,
+      statements: 56,
     },
   },
   preset: 'ts-jest',

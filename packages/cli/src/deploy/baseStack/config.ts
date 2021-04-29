@@ -31,3 +31,24 @@ export const BASE_STACK_LAMBDA_IMAGE_BUILDER_EXPORTED_NAME = `${pascalCase(
 export const BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME = `${pascalCase(
   NAME,
 )}LambdaLayerBuilder`;
+
+/**
+ * VPC
+ */
+export const VPC_ID_EXPORTED_NAME = `${pascalCase(NAME)}VPCIDExportedName`;
+
+export const VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME = `${pascalCase(
+  NAME,
+)}DefaultSecurityGroupExportedName`;
+
+export const VPC_PUBLIC_SUBNET_0_EXPORTED_NAME = `${pascalCase(
+  NAME,
+)}PepeVPCPublicSubnet0ExportedName`;
+
+export const VPC_PUBLIC_SUBNET_1_EXPORTED_NAME = `${pascalCase(
+  NAME,
+)}PepeVPCPublicSubnet1ExportedName`;
+
+export const VPC_PUBLIC_SUBNET_2_EXPORTED_NAME = `${pascalCase(
+  NAME,
+)}PepeVPCPublicSubnet2ExportedName`;
