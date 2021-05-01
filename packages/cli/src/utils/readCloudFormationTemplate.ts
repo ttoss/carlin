@@ -1,13 +1,11 @@
 import fs from 'fs';
-import yaml from 'js-yaml';
 import path from 'path';
 
-import { CloudFormationTemplate, getSchema } from './cloudFormationTemplate';
-
-type TagAndType = {
-  tag: string;
-  options: yaml.TypeConstructorOptions;
-};
+import {
+  CloudFormationTemplate,
+  TagAndType,
+  loadCloudFormationTemplate,
+} from './cloudFormationTemplate';
 
 const getTypes = (): TagAndType[] => [
   {
@@ -32,11 +30,13 @@ export const readCloudFormationYamlTemplate = ({
 }: {
   templatePath: string;
 }): CloudFormationTemplate => {
-  const schema = getSchema(getTypes());
   const template = fs.readFileSync(templatePath).toString();
-  const parsed = yaml.safeLoad(template, { schema });
+
+  const parsed = loadCloudFormationTemplate(template, getTypes());
+
   if (!parsed || typeof parsed === 'string') {
     throw new Error('Cannot parse CloudFormation template.');
   }
+
   return parsed as CloudFormationTemplate;
 };

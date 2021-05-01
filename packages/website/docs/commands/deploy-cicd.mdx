@@ -2,9 +2,13 @@
 title: deploy cicd
 ---
 
+import InnerHTML from '../../src/components/InnerHTML';
 import Template from '../../src/components/Template';
 
 import { carlinCicdConfig } from '../../.docusaurus/carlin/default/carlinCicdConfig.json';
+import { cicdTemplate } from '../../.docusaurus/carlin/default/cicdTemplate.json';
+import { cicdTemplateEcrRepository } from '../../.docusaurus/carlin/default/cicdTemplateEcrRepository.json';
+import { cicdTemplateGetEcrRepositoryComment } from '../../.docusaurus/carlin/default/cicdTemplateGetEcrRepositoryComment.json';
 
 ## Overview
 
@@ -14,13 +18,11 @@ This project was created to help anwsering the question:
 
 In other words, how can we setup a structure to execute commands and only pays for the time consumed?
 
-Aiming to create such structure, we've create this CICD module. Before we running
+Aiming to create such structure, we've create this CICD module. Let's understand the whole process before we run
 
 ```
 carlin deploy cicd
 ```
-
-let's understand the whole process.
 
 ## Serverless Repository
 
@@ -45,3 +47,13 @@ This project was create using [GitHub](https://github.com).
    ```
    carlin deploy cicd
    ```
+
+1. The CICD Stack will be created, whose full template is:
+
+   <Template json={cicdTemplate} />
+
+### Created Resources
+
+<InnerHTML html={cicdTemplateGetEcrRepositoryComment} />
+
+<Template json={cicdTemplateEcrRepository} />

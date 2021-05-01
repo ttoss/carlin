@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 
+import { formatCode } from '../../utils/formatCode';
 import { CloudFormationTemplate, getIamPath } from '../../utils';
 
 import {
@@ -45,7 +46,7 @@ export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID =
 export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID =
   'RepositoryTasksECSTaskDefinitionTaskRoleIAMRole';
 
-const apiProxyHandlerLambdaCode = `
+const apiProxyHandlerLambdaCode = formatCode(`
 const AWS = require('aws-sdk');
 
 const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
@@ -145,37 +146,56 @@ exports.proxyHandler =  async function(event, context) {
     };
   }
 }
-`;
+`);
 
-export const getCicdTemplate = (): CloudFormationTemplate => {
+export const getCicdTemplate = ({
+  cpu = '1024',
+  memory = '2048',
+}: {
+  cpu?: string;
+  memory?: string;
+}): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
 
   /**
-   * Elastic Container Registry
+   * #### Elastic Container Registry
+   *
+   * The algorithm will clone the repository and will create a Docker image
+   * to be used to perform commands. [Yarn cache](https://classic.yarnpkg.com/en/docs/cli/cache/)
+   * will also be saved together with the code to reduce tasks installation
+   * time. The created image will be pushed to [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/).
+   *
+   * A expiration rule is also defined. The registry only keeps the latest image.
    */
-  resources[ECR_REPOSITORY_LOGICAL_ID] = {
+  const getEcrRepositoryResource = () => ({
     Type: 'AWS::ECR::Repository',
     Properties: {
       LifecyclePolicy: {
-        LifecyclePolicyText: JSON.stringify({
-          rules: [
-            {
-              rulePriority: 1,
-              description: 'Only keep the latest image',
-              selection: {
-                tagStatus: 'any',
-                countType: 'imageCountMoreThan',
-                countNumber: 1,
+        LifecyclePolicyText: JSON.stringify(
+          {
+            rules: [
+              {
+                rulePriority: 1,
+                description: 'Only keep the latest image',
+                selection: {
+                  tagStatus: 'any',
+                  countType: 'imageCountMoreThan',
+                  countNumber: 1,
+                },
+                action: {
+                  type: 'expire',
+                },
               },
-              action: {
-                type: 'expire',
-              },
-            },
-          ],
-        }),
+            ],
+          },
+          null,
+          2,
+        ),
       },
     },
-  };
+  });
+
+  resources[ECR_REPOSITORY_LOGICAL_ID] = getEcrRepositoryResource();
 
   /**
    * CodeBuild
@@ -344,7 +364,7 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
           'Fn::GetAtt': [CODE_BUILD_PROJECT_SERVICE_ROLE_LOGICAL_ID, 'Arn'],
         },
         Source: {
-          BuildSpec: yaml.safeDump({
+          BuildSpec: yaml.dump({
             version: '0.2',
             phases: {
               install: {
@@ -624,14 +644,14 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
             Name: REPOSITORY_ECS_TASK_CONTAINER_NAME,
           },
         ],
-        Cpu: 1024,
+        Cpu: cpu,
         ExecutionRoleArn: {
           'Fn::GetAtt': [
             REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID,
             'Arn',
           ],
         },
-        Memory: 2048,
+        Memory: memory,
         NetworkMode: 'awsvpc',
         RequiresCompatibilities: ['FARGATE'],
       },

@@ -6,7 +6,7 @@ import yaml from 'js-yaml';
 
 export const readYaml = ({ path }: { path: string }) => {
   const template = fs.readFileSync(path, 'utf8') || JSON.stringify({});
-  return yaml.safeLoad(template);
+  return yaml.load(template);
 };
 
 /**

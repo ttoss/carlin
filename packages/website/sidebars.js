@@ -1,6 +1,6 @@
 module.exports = {
   docs: {
-    'Getting Started': ['overview', 'history', 'installation', 'CLI'],
+    'Getting Started': ['overview', 'installation', 'CLI'],
     Commands: [
       'commands/deploy',
       'commands/deploy-base-stack',

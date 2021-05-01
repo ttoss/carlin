@@ -20,7 +20,7 @@ export const deployCicd = async ({
     });
 
     await deploy({
-      template: getCicdTemplate(),
+      template: getCicdTemplate({}),
       params: {
         StackName: stackName,
         Parameters: [

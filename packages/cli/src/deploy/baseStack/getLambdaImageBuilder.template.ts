@@ -135,7 +135,7 @@ export const getLambdaImageBuilderTemplate = (): CloudFormationTemplate => {
             'Fn::GetAtt': [CODE_BUILD_PROJECT_SERVICE_ROLE_LOGICAL_ID, 'Arn'],
           },
           Source: {
-            BuildSpec: yaml.safeDump({
+            BuildSpec: yaml.dump({
               version: '0.2',
               phases: {
                 install: {
