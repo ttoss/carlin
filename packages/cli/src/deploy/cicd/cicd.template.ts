@@ -2,6 +2,13 @@ import yaml from 'js-yaml';
 
 import { CloudFormationTemplate, getIamPath } from '../../utils';
 
+import {
+  BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
+  BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
+  BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
+  BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
+} from '../baseStack/config';
+
 export const API_LOGICAL_ID = 'ApiV1ServerlessApi';
 
 export const CODE_BUILD_PROJECT_LOGS_LOGICAL_ID =
@@ -43,28 +50,94 @@ const AWS = require('aws-sdk');
 
 const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
 
+const ecs = new AWS.ECS({ apiVersion: '2014-11-13' });
+
 exports.proxyHandler =  async function(event, context) {
   try {
     const body = JSON.parse(event.body);
 
+    let response;
+
     if(body.action === 'updateRepository') {
-      const startBuildResponse = await codebuild.startBuild({
+      response = await codebuild.startBuild({
         projectName: process.env.${PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME}
       }).promise();
+    }
 
+    if(body.action === 'executeTask') {
+      const { commands = [], cpu, memory, environments = [] } = body;
+
+      if(commands.length === 0) {
+        return {
+          statusCode: 400,
+          body: 'Commands not provided.',
+        };
+      }
+
+      const command = [
+        // https://stackoverflow.com/questions/2853803/how-to-echo-shell-commands-as-they-are-executed/2853811
+        'set -x',
+        ...commands
+      ]
+        .map(c => c.replace(/;$/, ''))
+        .join(' && ');
+
+      response = await ecs.runTask({
+        taskDefinition: process.env.ECS_TASK_DEFINITION,
+        cluster: process.env.ECS_CLUSTER_ARN,
+        count: 1,
+        launchType: 'FARGATE',
+        networkConfiguration: {
+          awsvpcConfiguration: {
+            subnets: [
+              process.env.VPC_PUBLIC_SUBNET_0,
+              process.env.VPC_PUBLIC_SUBNET_1,
+              process.env.VPC_PUBLIC_SUBNET_2,
+            ],
+            assignPublicIp: 'ENABLED',
+            securityGroups: [
+              process.env.VPC_SECURITY_GROUP,
+            ],
+          },
+        },
+        overrides: {
+          containerOverrides: [
+            {
+              command: ['sh', '-cv', command],
+              name: process.env.ECS_CONTAINER_NAME,
+              environment: [
+                ...environments,
+                {
+                  name: 'CI',
+                  value: 'true',
+                },
+                {
+                  name: 'ECS_ENABLE_CONTAINER_METADATA',
+                  value: 'true',
+                },
+              ],
+            },
+          ],
+          cpu,
+          memory,
+        },
+      }).promise()
+    }
+
+    if(response) {
       return {
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(startBuildResponse),
+        body: JSON.stringify(response),
       };  
+    } else {
+      return {
+        statusCode: 403,
+        body: 'Execute access forbidden',
+      };
     }
-
-    return {
-      statusCode: 403,
-      body: 'Execute access forbidden',
-    };
   } catch(err) {
     return {
       statusCode: 400,
@@ -193,26 +266,42 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
               Name: 'DOCKERFILE',
               Value: {
                 'Fn::Sub': [
-                  'FROM ubuntu:latest',
+                  'FROM public.ecr.aws/ubuntu/ubuntu:latest',
 
-                  '# make sure apt is up to date',
+                  // https://stackoverflow.com/a/59693182/8786986
+                  'ENV DEBIAN_FRONTEND noninteractive',
+
+                  // Make sure apt is up to date
                   'RUN apt-get update --fix-missing',
 
-                  '# Clean cache',
+                  'RUN apt-get install -y curl',
+                  'RUN apt-get install -y git',
+
+                  // Install Node.js
+                  'RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -',
+                  'RUN apt-get install -y nodejs',
+
+                  // Clean cache
                   'RUN apt-get clean',
 
-                  '# Configure git',
+                  // Install Yarn
+                  'RUN npm install -g yarn',
+
+                  // Configure git
                   'RUN git config --global user.name carlin',
                   'RUN git config --global user.email carlin@ttoss.dev',
 
-                  '# Copy repository',
-                  'COPY . /home/monorepo',
+                  // Copy repository
+                  'COPY . /home',
 
-                  '# Go to repository directory',
-                  'WORKDIR /home/monorepo',
+                  // Go to repository directory
+                  'WORKDIR /home/repository',
 
-                  '# Set Yarn cache',
-                  'RUN yarn config set cache-folder /home/monorepo/yarn-cache',
+                  // Set Yarn cache
+                  'RUN mkdir -p /home/yarn-cache',
+                  'RUN yarn config set cache-folder /home/yarn-cache',
+
+                  'RUN yarn install',
                 ].join('\n'),
               },
             },
@@ -265,43 +354,35 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
                   'chmod 600 ~/.ssh/id_rsa',
                   'rm -rf repository',
                   'git clone $SSH_URL repository',
-                  'npm install -g yarn',
-                  'mkdir -p yarn-cache',
-                  'yarn config set cache-folder ./yarn-cache',
                   'cd repository',
                   'ls',
-                  'yarn install',
                 ],
               },
               pre_build: {
-                commands: [
-                  'echo pre_build started on `date`',
-                  '$(aws ecr get-login --no-include-email --region $AWS_REGION)',
-                ],
+                commands: ['echo pre_build started on `date`'],
               },
               build: {
                 commands: [
                   'echo build started on `date`',
+                  '$(aws ecr get-login --no-include-email --region $AWS_REGION)',
                   'echo Building the repository image...',
                   'cd ../',
                   'echo "$DOCKERFILE" > Dockerfile',
                   'cat Dockerfile',
                   'docker build -t $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .',
                   'docker tag $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG',
-                ],
-              },
-              post_build: {
-                commands: [
-                  'echo post_build completed on `date`',
                   'echo Pushing the repository image...',
                   'docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG',
                 ],
+              },
+              post_build: {
+                commands: ['echo post_build completed on `date`'],
               },
             },
           }),
           Type: 'NO_SOURCE',
         },
-        TimeoutInMinutes: 60,
+        TimeoutInMinutes: 15,
       },
     };
   })();
@@ -354,6 +435,33 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
                     ],
                   },
                 },
+                {
+                  Effect: 'Allow',
+                  Action: ['iam:PassRole'],
+                  Resource: [
+                    {
+                      'Fn::GetAtt': [
+                        REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID,
+                        'Arn',
+                      ],
+                    },
+                    {
+                      'Fn::GetAtt': [
+                        REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID,
+                        'Arn',
+                      ],
+                    },
+                  ],
+                },
+                {
+                  Effect: 'Allow',
+                  Action: ['ecs:RunTask'],
+                  Resource: [
+                    {
+                      Ref: REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
+                    },
+                  ],
+                },
               ],
             },
           },
@@ -379,6 +487,25 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
           Variables: {
             [PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME]: {
               Ref: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+            },
+            ECS_CLUSTER_ARN: {
+              'Fn::GetAtt': [REPOSITORY_TASKS_ECS_CLUSTER_LOGICAL_ID, 'Arn'],
+            },
+            ECS_CONTAINER_NAME: REPOSITORY_ECS_TASK_CONTAINER_NAME,
+            ECS_TASK_DEFINITION: {
+              Ref: REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
+            },
+            VPC_SECURITY_GROUP: {
+              'Fn::ImportValue': BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
+            },
+            VPC_PUBLIC_SUBNET_0: {
+              'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
+            },
+            VPC_PUBLIC_SUBNET_1: {
+              'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
+            },
+            VPC_PUBLIC_SUBNET_2: {
+              'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
             },
           },
         },
@@ -525,8 +652,8 @@ export const getCicdTemplate = (): CloudFormationTemplate => {
       },
     },
     Outputs: {
-      ApiV1Endpoint: {
-        Description: 'API v1 stage endpoint.',
+      CicdApiV1Endpoint: {
+        Description: 'CICD API v1 stage endpoint.',
         Value: {
           'Fn::Sub': `https://\${${API_LOGICAL_ID}}.execute-api.\${AWS::Region}.amazonaws.com/v1/`,
         },

@@ -39,6 +39,10 @@ export const baseStackTemplate = deepmerge.all([
  *
  * - **Lambda Image builder**. This resource is a CodeBuild project that builds
  * Docker Images if Lambda is going to use them.
+ *
+ * - **VPC**. This resource is used when some network infrastructure is
+ * required. For example, CICD needs a VPC to execute the [Fargate](https://aws.amazon.com/fargate/)
+ * operations.
  */
 export const deployBaseStack = async () => {
   try {

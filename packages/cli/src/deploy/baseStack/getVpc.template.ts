@@ -5,11 +5,11 @@ import { NAME } from '../../config';
 import { CloudFormationTemplate } from '../../utils';
 
 import {
-  VPC_ID_EXPORTED_NAME,
-  VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
-  VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
-  VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
-  VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
+  BASE_STACK_VPC_ID_EXPORTED_NAME,
+  BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
+  BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
+  BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
+  BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
 } from './config';
 
 export const getVpcTemplate = () => {
@@ -97,48 +97,24 @@ export const getVpcTemplate = () => {
           Ref: EC2_VPC_LOGICAL_ID,
         },
         Export: {
-          Name: VPC_ID_EXPORTED_NAME,
+          Name: BASE_STACK_VPC_ID_EXPORTED_NAME,
         },
       },
-      PepeVPCDefaultSecurityGroup: {
+      VPCDefaultSecurityGroup: {
         Value: {
           'Fn::GetAtt': [EC2_VPC_LOGICAL_ID, 'DefaultSecurityGroup'],
         },
         Export: {
-          Name: VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
+          Name: BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
         },
       },
-      // PepeVPCPublicSubnet1: {
-      //   Value: {
-      //     Ref: 'PublicSubnet1EC2Subnet',
-      //   },
-      //   Export: {
-      //     Name: 'PepeVPCPublicSubnet1',
-      //   },
-      // },
-      // PepeVPCPublicSubnet2: {
-      //   Value: {
-      //     Ref: 'PublicSubnet2EC2Subnet',
-      //   },
-      //   Export: {
-      //     Name: 'PepeVPCPublicSubnet2',
-      //   },
-      // },
-      // PepeVPCPublicSubnet3: {
-      //   Value: {
-      //     Ref: 'PublicSubnet3EC2Subnet',
-      //   },
-      //   Export: {
-      //     Name: 'PepeVPCPublicSubnet3',
-      //   },
-      // },
     },
   };
 
   [
-    VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
-    VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
-    VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
+    BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
+    BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
+    BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
   ].forEach((publicSubnetExportedName, index) => {
     const publicSubnetLogicalId = `PublicSubnet${index}EC2Subnet`;
 
@@ -171,7 +147,7 @@ export const getVpcTemplate = () => {
             Value: {
               'Fn::Join': [
                 ' ',
-                [EC2_VPC_LOGICAL_ID, '-', 'publicSubnetCidrMappings'],
+                [EC2_VPC_LOGICAL_ID, '-', publicSubnetLogicalId],
               ],
             },
           },
