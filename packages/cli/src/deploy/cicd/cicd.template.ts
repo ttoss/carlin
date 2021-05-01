@@ -1,6 +1,5 @@
 import yaml from 'js-yaml';
 
-import { formatCode } from '../../utils/formatCode';
 import { CloudFormationTemplate, getIamPath } from '../../utils';
 
 import {
@@ -46,114 +45,18 @@ export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID =
 export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID =
   'RepositoryTasksECSTaskDefinitionTaskRoleIAMRole';
 
-const apiProxyHandlerLambdaCode = formatCode(`
-const AWS = require('aws-sdk');
-
-const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
-
-const ecs = new AWS.ECS({ apiVersion: '2014-11-13' });
-
-exports.proxyHandler =  async function(event, context) {
-  try {
-    const body = JSON.parse(event.body);
-
-    let response;
-
-    if(body.action === 'updateRepository') {
-      response = await codebuild.startBuild({
-        projectName: process.env.${PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME}
-      }).promise();
-    }
-
-    if(body.action === 'executeTask') {
-      const { commands = [], cpu, memory, environments = [] } = body;
-
-      if(commands.length === 0) {
-        return {
-          statusCode: 400,
-          body: 'Commands not provided.',
-        };
-      }
-
-      const command = [
-        // https://stackoverflow.com/questions/2853803/how-to-echo-shell-commands-as-they-are-executed/2853811
-        'set -x',
-        ...commands
-      ]
-        .map(c => c.replace(/;$/, ''))
-        .join(' && ');
-
-      response = await ecs.runTask({
-        taskDefinition: process.env.ECS_TASK_DEFINITION,
-        cluster: process.env.ECS_CLUSTER_ARN,
-        count: 1,
-        launchType: 'FARGATE',
-        networkConfiguration: {
-          awsvpcConfiguration: {
-            subnets: [
-              process.env.VPC_PUBLIC_SUBNET_0,
-              process.env.VPC_PUBLIC_SUBNET_1,
-              process.env.VPC_PUBLIC_SUBNET_2,
-            ],
-            assignPublicIp: 'ENABLED',
-            securityGroups: [
-              process.env.VPC_SECURITY_GROUP,
-            ],
-          },
-        },
-        overrides: {
-          containerOverrides: [
-            {
-              command: ['sh', '-cv', command],
-              name: process.env.ECS_CONTAINER_NAME,
-              environment: [
-                ...environments,
-                {
-                  name: 'CI',
-                  value: 'true',
-                },
-                {
-                  name: 'ECS_ENABLE_CONTAINER_METADATA',
-                  value: 'true',
-                },
-              ],
-            },
-          ],
-          cpu,
-          memory,
-        },
-      }).promise()
-    }
-
-    if(response) {
-      return {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(response),
-      };  
-    } else {
-      return {
-        statusCode: 403,
-        body: 'Execute access forbidden',
-      };
-    }
-  } catch(err) {
-    return {
-      statusCode: 400,
-      body: err.message,
-    };
-  }
-}
-`);
-
 export const getCicdTemplate = ({
   cpu = '1024',
   memory = '2048',
+  s3,
 }: {
   cpu?: string;
   memory?: string;
+  s3: {
+    bucket: string;
+    key: string;
+    versionId: string;
+  };
 }): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
 
@@ -493,6 +396,11 @@ export const getCicdTemplate = ({
     resources.ApiV1ServerlessFunction = {
       Type: 'AWS::Serverless::Function',
       Properties: {
+        CodeUri: {
+          Bucket: s3.bucket,
+          Key: s3.key,
+          Version: s3.versionId,
+        },
         Events: {
           ApiEvent: {
             Type: 'Api',
@@ -530,11 +438,10 @@ export const getCicdTemplate = ({
           },
         },
         Handler: 'index.proxyHandler',
-        InlineCode: apiProxyHandlerLambdaCode,
         Role: {
           'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
         },
-        Runtime: 'nodejs12.x',
+        Runtime: 'nodejs14.x',
         Timeout: 60,
       },
     };

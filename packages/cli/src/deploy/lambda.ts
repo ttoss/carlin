@@ -35,7 +35,7 @@ export const buildLambdaSingleFile = async ({
   log.info(logPrefix, 'Building Lambda single file...');
 
   const webpackConfig: webpack.Configuration = {
-    entry: path.join(process.cwd(), lambdaInput),
+    entry: path.resolve(process.cwd(), lambdaInput),
     mode: 'none',
     externals: ['aws-sdk', ...builtins, ...lambdaExternals],
     module: {
