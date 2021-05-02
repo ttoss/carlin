@@ -13,7 +13,7 @@ const getProcessEnvVariable = (env: string): string => {
   throw new Error(`process.env.${env} doesn't exist.`);
 };
 
-export const proxyHandler: ProxyHandler = async (event) => {
+export const cicdApiV1ProxyHandler: ProxyHandler = async (event) => {
   try {
     const body = JSON.parse(event.body || JSON.stringify({}));
 

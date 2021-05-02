@@ -437,7 +437,7 @@ export const getCicdTemplate = ({
             },
           },
         },
-        Handler: 'index.proxyHandler',
+        Handler: 'index.cicdApiV1ProxyHandler',
         Role: {
           'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
         },
