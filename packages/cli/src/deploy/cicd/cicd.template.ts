@@ -579,6 +579,9 @@ export const getCicdTemplate = ({
       },
     },
     Outputs: {
+      [REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID]: {
+        Value: { Ref: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID },
+      },
       CicdApiV1Endpoint: {
         Description: 'CICD API v1 stage endpoint.',
         Value: {

@@ -55,3 +55,19 @@ export const waitCodeBuildFinish = async ({
 
   return result;
 };
+
+export const startCodeBuildBuild = async ({
+  projectName,
+}: {
+  projectName: string;
+}) => {
+  const codeBuild = new CodeBuild();
+
+  const { build } = await codeBuild.startBuild({ projectName }).promise();
+
+  if (!build) {
+    throw new Error(`Cannot start ${projectName} build`);
+  }
+
+  return build;
+};

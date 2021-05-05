@@ -16,6 +16,10 @@ const logPrefix = 'deploy-cicd';
 export const sshKeyCoerce = (dir: string) => fs.readFileSync(dir, 'utf-8');
 
 export const options = {
+  'repository-update': {
+    default: true,
+    type: 'boolean',
+  },
   'ssh-key': {
     coerce: (dir: string) => sshKeyCoerce(dir),
     demandOption: true,

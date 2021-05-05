@@ -85,11 +85,12 @@ export const describeStackEvents = async ({
   return events;
 };
 
-export const describeStacks = async ({ stackName }: { stackName: string }) => {
+export const describeStacks = async ({
+  stackName,
+}: { stackName?: string } = {}) => {
   const { Stacks } = await cloudFormation()
     .describeStacks({ StackName: stackName })
     .promise();
-
   return Stacks;
 };
 
@@ -99,10 +100,28 @@ export const describeStack = async ({ stackName }: { stackName: string }) => {
     .promise();
 
   if (!Stacks) {
-    throw new Error(`Stack ${stackName} not found and cannot be described`);
+    throw new Error(`Stack ${stackName} not found and cannot be described.`);
   }
 
   return Stacks[0];
+};
+
+export const getStackOutput = async ({
+  stackName,
+  outputKey,
+}: {
+  stackName: string;
+  outputKey: string;
+}) => {
+  const { Outputs = [] } = await describeStack({ stackName });
+
+  const output = Outputs?.find(({ OutputKey }) => OutputKey === outputKey);
+
+  if (!output) {
+    throw new Error(`Output ${outputKey} doesn't exist on ${stackName} stack`);
+  }
+
+  return output;
 };
 
 export const printStackOutputsAfterDeploy = async ({
@@ -110,13 +129,11 @@ export const printStackOutputsAfterDeploy = async ({
 }: {
   stackName: string;
 }) => {
-  const Stacks = await describeStacks({ stackName });
-
-  if (!Stacks) {
-    return;
-  }
-
-  const { EnableTerminationProtection, StackName, Outputs } = Stacks[0];
+  const {
+    EnableTerminationProtection,
+    StackName,
+    Outputs,
+  } = await describeStack({ stackName });
 
   log.output('Describe Stack');
   log.output('StackName', StackName);
@@ -286,14 +303,7 @@ export const deploy = async ({
 };
 
 export const canDestroyStack = async ({ stackName }: { stackName: string }) => {
-  const stacks = await describeStacks({ stackName });
-
-  if (!stacks) {
-    log.info(logPrefix, 'Stack not found and cannot be destroyed.');
-    return false;
-  }
-
-  const { EnableTerminationProtection } = stacks[0];
+  const { EnableTerminationProtection } = await describeStack({ stackName });
 
   if (EnableTerminationProtection) {
     return false;

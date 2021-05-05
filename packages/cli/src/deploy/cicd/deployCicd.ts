@@ -1,12 +1,18 @@
 import * as fs from 'fs';
+import log from 'npmlog';
 import * as path from 'path';
 
-import { deploy } from '../cloudFormation.core';
+import { waitCodeBuildFinish, startCodeBuildBuild } from '../../utils';
+
+import { deploy, getStackOutput } from '../cloudFormation.core';
 import { handleDeployError, handleDeployInitialization } from '../utils';
 
 import { deployLambdaCode } from '../lambda';
 
-import { getCicdTemplate } from './cicd.template';
+import {
+  REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+  getCicdTemplate,
+} from './cicd.template';
 import { getCicdStackName } from './getCicdStackName';
 
 const logPrefix = 'cicd';
@@ -52,6 +58,29 @@ const deployCicdLambdas = async ({ stackName }: { stackName: string }) => {
   return s3;
 };
 
+const waitRepositoryImageUpdate = async ({
+  stackName,
+}: {
+  stackName: string;
+}) => {
+  log.info(logPrefix, 'Starting repository image update...');
+
+  const { OutputValue: projectName } = await getStackOutput({
+    stackName,
+    outputKey: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+  });
+
+  if (!projectName) {
+    throw new Error(`Cannot retrieve repository image CodeBuild project name.`);
+  }
+
+  const build = await startCodeBuildBuild({ projectName });
+
+  if (build.id) {
+    await waitCodeBuildFinish({ buildId: build.id, name: stackName });
+  }
+};
+
 export const deployCicd = async ({
   sshKey,
   sshUrl,
@@ -76,6 +105,8 @@ export const deployCicd = async ({
       },
       terminationProtection: true,
     });
+
+    await waitRepositoryImageUpdate({ stackName });
   } catch (error) {
     handleDeployError({ error, logPrefix });
   }
