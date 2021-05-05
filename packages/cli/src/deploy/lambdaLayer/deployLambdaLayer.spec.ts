@@ -3,7 +3,7 @@ import faker from 'faker';
 import { getPackageLambdaLayerStackName } from './deployLambdaLayer';
 
 const generateRandomPackageName = () =>
-  `@${faker.random.word()}/${faker.random.word()}@${faker.random.number()}.${faker.random.number()}.${faker.random.number()}`;
+  `@${faker.random.word()}/${faker.random.word()}@${faker.datatype.number()}.${faker.datatype.number()}.${faker.datatype.number()}`;
 
 describe('testing getPackageLambdaLayerStackName', () => {
   test('should return a valid stack name', () => {
