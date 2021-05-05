@@ -43,6 +43,12 @@ module.exports = () => {
   return {
     name: 'carlin',
     loadContent: async () => {
+      const s3 = {
+        bucket: 'my-bucket',
+        key: 'some-key',
+        versionId: 'version-id',
+      };
+
       return {
         defaultTemplatePaths,
 
@@ -154,7 +160,7 @@ module.exports = () => {
           fs.readFileSync('../../cicd/carlin.yml', 'utf-8'),
         ),
         ...(() => {
-          const cicdTemplate = getCicdTemplate({});
+          const cicdTemplate = getCicdTemplate({ s3 });
           return {
             cicdTemplate,
             cicdTemplateEcrRepository:

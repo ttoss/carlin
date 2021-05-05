@@ -6,10 +6,12 @@ import Algorithm from '../../src/components/Algorithm';
 import Carlin from '../../src/components/Carlin';
 import CodeBlock from '../../src/components/CodeBlock';
 import InnerHTML from '../../src/components/InnerHTML';
+import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 import Template from '../../src/components/Template';
 
 import { assignSecurityHeadersComment } from '../../.docusaurus/carlin/default/assignSecurityHeadersComment.json';
 import { deployStaticAppComment } from '../../.docusaurus/carlin/default/deployStaticAppComment.json';
+import { deployStaticAppOptions } from '../../.docusaurus/carlin/default/deployStaticAppOptions.json';
 import { publishLambdaVersionZipFileComment } from '../../.docusaurus/carlin/default/publishLambdaVersionZipFileComment.json';
 import { removeOldVersionsComment } from '../../.docusaurus/carlin/default/removeOldVersionsComment.json';
 import { staticAppCloudFrontTemplate } from '../../.docusaurus/carlin/default/staticAppCloudFrontTemplate.json';
@@ -55,7 +57,7 @@ to the required version.
 
 <InnerHTML html={assignSecurityHeadersComment} />
 
-## Deployments
+## Configurations
 
 The differences among all deployments occurs at the template level. Each option adds a piece of instructions on the final CloudFormation template, that we'll present to you.
 
@@ -110,6 +112,24 @@ The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) t
   json={staticAppCloudFrontTemplate.Resources.CloudFrontDistribution.Properties}
 />
 
+### CloudFront Aliases
+
+When you're performing a CloudFront deployment, you can set the CloudFront aliases using the <OptionAliasesInline options={deployStaticAppOptions} option="aliases" to="/docs/api-reference/deploy-static-app#aliases" /> flag.
+It defines the CNAMEs (alternate domain names), if any, for your distribution, as described on [this CloudFront docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).
+
+Together with <OptionAliasesInline options={deployStaticAppOptions} option="aliases" to="/docs/api-reference/deploy-static-app#aliases" />, you must define the option <OptionAliasesInline options={deployStaticAppOptions} option="acm" to="/docs/api-reference/deploy-static-app#acm" />,
+that points to a [AWS Certificate Manager (ACM)](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) that must be previously created. The aliases must match the ACM rules.
+
+The configuration example below allow you to access your application through the URLs defined on `aliases` property.
+
+```yaml title="carlin.yml"
+acm: arn:aws:acm:us-east-1:123412341234:certificate/25ff9029-5334-4cb0-a530-7507203c46a0
+aliases:
+  - mydomain.com
+  - www1.mydomain.com
+  - www2.mydomain.com
+```
+
 ### Google Tag Manager
 
 ```
@@ -118,7 +138,7 @@ carlin deploy static-app --gtm-id GTM-XXXX
 
 <InnerHTML html={staticAppLambdaEdgeOriginRequestDescriptionComment} />
 
-#### Lamdba@Edge Origin Request code
+#### Lamdba@Edge Origin Request code and algorithm
 
 :::note Algorithm
 

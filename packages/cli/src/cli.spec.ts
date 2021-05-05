@@ -25,20 +25,49 @@ jest.mock('find-up', () => ({
     .mockReturnValueOnce(undefined),
 }));
 
-jest.mock('./deploy/staticApp/staticApp', () => ({
-  ...(jest.requireActual('./deploy/staticApp/staticApp') as any),
-  deployStaticApp: jest.fn(),
+jest.mock('./deploy/baseStack/deployBaseStack', () => ({
+  ...(jest.requireActual('./deploy/baseStack/deployBaseStack') as any),
+  deployBaseStack: jest.fn(),
 }));
 
 import { getCurrentBranch, getEnvironment, getProjectName } from './utils';
 
 import cli from './cli';
 
-import { deployStaticApp } from './deploy/staticApp/staticApp';
+import { deployBaseStack } from './deploy/baseStack/deployBaseStack';
 
 const parse = async (arg: any, context: any) => {
   return cli().strict(false).parse(arg, context);
 };
+
+describe('environment type', () => {
+  test('throw error if it is an object', () => {
+    expect(() =>
+      parse(`print-args`, {
+        environment: { obj: faker.random.word() },
+      }),
+    ).rejects.toThrow();
+  });
+
+  test('throw error if it is an array', () => {
+    expect(() =>
+      parse(`print-args`, {
+        environment: [faker.random.word()],
+      }),
+    ).rejects.toThrow();
+  });
+
+  test("don't throw error if it is a string", async () => {
+    const environment = faker.random.word();
+    const argv = await parse(`print-args`, { environment });
+    expect(argv.environment).toEqual(environment);
+  });
+
+  test("don't throw error if it is a string", async () => {
+    const argv = await parse(`print-args`, {});
+    expect(argv.environment).toBeUndefined();
+  });
+});
 
 describe('validating environment variables', () => {
   afterEach(() => {
@@ -96,11 +125,11 @@ describe('validating environment variables', () => {
 
 describe('handle merge config correctly', () => {
   describe('Config merging errors when default values is present #16 https://github.com/ttoss/carlin/issues/16', () => {
-    test('deploy static-app --region should not be the default', async () => {
-      await parse('deploy static-app', {
+    test('deploy base-stack --region should not be the default', async () => {
+      await parse('deploy base-stack', {
         environment: 'Production',
       });
-      expect(deployStaticApp).toHaveBeenCalledWith(
+      expect(deployBaseStack).toHaveBeenCalledWith(
         expect.objectContaining({ region }),
       );
     });

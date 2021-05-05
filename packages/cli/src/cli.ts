@@ -207,6 +207,18 @@ const cli = () => {
           });
         }
       }) as any)
+      /**
+       * Sometimes "environments" can be written as "environment" on config file.
+       */
+      .middleware(({ environment }) => {
+        if (!['string', 'undefined'].includes(typeof environment)) {
+          throw new Error(
+            `environment type is invalid. The value: ${JSON.stringify(
+              environment,
+            )}`,
+          );
+        }
+      })
       .pkgConf(getPkgConfig())
       .config(getConfig())
       .config('config', (configPath: string) =>

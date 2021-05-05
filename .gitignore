@@ -111,3 +111,5 @@ node_modules/
 tmp_*
 storybook-static/
 package-lock.json
+
+github-app/

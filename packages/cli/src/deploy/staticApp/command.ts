@@ -1,7 +1,8 @@
 /* eslint-disable no-param-reassign */
+import AWS from 'aws-sdk';
 import { CommandModule, InferredOptionTypes } from 'yargs';
 
-import { NAME } from '../../config';
+import { NAME, CLOUDFRONT_REGION } from '../../config';
 import { addGroupToOptions } from '../../utils';
 
 import { destroyCloudFormation } from '../cloudFormation';
@@ -70,11 +71,21 @@ export const deployStaticAppCommand: CommandModule<
   builder: (yargs) =>
     yargs
       .options(addGroupToOptions(options, 'Deploy Static App Options'))
+      /**
+       * CloudFront triggers can be only in US East (N. Virginia) Region.
+       * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-cloudfront-triggers
+       */
+      .middleware((argv) => {
+        AWS.config.region = CLOUDFRONT_REGION;
+        argv.region = CLOUDFRONT_REGION;
+      })
       .middleware((argv: any) => {
         const { acm, aliases, csp, gtmId, spa } = argv;
+
         const someDefined = [acm, aliases, csp, gtmId, spa].some(
           (value) => !!value,
         );
+
         if (someDefined) {
           argv.cloudfront = true;
         }
