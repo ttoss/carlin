@@ -76,7 +76,11 @@ export const describeStackEvents = async ({
 
   const events = (StackEvents || [])
     .filter(({ Timestamp }) => Date.now() - Number(Timestamp) < 10 * 60 * 1000)
-    .filter(({ ResourceStatusReason }) => ResourceStatusReason);
+    .filter(({ ResourceStatusReason }) => ResourceStatusReason)
+    /**
+     * Show newer events last.
+     */
+    .reverse();
 
   events.forEach(({ LogicalResourceId, ResourceStatusReason }) =>
     log.event(LogicalResourceId, ResourceStatusReason),

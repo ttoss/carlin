@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import { camelCase } from 'change-case';
 import fs from 'fs';
 import log from 'npmlog';
 import { CommandModule, InferredOptionTypes } from 'yargs';
@@ -6,6 +7,7 @@ import { CommandModule, InferredOptionTypes } from 'yargs';
 import { NAME } from '../../config';
 import { addGroupToOptions } from '../../utils';
 
+import { pipelines } from './pipelines';
 import { deployCicd } from './deployCicd';
 
 const logPrefix = 'deploy-cicd';
@@ -16,6 +18,19 @@ const logPrefix = 'deploy-cicd';
 export const sshKeyCoerce = (dir: string) => fs.readFileSync(dir, 'utf-8');
 
 export const options = {
+  cpu: {
+    type: 'string',
+  },
+  memory: {
+    type: 'string',
+  },
+  pipelines: {
+    choices: pipelines,
+    coerce: (values: string[]) => values.map((value) => camelCase(value)),
+    default: [],
+    description: 'Pipelines that will be implemented with the CICD stack.',
+    type: 'array',
+  },
   'repository-update': {
     default: true,
     type: 'boolean',

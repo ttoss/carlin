@@ -9,6 +9,7 @@ import { handleDeployError, handleDeployInitialization } from '../utils';
 
 import { deployLambdaCode } from '../lambda';
 
+import type { Pipelines } from './pipelines';
 import {
   REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
   getCicdTemplate,
@@ -19,7 +20,7 @@ const logPrefix = 'cicd';
 
 const deployCicdLambdas = async ({ stackName }: { stackName: string }) => {
   const getLambdaInput = (extension: 'js' | 'ts') =>
-    path.resolve(__dirname, `lambdas.${extension}`);
+    path.resolve(__dirname, `lambdas/index.${extension}`);
 
   const lambdaInput = (() => {
     /**
@@ -82,9 +83,17 @@ const waitRepositoryImageUpdate = async ({
 };
 
 export const deployCicd = async ({
+  cpu,
+  memory,
+  pipelines,
+  repositoryUpdate,
   sshKey,
   sshUrl,
 }: {
+  cpu?: string;
+  memory?: string;
+  pipelines: Pipelines;
+  repositoryUpdate?: boolean;
   sshKey: string;
   sshUrl: string;
 }) => {
@@ -95,7 +104,12 @@ export const deployCicd = async ({
     });
 
     await deploy({
-      template: getCicdTemplate({ s3: await deployCicdLambdas({ stackName }) }),
+      template: getCicdTemplate({
+        cpu,
+        memory,
+        pipelines,
+        s3: await deployCicdLambdas({ stackName }),
+      }),
       params: {
         StackName: stackName,
         Parameters: [
@@ -106,7 +120,9 @@ export const deployCicd = async ({
       terminationProtection: true,
     });
 
-    await waitRepositoryImageUpdate({ stackName });
+    if (repositoryUpdate) {
+      await waitRepositoryImageUpdate({ stackName });
+    }
   } catch (error) {
     handleDeployError({ error, logPrefix });
   }

@@ -9,6 +9,9 @@ import {
   BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
 } from '../baseStack/config';
 
+import type { Pipelines, Pipeline } from './pipelines';
+import { ECS_TASK_DEFAULT_CPU, ECS_TASK_DEFAULT_MEMORY } from './config';
+
 export const API_LOGICAL_ID = 'ApiV1ServerlessApi';
 
 export const CODE_BUILD_PROJECT_LOGS_LOGICAL_ID =
@@ -45,11 +48,25 @@ export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID =
 export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID =
   'RepositoryTasksECSTaskDefinitionTaskRoleIAMRole';
 
+export const PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID =
+  'PipelinesArtifactStoreS3Bucket';
+
+export const PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID =
+  'PipelinesMainReleaseIAMRole';
+
+export const PIPELINES_MAIN_RELEASE_LOGICAL_ID =
+  'PipelinesMainReleaseCodePipeline';
+
+export const PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
+  'PipelinesHandlerLambdaFunction';
+
 export const getCicdTemplate = ({
-  cpu = '1024',
-  memory = '2048',
+  pipelines,
+  cpu = ECS_TASK_DEFAULT_CPU,
+  memory = ECS_TASK_DEFAULT_MEMORY,
   s3,
 }: {
+  pipelines: Pipelines;
   cpu?: string;
   memory?: string;
   s3: {
@@ -393,7 +410,7 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources.ApiV1ServerlessFunction = {
+    resources.cicdApiV1ServerlessFunction = {
       Type: 'AWS::Serverless::Function',
       Properties: {
         CodeUri: {
@@ -437,7 +454,34 @@ export const getCicdTemplate = ({
             },
           },
         },
-        Handler: 'index.cicdApiV1ProxyHandler',
+        Handler: 'index.cicdApiV1Handler',
+        Role: {
+          'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
+        },
+        Runtime: 'nodejs14.x',
+        Timeout: 60,
+      },
+    };
+
+    resources.githubWebhooksApiV1ServerlessFunction = {
+      Type: 'AWS::Serverless::Function',
+      Properties: {
+        CodeUri: {
+          Bucket: s3.bucket,
+          Key: s3.key,
+          Version: s3.versionId,
+        },
+        Events: {
+          ApiEvent: {
+            Type: 'Api',
+            Properties: {
+              Method: 'POST',
+              Path: '/github/webhooks',
+              RestApiId: { Ref: API_LOGICAL_ID },
+            },
+          },
+        },
+        Handler: 'index.githubWebhooksApiV1Handler',
         Role: {
           'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
         },
@@ -565,6 +609,161 @@ export const getCicdTemplate = ({
     };
   })();
 
+  /**
+   * Pipelines
+   */
+  if (pipelines.includes('main')) {
+    resources[PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID] = {
+      Type: 'AWS::S3::Bucket',
+      Properties: {
+        LifecycleConfiguration: {
+          Rules: [
+            {
+              ExpirationInDays: 29,
+              Status: 'Enabled',
+            },
+          ],
+        },
+      },
+    };
+
+    resources[PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID] = {
+      Type: 'AWS::Lambda::Function',
+      Properties: {
+        Code: {
+          S3Bucket: s3.bucket,
+          S3Key: s3.key,
+          S3ObjectVersion: s3.versionId,
+        },
+        Handler: 'index.pipelinesHandler',
+        MemorySize: 128,
+        Role: {
+          'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
+        },
+        Runtime: 'nodejs14.x',
+        Timeout: 60,
+      },
+    };
+
+    resources[PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID] = {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: 'codepipeline.amazonaws.com',
+              },
+              Action: 'sts:AssumeRole',
+            },
+          ],
+        },
+        ManagedPolicyArns: [],
+        Path: getIamPath(),
+        Policies: [
+          {
+            PolicyName: `${PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID}Policy`,
+            PolicyDocument: {
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: 'lambda:InvokeFunction',
+                  Resource: [
+                    {
+                      'Fn::GetAtt': [
+                        PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID,
+                        'Arn',
+                      ],
+                    },
+                  ],
+                },
+                {
+                  Effect: 'Allow',
+                  Action: 's3:*',
+                  Resource: {
+                    'Fn::Sub': [
+                      // eslint-disable-next-line no-template-curly-in-string
+                      'arn:aws:s3:::${BucketName}/*',
+                      {
+                        BucketName: {
+                          Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+
+    resources[PIPELINES_MAIN_RELEASE_LOGICAL_ID] = {
+      Type: 'AWS::CodePipeline::Pipeline',
+      Properties: {
+        ArtifactStore: {
+          Location: { Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID },
+          Type: 'S3',
+        },
+        RestartExecutionOnUpdate: false,
+        RoleArn: {
+          'Fn::GetAtt': [PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID, 'Arn'],
+        },
+        Stages: [
+          {
+            Actions: [
+              {
+                ActionTypeId: {
+                  Category: 'Source',
+                  Owner: 'AWS',
+                  Provider: 'S3',
+                  Version: 1,
+                },
+                Configuration: {
+                  S3Bucket: {
+                    Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID,
+                  },
+                  S3ObjectKey: 'test/tes.zip',
+                },
+                Name: 'MainReleaseS3SourceAction',
+                OutputArtifacts: [
+                  {
+                    Name: 'MainReleaseS3SourceOutput',
+                  },
+                ],
+              },
+            ],
+            Name: 'MainReleaseS3SourceStage',
+          },
+          {
+            Actions: [
+              {
+                ActionTypeId: {
+                  Category: 'Invoke',
+                  Owner: 'AWS',
+                  Provider: 'Lambda',
+                  Version: 1,
+                },
+                Configuration: {
+                  FunctionName: {
+                    Ref: PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID,
+                  },
+                  UserParameters: 'mainRelease' as Pipeline,
+                },
+                Name: 'MainReleaseRunECSTasksAction',
+              },
+            ],
+            Name: 'MainReleaseRunECSTasksStage',
+          },
+        ],
+      },
+    };
+  }
+
   return {
     AWSTemplateFormatVersion: '2010-09-09',
     Transform: 'AWS::Serverless-2016-10-31',
@@ -582,7 +781,7 @@ export const getCicdTemplate = ({
       [REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID]: {
         Value: { Ref: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID },
       },
-      CicdApiV1Endpoint: {
+      ApiV1Endpoint: {
         Description: 'CICD API v1 stage endpoint.',
         Value: {
           'Fn::Sub': `https://\${${API_LOGICAL_ID}}.execute-api.\${AWS::Region}.amazonaws.com/v1/`,

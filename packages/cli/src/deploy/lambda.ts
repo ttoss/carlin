@@ -54,9 +54,6 @@ export const buildLambdaSingleFile = async ({
               esModuleInterop: true,
               declaration: false,
               target: 'es2017',
-              /**
-               * Fix https://stackoverflow.com/questions/65202242/how-to-use-rollup-js-to-create-a-common-js-and-named-export-bundle/65202822#65202822
-               */
               module: 'esnext',
               noEmit: false,
             },

@@ -3,7 +3,7 @@ import log from 'npmlog';
 
 const logPrefix = 'codebuild';
 
-const WAIT_TIME = 5000;
+const WAIT_TIME = 10 * 1000;
 
 /**
  * @param param.name name used to identify the build.
