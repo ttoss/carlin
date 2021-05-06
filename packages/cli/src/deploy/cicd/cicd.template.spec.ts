@@ -3,6 +3,7 @@ import { API_LOGICAL_ID, getCicdTemplate } from './cicd.template';
 describe('testing CICD template', () => {
   test('should have serverless API', async () => {
     const template = await getCicdTemplate({
+      pipelines: ['main'],
       s3: {
         bucket: 'bucket',
         key: 'key',

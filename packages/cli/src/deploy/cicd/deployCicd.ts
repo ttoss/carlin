@@ -9,7 +9,7 @@ import { handleDeployError, handleDeployInitialization } from '../utils';
 
 import { deployLambdaCode } from '../lambda';
 
-import type { Pipelines } from './pipelines';
+import type { Pipeline } from './pipelines';
 import {
   REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
   getCicdTemplate,
@@ -92,7 +92,7 @@ export const deployCicd = async ({
 }: {
   cpu?: string;
   memory?: string;
-  pipelines: Pipelines;
+  pipelines: Pipeline[];
   repositoryUpdate?: boolean;
   sshKey: string;
   sshUrl: string;

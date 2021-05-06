@@ -1,14 +1,6 @@
 import { Webhooks } from '@octokit/webhooks';
 import { ProxyHandler } from 'aws-lambda';
 
-const webhooks = new Webhooks({ secret: '' });
-
-// webhooks.on(['pull_request.ready_for_review'], () => {});
-
-webhooks.onAny((context) => {
-  console.log(context);
-});
-
 export const githubWebhooksApiV1Handler: ProxyHandler = async (
   event,
   context,
@@ -42,7 +34,13 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
       throw new Error("X-Hub-Signature-256 or X-Hub-Signature doesn't exist.");
     }
 
-    const payload = JSON.parse(body);
+    const webhooks = new Webhooks({ secret: '123' });
+
+    // webhooks.on(['pull_request.ready_for_review'], () => {});
+
+    webhooks.onAny((onAnyContext) => {
+      console.log(onAnyContext);
+    });
 
     /**
      * Replace "receive" for "verifyAndReceive" when WebCrypto exist on Node.js
@@ -52,7 +50,7 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
       id: xGitHubDelivery,
       name: xGitHubEvent as any,
       // signature: xHubSignature,
-      payload,
+      payload: JSON.parse(body),
     });
 
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };

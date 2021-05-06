@@ -3,13 +3,14 @@ import yaml from 'js-yaml';
 import { CloudFormationTemplate, getIamPath } from '../../utils';
 
 import {
+  BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
   BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
   BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
   BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
   BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
 } from '../baseStack/config';
 
-import type { Pipelines, Pipeline } from './pipelines';
+import type { Pipeline } from './pipelines';
 import { ECS_TASK_DEFAULT_CPU, ECS_TASK_DEFAULT_MEMORY } from './config';
 
 export const API_LOGICAL_ID = 'ApiV1ServerlessApi';
@@ -51,14 +52,18 @@ export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID =
 export const PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID =
   'PipelinesArtifactStoreS3Bucket';
 
-export const PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID =
-  'PipelinesMainReleaseIAMRole';
+export const PIPELINES_MAIN_ROLE_LOGICAL_ID = 'PipelinesMainIAMRole';
 
-export const PIPELINES_MAIN_RELEASE_LOGICAL_ID =
-  'PipelinesMainReleaseCodePipeline';
+export const PIPELINES_MAIN_LOGICAL_ID = 'PipelinesMainCodePipeline';
 
 export const PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
   'PipelinesHandlerLambdaFunction';
+
+const TRIGGER_PIPELINES_OBJECT_KEY_PREFIX = 'cicd/pipelines/triggers/';
+
+export const getTriggerPipelinesObjectKey = (pipeline: Pipeline) => {
+  return `${TRIGGER_PIPELINES_OBJECT_KEY_PREFIX}${pipeline}.zip`;
+};
 
 export const getCicdTemplate = ({
   pipelines,
@@ -66,7 +71,7 @@ export const getCicdTemplate = ({
   memory = ECS_TASK_DEFAULT_MEMORY,
   s3,
 }: {
-  pipelines: Pipelines;
+  pipelines: Pipeline[];
   cpu?: string;
   memory?: string;
   s3: {
@@ -76,6 +81,28 @@ export const getCicdTemplate = ({
   };
 }): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
+
+  const executeEcsTaskVariables = {
+    ECS_CLUSTER_ARN: {
+      'Fn::GetAtt': [REPOSITORY_TASKS_ECS_CLUSTER_LOGICAL_ID, 'Arn'],
+    },
+    ECS_CONTAINER_NAME: REPOSITORY_ECS_TASK_CONTAINER_NAME,
+    ECS_TASK_DEFINITION: {
+      Ref: REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
+    },
+    VPC_SECURITY_GROUP: {
+      'Fn::ImportValue': BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
+    },
+    VPC_PUBLIC_SUBNET_0: {
+      'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
+    },
+    VPC_PUBLIC_SUBNET_1: {
+      'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
+    },
+    VPC_PUBLIC_SUBNET_2: {
+      'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
+    },
+  };
 
   /**
    * #### Elastic Container Registry
@@ -402,6 +429,14 @@ export const getCicdTemplate = ({
                     },
                   ],
                 },
+                {
+                  Action: [
+                    'codepipeline:PutJobSuccessResult',
+                    'codepipeline:PutJobFailureResult',
+                  ],
+                  Effect: 'Allow',
+                  Resource: '*',
+                },
               ],
             },
           },
@@ -410,7 +445,7 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources.cicdApiV1ServerlessFunction = {
+    resources.CicdApiV1ServerlessFunction = {
       Type: 'AWS::Serverless::Function',
       Properties: {
         CodeUri: {
@@ -433,25 +468,7 @@ export const getCicdTemplate = ({
             [PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME]: {
               Ref: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
             },
-            ECS_CLUSTER_ARN: {
-              'Fn::GetAtt': [REPOSITORY_TASKS_ECS_CLUSTER_LOGICAL_ID, 'Arn'],
-            },
-            ECS_CONTAINER_NAME: REPOSITORY_ECS_TASK_CONTAINER_NAME,
-            ECS_TASK_DEFINITION: {
-              Ref: REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
-            },
-            VPC_SECURITY_GROUP: {
-              'Fn::ImportValue': BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
-            },
-            VPC_PUBLIC_SUBNET_0: {
-              'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_0_EXPORTED_NAME,
-            },
-            VPC_PUBLIC_SUBNET_1: {
-              'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
-            },
-            VPC_PUBLIC_SUBNET_2: {
-              'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
-            },
+            ...executeEcsTaskVariables,
           },
         },
         Handler: 'index.cicdApiV1Handler',
@@ -463,7 +480,7 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources.githubWebhooksApiV1ServerlessFunction = {
+    resources.GitHubWebhooksApiV1ServerlessFunction = {
       Type: 'AWS::Serverless::Function',
       Properties: {
         CodeUri: {
@@ -619,7 +636,10 @@ export const getCicdTemplate = ({
         LifecycleConfiguration: {
           Rules: [
             {
-              ExpirationInDays: 29,
+              /**
+               * We won't use the artifacts forever.
+               */
+              ExpirationInDays: 7,
               Status: 'Enabled',
             },
           ],
@@ -635,6 +655,11 @@ export const getCicdTemplate = ({
           S3Key: s3.key,
           S3ObjectVersion: s3.versionId,
         },
+        Environment: {
+          Variables: {
+            ...executeEcsTaskVariables,
+          },
+        },
         Handler: 'index.pipelinesHandler',
         MemorySize: 128,
         Role: {
@@ -645,7 +670,7 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources[PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID] = {
+    resources[PIPELINES_MAIN_ROLE_LOGICAL_ID] = {
       Type: 'AWS::IAM::Role',
       Properties: {
         AssumeRolePolicyDocument: {
@@ -664,7 +689,7 @@ export const getCicdTemplate = ({
         Path: getIamPath(),
         Policies: [
           {
-            PolicyName: `${PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID}Policy`,
+            PolicyName: `${PIPELINES_MAIN_ROLE_LOGICAL_ID}Policy`,
             PolicyDocument: {
               Version: '2012-10-17',
               Statement: [
@@ -683,13 +708,41 @@ export const getCicdTemplate = ({
                 {
                   Effect: 'Allow',
                   Action: 's3:*',
+                  Resource: [
+                    {
+                      'Fn::GetAtt': [
+                        PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID,
+                        'Arn',
+                      ],
+                    },
+                    {
+                      'Fn::Sub': `arn:aws:s3:::\${${PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID}}/*`,
+                    },
+                  ],
+                },
+                {
+                  Effect: 'Allow',
+                  Action: 's3:*',
                   Resource: {
                     'Fn::Sub': [
-                      // eslint-disable-next-line no-template-curly-in-string
-                      'arn:aws:s3:::${BucketName}/*',
+                      `arn:aws:s3:::\${BucketName}/${TRIGGER_PIPELINES_OBJECT_KEY_PREFIX}*`,
                       {
                         BucketName: {
-                          Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID,
+                          'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  Effect: 'Allow',
+                  Action: ['s3:Get*', 's3:List*'],
+                  Resource: {
+                    'Fn::Sub': [
+                      `arn:aws:s3:::\${BucketName}`,
+                      {
+                        BucketName: {
+                          'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
                         },
                       },
                     ],
@@ -702,7 +755,9 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources[PIPELINES_MAIN_RELEASE_LOGICAL_ID] = {
+    const pipelineMainS3SourceOutputName = 'PipelineMainS3SourceOutput';
+
+    resources[PIPELINES_MAIN_LOGICAL_ID] = {
       Type: 'AWS::CodePipeline::Pipeline',
       Properties: {
         ArtifactStore: {
@@ -711,7 +766,7 @@ export const getCicdTemplate = ({
         },
         RestartExecutionOnUpdate: false,
         RoleArn: {
-          'Fn::GetAtt': [PIPELINES_MAIN_RELEASE_ROLE_LOGICAL_ID, 'Arn'],
+          'Fn::GetAtt': [PIPELINES_MAIN_ROLE_LOGICAL_ID, 'Arn'],
         },
         Stages: [
           {
@@ -725,19 +780,19 @@ export const getCicdTemplate = ({
                 },
                 Configuration: {
                   S3Bucket: {
-                    Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID,
+                    'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
                   },
-                  S3ObjectKey: 'test/tes.zip',
+                  S3ObjectKey: getTriggerPipelinesObjectKey('main'),
                 },
-                Name: 'MainReleaseS3SourceAction',
+                Name: 'PipelineMainS3SourceAction',
                 OutputArtifacts: [
                   {
-                    Name: 'MainReleaseS3SourceOutput',
+                    Name: pipelineMainS3SourceOutputName,
                   },
                 ],
               },
             ],
-            Name: 'MainReleaseS3SourceStage',
+            Name: 'PipelineMainS3SourceStage',
           },
           {
             Actions: [
@@ -752,12 +807,26 @@ export const getCicdTemplate = ({
                   FunctionName: {
                     Ref: PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID,
                   },
-                  UserParameters: 'mainRelease' as Pipeline,
+                  UserParameters: ((): Pipeline => 'main')(),
                 },
-                Name: 'MainReleaseRunECSTasksAction',
+                InputArtifacts: [
+                  {
+                    Name: pipelineMainS3SourceOutputName,
+                  },
+                ],
+                Name: 'PipelineMainRunECSTasksAction',
+              },
+              {
+                ActionTypeId: {
+                  Category: 'Approval',
+                  Owner: 'AWS',
+                  Provider: 'Manual',
+                  Version: 1,
+                },
+                Name: 'PipelineMainRunECSTasksApproval',
               },
             ],
-            Name: 'MainReleaseRunECSTasksStage',
+            Name: 'PipelineMainRunECSTasksStage',
           },
         ],
       },
