@@ -517,6 +517,7 @@ export const getCicdTemplate = ({
               'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
             },
             PIPELINES_JSON: JSON.stringify(pipelines),
+            ...executeEcsTaskVariables,
           },
         },
         Handler: 'index.githubWebhooksApiV1Handler',
