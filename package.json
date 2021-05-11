@@ -12,7 +12,6 @@
     "publish": "lerna publish && lerna run deploy --scope carlin-website",
     "version": "lerna version",
     "test": "lerna run test",
-    "build": "lerna run build",
     "deploy": "lerna run deploy"
   },
   "repository": {

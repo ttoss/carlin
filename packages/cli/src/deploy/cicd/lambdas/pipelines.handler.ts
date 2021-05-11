@@ -3,15 +3,19 @@ import { CodePipelineEvent, CodePipelineHandler } from 'aws-lambda';
 import { CodePipeline, S3 } from 'aws-sdk';
 import * as fs from 'fs';
 
-import { Pipeline } from '../pipelines';
+import { Pipeline, getMainCommands } from '../pipelines';
 
 import { executeTasks, shConditionalCommands } from './executeTasks';
 
 const codepipeline = new CodePipeline();
 
-const getPipeline = (event: CodePipelineEvent) =>
-  event['CodePipeline.job'].data.actionConfiguration.configuration
-    .UserParameters as Pipeline;
+const getUserParameters = (event: CodePipelineEvent) => {
+  const [pipeline, stage] = event[
+    'CodePipeline.job'
+  ].data.actionConfiguration.configuration.UserParameters.split('&');
+
+  return { pipeline: pipeline as Pipeline, stage };
+};
 
 export const getJobDetails = async (event: CodePipelineEvent) => {
   const jobId = event['CodePipeline.job'].id;
@@ -40,7 +44,7 @@ export const getJobDetails = async (event: CodePipelineEvent) => {
 
   const zip = new AdmZip(filename);
 
-  const file = zip.readAsText(getPipeline(event));
+  const file = zip.readAsText(getUserParameters(event).pipeline);
 
   try {
     return JSON.parse(file);
@@ -64,7 +68,7 @@ const putJobFailureResult = (event: CodePipelineEvent, message: string) =>
 
 const executeMainPipeline = async (event: CodePipelineEvent) => {
   const command = shConditionalCommands({
-    conditionalCommands: ['yarn', 'yarn test', 'yarn build'],
+    conditionalCommands: getMainCommands(),
   });
   await executeTasks({ commands: [command] });
   await putJobSuccessResult(event);
@@ -72,7 +76,7 @@ const executeMainPipeline = async (event: CodePipelineEvent) => {
 
 export const pipelinesHandler: CodePipelineHandler = async (event) => {
   try {
-    const pipeline = getPipeline(event);
+    const { pipeline } = getUserParameters(event);
 
     // const jobDetails = await getJobDetails(event);
 

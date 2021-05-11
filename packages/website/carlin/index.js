@@ -32,6 +32,10 @@ const {
 
 const { getComment, getComments, toHtml } = require('./comments');
 
+const {
+  coverageThreshold: { global: testsCoverageThreshold },
+} = require('../../cli/jest.config');
+
 const cliApi = async (cmd) =>
   new Promise((resolve) => {
     cli().parse(cmd, { help: true }, (_, __, output) => {
@@ -160,13 +164,14 @@ module.exports = () => {
           fs.readFileSync('../../cicd/carlin.yml', 'utf-8'),
         ),
         ...(() => {
-          const cicdTemplate = getCicdTemplate({ s3 });
+          const cicdTemplate = getCicdTemplate({ pipelines: ['main'], s3 });
           return {
             cicdTemplate,
             cicdTemplateEcrRepository:
               cicdTemplate.Resources[ECR_REPOSITORY_LOGICAL_ID],
           };
         })(),
+        testsCoverageThreshold: yaml.dump(testsCoverageThreshold),
       };
     },
     contentLoaded: async ({ actions, content }) => {

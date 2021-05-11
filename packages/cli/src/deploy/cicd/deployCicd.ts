@@ -18,10 +18,10 @@ import { getCicdStackName } from './getCicdStackName';
 
 const logPrefix = 'cicd';
 
-const deployCicdLambdas = async ({ stackName }: { stackName: string }) => {
-  const getLambdaInput = (extension: 'js' | 'ts') =>
-    path.resolve(__dirname, `lambdas/index.${extension}`);
+export const getLambdaInput = (extension: 'js' | 'ts') =>
+  path.resolve(__dirname, `lambdas/index.${extension}`);
 
+const deployCicdLambdas = async ({ stackName }: { stackName: string }) => {
   const lambdaInput = (() => {
     /**
      * This case happens when carlin command is executed when the package is

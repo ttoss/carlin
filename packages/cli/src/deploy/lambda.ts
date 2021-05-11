@@ -36,7 +36,7 @@ export const buildLambdaSingleFile = async ({
 
   const webpackConfig: webpack.Configuration = {
     entry: path.resolve(process.cwd(), lambdaInput),
-    mode: 'none',
+    mode: 'production',
     externals: ['aws-sdk', ...builtins, ...lambdaExternals],
     module: {
       rules: [
@@ -60,6 +60,10 @@ export const buildLambdaSingleFile = async ({
           },
         },
       ],
+    },
+    optimization: {
+      // usedExports: true,
+      minimize: false,
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.json'],

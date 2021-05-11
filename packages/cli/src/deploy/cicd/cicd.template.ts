@@ -13,6 +13,11 @@ import {
 import type { Pipeline } from './pipelines';
 import { ECS_TASK_DEFAULT_CPU, ECS_TASK_DEFAULT_MEMORY } from './config';
 
+import {
+  getTriggerPipelinesObjectKey,
+  TRIGGER_PIPELINES_OBJECT_KEY_PREFIX,
+} from './getTriggerPipelineObjectKey';
+
 export const API_LOGICAL_ID = 'ApiV1ServerlessApi';
 
 export const CODE_BUILD_PROJECT_LOGS_LOGICAL_ID =
@@ -59,14 +64,8 @@ export const PIPELINES_MAIN_LOGICAL_ID = 'PipelinesMainCodePipeline';
 export const PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
   'PipelinesHandlerLambdaFunction';
 
-const TRIGGER_PIPELINES_OBJECT_KEY_PREFIX = 'cicd/pipelines/triggers/';
-
-export const getTriggerPipelinesObjectKey = (pipeline: Pipeline) => {
-  return `${TRIGGER_PIPELINES_OBJECT_KEY_PREFIX}${pipeline}.zip`;
-};
-
 export const getCicdTemplate = ({
-  pipelines,
+  pipelines = [],
   cpu = ECS_TASK_DEFAULT_CPU,
   memory = ECS_TASK_DEFAULT_MEMORY,
   s3,
@@ -386,6 +385,7 @@ export const getCicdTemplate = ({
         ManagedPolicyArns: [
           'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
         ],
+        Path: getIamPath(),
         Policies: [
           {
             PolicyName: `${FUNCTION_IAM_ROLE_LOGICAL_ID}Policy`,
@@ -437,11 +437,24 @@ export const getCicdTemplate = ({
                   Effect: 'Allow',
                   Resource: '*',
                 },
+                {
+                  Action: 's3:*',
+                  Effect: 'Allow',
+                  Resource: {
+                    'Fn::Sub': [
+                      `arn:aws:s3:::\${BucketName}/${TRIGGER_PIPELINES_OBJECT_KEY_PREFIX}*`,
+                      {
+                        BucketName: {
+                          'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+                        },
+                      },
+                    ],
+                  },
+                },
               ],
             },
           },
         ],
-        Path: getIamPath(),
       },
     };
 
@@ -496,6 +509,14 @@ export const getCicdTemplate = ({
               Path: '/github/webhooks',
               RestApiId: { Ref: API_LOGICAL_ID },
             },
+          },
+        },
+        Environment: {
+          Variables: {
+            BASE_STACK_BUCKET_NAME: {
+              'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+            },
+            PIPELINES_JSON: JSON.stringify(pipelines),
           },
         },
         Handler: 'index.githubWebhooksApiV1Handler',
@@ -572,7 +593,24 @@ export const getCicdTemplate = ({
           'arn:aws:iam::aws:policy/job-function/ViewOnlyAccess',
         ],
         Path: getIamPath(),
-        // Policies: null,
+        /**
+         * TODO: improve the policies rules.
+         */
+        Policies: [
+          {
+            PolicyName: `${REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID}Policy`,
+            PolicyDocument: {
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: ['*'],
+                  Resource: '*',
+                },
+              ],
+            },
+          },
+        ],
       },
     };
 

@@ -4,6 +4,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
+    "prebuild": "yarn workspace carlin build",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "rm -rf build && yarn build && carlin deploy static-app",
