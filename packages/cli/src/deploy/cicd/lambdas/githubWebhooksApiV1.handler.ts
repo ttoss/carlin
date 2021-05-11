@@ -88,7 +88,7 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
           'pull_request.synchronize',
         ],
         async ({ payload }) => {
-          executeTasks({
+          await executeTasks({
             commands: [
               shConditionalCommands({
                 conditionalCommands: getPrCommands({
@@ -99,6 +99,20 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
           });
         },
       );
+
+      webhooks.on(['pull_request.closed'], async ({ payload }) => {
+        await executeTasks({
+          memory: '512',
+          cpu: '512',
+          commands: [
+            shConditionalCommands({
+              conditionalCommands: getPrCommands({
+                branch: payload.pull_request.head.ref,
+              }),
+            }),
+          ],
+        });
+      });
     }
 
     if (pipelines.includes('main')) {

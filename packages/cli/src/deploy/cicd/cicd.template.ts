@@ -257,6 +257,14 @@ export const getCicdTemplate = ({
                   'RUN git config --global user.name carlin',
                   'RUN git config --global user.email carlin@ttoss.dev',
 
+                  'RUN mkdir /root/.ssh/',
+                  'COPY ./id_rsa /root/.ssh/id_rsa',
+                  'RUN chmod 600 /root/.ssh/id_rsa',
+
+                  // Make sure your domain is accepted
+                  'RUN touch /root/.ssh/known_hosts',
+                  'RUN ssh-keyscan github.com >> /root/.ssh/known_hosts',
+
                   // Copy repository
                   'COPY . /home',
 
@@ -333,6 +341,7 @@ export const getCicdTemplate = ({
                   '$(aws ecr get-login --no-include-email --region $AWS_REGION)',
                   'echo Building the repository image...',
                   'cd ../',
+                  'cp ~/.ssh/id_rsa .',
                   'echo "$DOCKERFILE" > Dockerfile',
                   'cat Dockerfile',
                   'docker build -t $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .',
@@ -661,6 +670,12 @@ export const getCicdTemplate = ({
         Memory: memory,
         NetworkMode: 'awsvpc',
         RequiresCompatibilities: ['FARGATE'],
+        TaskRoleArn: {
+          'Fn::GetAtt': [
+            REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID,
+            'Arn',
+          ],
+        },
       },
     };
   })();

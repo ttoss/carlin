@@ -57,3 +57,27 @@ This project was create using [GitHub](https://github.com).
 <InnerHTML html={cicdTemplateGetEcrRepositoryComment} />
 
 <Template json={cicdTemplateEcrRepository} />
+
+---
+
+You can test the created image in your local environment following theses steps:
+
+1. Perform a Docker login running the command if you're using AWS CLI v2:
+
+   ```sh
+   aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws-account-id>.dkr.ecr.<region>.amazonaws.com
+   ```
+
+1. Pull the image:
+
+   ```sh
+   docker pull <aws-account-id>.dkr.ecr.<region>.amazonaws.com/<repository-name>:latest
+   ```
+
+1. [Run bash in a disposable new container:](https://stackoverflow.com/a/43309168/8786986)
+
+   ```sh
+   docker run --rm -it --entrypoint bash <image-name-or-id>
+   ```
+
+1. Run `exit` to close the bash.
