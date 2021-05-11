@@ -4,7 +4,7 @@ import { ProxyHandler } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 
 import { getTriggerPipelinesObjectKey } from '../getTriggerPipelineObjectKey';
-import { Pipeline, getPrCommands } from '../pipelines';
+import { Pipeline, getPrCommands, getClosedPrCommands } from '../pipelines';
 
 import { executeTasks, shConditionalCommands } from './executeTasks';
 import { getProcessEnvVariable } from './getProcessEnvVariable';
@@ -101,12 +101,15 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
       );
 
       webhooks.on(['pull_request.closed'], async ({ payload }) => {
+        /**
+         * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+         */
         await executeTasks({
+          cpu: '256',
           memory: '512',
-          cpu: '512',
           commands: [
             shConditionalCommands({
-              conditionalCommands: getPrCommands({
+              conditionalCommands: getClosedPrCommands({
                 branch: payload.pull_request.head.ref,
               }),
             }),
