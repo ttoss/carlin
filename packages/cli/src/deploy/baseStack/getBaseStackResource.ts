@@ -1,4 +1,4 @@
-import { CloudFormation } from 'aws-sdk';
+import { getStackOutput } from '../cloudFormation.core';
 
 import {
   BASE_STACK_NAME,
@@ -7,40 +7,11 @@ import {
   BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME,
 } from './config';
 
-export const getBaseStackOutput = async (resource: string) => {
-  const cloudFormation = new CloudFormation();
-
-  const Stacks = await (async () => {
-    try {
-      const response = await cloudFormation
-        .describeStacks({ StackName: BASE_STACK_NAME })
-        .promise();
-
-      if (!response.Stacks) {
-        throw new Error();
-      }
-
-      return response.Stacks;
-    } catch (err) {
-      throw new Error(
-        `Stack ${BASE_STACK_NAME} not found. Please, check if you've deployed ${BASE_STACK_NAME}. If don't, execute \`carlin deploy base-stack\`, For more information, please, check this link https://carlin.ttoss.dev/docs/commands/deploy-base-stack`,
-      );
-    }
-  })();
-
-  const { Outputs } = Stacks[0];
-
-  const output = Outputs?.find(({ OutputKey }) => OutputKey === resource);
-
-  if (!output) {
-    throw new Error(
-      `Stack ${BASE_STACK_NAME} doesn't have ${resource} output.`,
-    );
-  }
-
-  if (!output.OutputValue) {
-    throw new Error(`Key ${resource} has no OutputValue.`);
-  }
+export const getBaseStackOutput = async (outputKey: string) => {
+  const output = await getStackOutput({
+    stackName: BASE_STACK_NAME,
+    outputKey,
+  });
 
   return output.OutputValue;
 };

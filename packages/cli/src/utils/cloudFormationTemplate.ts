@@ -10,7 +10,7 @@ interface Parameter {
 
 export interface Resource {
   Type: string;
-  DeletionPolicy?: string;
+  DeletionPolicy?: 'Delete' | 'Retain';
   Description?: string;
   DependsOn?: string[];
   Condition?: string;
@@ -27,13 +27,15 @@ export type Output = {
 
 export interface CloudFormationTemplate {
   AWSTemplateFormatVersion: '2010-09-09';
+  Transform?: 'AWS::Serverless-2016-10-31';
+  Mappings?: any;
   Conditions?: any;
   Parameters?: { [key: string]: Parameter };
   Resources: { [key: string]: Resource };
   Outputs?: { [key: string]: Output };
 }
 
-interface TagAndType {
+export interface TagAndType {
   tag: string;
   options: yaml.TypeConstructorOptions;
 }
@@ -143,9 +145,35 @@ const cloudFormationTypes: TagAndType[] = [
 const getYamlTypes = (tagAndTypeArr: TagAndType[]) =>
   tagAndTypeArr.map(({ tag, options }) => new yaml.Type(tag, options));
 
+/**
+ * Transform CloudFormation directives in objects. For example, transform
+ * !Ref Something in { Ref: Something }.
+ */
 export const getSchema = (tagAndTypeArr: TagAndType[] = []) =>
-  yaml.Schema.create(getYamlTypes([...tagAndTypeArr, ...cloudFormationTypes]));
+  yaml.DEFAULT_SCHEMA.extend(
+    getYamlTypes([...tagAndTypeArr, ...cloudFormationTypes]),
+  );
 
+/**
+ * Transform a JSON in a YAML string.
+ *
+ * @param cloudFormationTemplate JSON CloudFormation template
+ * @returns YAML as string
+ */
 export const dumpToYamlCloudFormationTemplate = (
   cloudFormationTemplate: CloudFormationTemplate,
-) => yaml.safeDump(cloudFormationTemplate, { schema: getSchema() });
+) => yaml.dump(cloudFormationTemplate, { schema: getSchema() });
+
+/**
+ * Transform YAML string in JSON object.
+ *
+ * @param template template in String format.
+ * @param tagAndTypeArr YAML types.
+ * @returns JSON template.
+ */
+export const loadCloudFormationTemplate = (
+  template: string,
+  tagAndTypeArr: TagAndType[] = [],
+) => {
+  return yaml.load(template, { schema: getSchema(tagAndTypeArr) });
+};

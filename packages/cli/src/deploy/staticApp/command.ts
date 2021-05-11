@@ -1,7 +1,8 @@
 /* eslint-disable no-param-reassign */
+import AWS from 'aws-sdk';
 import { CommandModule, InferredOptionTypes } from 'yargs';
 
-import { NAME } from '../../config';
+import { NAME, CLOUDFRONT_REGION } from '../../config';
 import { addGroupToOptions } from '../../utils';
 
 import { destroyCloudFormation } from '../cloudFormation';
@@ -46,6 +47,16 @@ export const options = {
     describe: `Is the name of a Route 53 hosted zone. If this value is provided, ${NAME} creates the subdomains defined on \`--aliases\` option. E.g. if you have a hosted zone named "sub.domain.com", the value provided may be "sub.domain.com".`,
     type: 'string',
   },
+  /**
+   * CloudFront triggers can be only in US East (N. Virginia) Region.
+   * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-cloudfront-triggers
+   */
+  region: {
+    coerce: () => CLOUDFRONT_REGION,
+    default: CLOUDFRONT_REGION,
+    hidden: true,
+    type: 'string',
+  },
   'skip-upload': {
     default: false,
     describe:
@@ -70,11 +81,20 @@ export const deployStaticAppCommand: CommandModule<
   builder: (yargs) =>
     yargs
       .options(addGroupToOptions(options, 'Deploy Static App Options'))
+      /**
+       * CloudFront triggers can be only in US East (N. Virginia) Region.
+       * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-cloudfront-triggers
+       */
+      .middleware(() => {
+        AWS.config.region = CLOUDFRONT_REGION;
+      })
       .middleware((argv: any) => {
         const { acm, aliases, csp, gtmId, spa } = argv;
+
         const someDefined = [acm, aliases, csp, gtmId, spa].some(
           (value) => !!value,
         );
+
         if (someDefined) {
           argv.cloudfront = true;
         }

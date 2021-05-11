@@ -14,7 +14,7 @@ import { getPackageName } from './packageJson';
  */
 export const getProjectName = () => {
   if (getEnvVar('PROJECT')) {
-    return getEnvVar('PROJECT');
+    return getEnvVar('PROJECT') as string;
   }
 
   const name = getPackageName();

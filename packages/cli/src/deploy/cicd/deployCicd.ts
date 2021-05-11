@@ -1,39 +1,128 @@
-import { deploy } from '../cloudFormation.core';
+import * as fs from 'fs';
+import log from 'npmlog';
+import * as path from 'path';
+
+import { waitCodeBuildFinish, startCodeBuildBuild } from '../../utils';
+
+import { deploy, getStackOutput } from '../cloudFormation.core';
 import { handleDeployError, handleDeployInitialization } from '../utils';
 
-import { getCicdTemplate } from './cicd.template';
-import { getStackName } from './getStackName';
+import { deployLambdaCode } from '../lambda';
+
+import type { Pipeline } from './pipelines';
+import {
+  REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+  getCicdTemplate,
+} from './cicd.template';
+import { getCicdStackName } from './getCicdStackName';
 
 const logPrefix = 'cicd';
 
-export const deployCicd = async ({
-  repository,
-  sshKey,
+export const getLambdaInput = (extension: 'js' | 'ts') =>
+  path.resolve(__dirname, `lambdas/index.${extension}`);
+
+const deployCicdLambdas = async ({ stackName }: { stackName: string }) => {
+  const lambdaInput = (() => {
+    /**
+     * This case happens when carlin command is executed when the package is
+     * built.
+     */
+    if (fs.existsSync(getLambdaInput('js'))) {
+      return getLambdaInput('js');
+    }
+
+    /**
+     * The package isn't built.
+     */
+    if (fs.existsSync(getLambdaInput('ts'))) {
+      return getLambdaInput('ts');
+    }
+
+    throw new Error('Cannot read CICD lambdas file.');
+  })();
+
+  const s3 = await deployLambdaCode({
+    lambdaInput,
+    lambdaExternals: [],
+    /**
+     * Needs stackName to define the S3 key.
+     */
+    stackName,
+  });
+
+  if (!s3 || !s3.bucket) {
+    throw new Error(
+      'Cannot retrieve bucket in which Lambda code was deployed.',
+    );
+  }
+
+  return s3;
+};
+
+const waitRepositoryImageUpdate = async ({
+  stackName,
 }: {
-  repository: string;
+  stackName: string;
+}) => {
+  log.info(logPrefix, 'Starting repository image update...');
+
+  const { OutputValue: projectName } = await getStackOutput({
+    stackName,
+    outputKey: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+  });
+
+  if (!projectName) {
+    throw new Error(`Cannot retrieve repository image CodeBuild project name.`);
+  }
+
+  const build = await startCodeBuildBuild({ projectName });
+
+  if (build.id) {
+    await waitCodeBuildFinish({ buildId: build.id, name: stackName });
+  }
+};
+
+export const deployCicd = async ({
+  cpu,
+  memory,
+  pipelines,
+  repositoryUpdate,
+  sshKey,
+  sshUrl,
+}: {
+  cpu?: string;
+  memory?: string;
+  pipelines: Pipeline[];
+  repositoryUpdate?: boolean;
   sshKey: string;
+  sshUrl: string;
 }) => {
   try {
     const { stackName } = await handleDeployInitialization({
       logPrefix,
-      stackName: getStackName(),
+      stackName: getCicdStackName(),
     });
 
-    if (stackName) {
-      process.exit();
-    }
-
     await deploy({
-      template: getCicdTemplate(),
+      template: getCicdTemplate({
+        cpu,
+        memory,
+        pipelines,
+        s3: await deployCicdLambdas({ stackName }),
+      }),
       params: {
         StackName: stackName,
         Parameters: [
-          { ParameterKey: 'Repository', ParameterValue: repository },
+          { ParameterKey: 'SSHUrl', ParameterValue: sshUrl },
           { ParameterKey: 'SSHKey', ParameterValue: sshKey },
         ],
       },
       terminationProtection: true,
     });
+
+    if (repositoryUpdate) {
+      await waitRepositoryImageUpdate({ stackName });
+    }
   } catch (error) {
     handleDeployError({ error, logPrefix });
   }

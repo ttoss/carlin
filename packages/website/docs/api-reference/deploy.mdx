@@ -12,9 +12,9 @@ import { deployOptions } from '../../.docusaurus/carlin/default/deployOptions.js
 
 <OptionHeader option="aws-account-id" options={deployOptions} />
 
-This option locks the deployment AWS accound id. As we work with many [environments](/docs/CLI#environments), sometimes we might perform some deploy with undesired credentials.
-For instance, we might run a deploy for staging environment but with production credentials.
-This way the deployment process will be only performed if the credentials AWS account id matches the value of this option.
+This option locks the deployment AWS accound id. As we work with many [environments](/docs/CLI#environments), sometimes we try to perform some deploy with undesired credentials.
+For instance, we try to run a deploy for staging environment but with production credentials.
+If we provide this option, the deployment is locked, it will be only performed if the credentials AWS account id matches the value of this option.
 
 Suppose we have the following configuration:
 

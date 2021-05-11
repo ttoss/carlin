@@ -1,3 +1,4 @@
+const fs = require('fs');
 const yaml = require('js-yaml');
 
 /* eslint-disable global-require */
@@ -24,7 +25,16 @@ const {
   getLambdaLayerTemplate,
 } = require('carlin/dist/deploy/lambdaLayer/deployLambdaLayer');
 
+const {
+  getCicdTemplate,
+  ECR_REPOSITORY_LOGICAL_ID,
+} = require('carlin/dist/deploy/cicd/cicd.template');
+
 const { getComment, getComments, toHtml } = require('./comments');
+
+const {
+  coverageThreshold: { global: testsCoverageThreshold },
+} = require('../../cli/jest.config');
 
 const cliApi = async (cmd) =>
   new Promise((resolve) => {
@@ -37,6 +47,12 @@ module.exports = () => {
   return {
     name: 'carlin',
     loadContent: async () => {
+      const s3 = {
+        bucket: 'my-bucket',
+        key: 'some-key',
+        versionId: 'version-id',
+      };
+
       return {
         defaultTemplatePaths,
 
@@ -85,6 +101,10 @@ module.exports = () => {
             'getCurrentBranch',
           ],
           getProjectNameComment: ['utils/getProjectName.js', 'getProjectName'],
+          cicdTemplateGetEcrRepositoryComment: [
+            'deploy/cicd/cicd.template.js',
+            'getCicdTemplate~getEcrRepositoryResource',
+          ],
         }),
         stackNameComment: toHtml(
           getComment(['deploy/stackName.js', 'getStackName']).split(
@@ -113,7 +133,7 @@ module.exports = () => {
 
         lambdaLayerBuildspec: getBuildSpec(),
         lambdaLayerBuildspecCommands: yaml.dump(
-          yaml.safeLoad(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
+          yaml.load(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
             .install.commands,
         ),
         lambdaLayerCodeBuildProjectTemplate: getLambdaLayerBuilderTemplate(),
@@ -140,6 +160,18 @@ module.exports = () => {
           cloudfront: true,
           gtmId: 'GTM-XXXX',
         }),
+        carlinCicdConfig: yaml.load(
+          fs.readFileSync('../../cicd/carlin.yml', 'utf-8'),
+        ),
+        ...(() => {
+          const cicdTemplate = getCicdTemplate({ pipelines: ['main'], s3 });
+          return {
+            cicdTemplate,
+            cicdTemplateEcrRepository:
+              cicdTemplate.Resources[ECR_REPOSITORY_LOGICAL_ID],
+          };
+        })(),
+        testsCoverageThreshold: yaml.dump(testsCoverageThreshold),
       };
     },
     contentLoaded: async ({ actions, content }) => {

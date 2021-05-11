@@ -35,8 +35,8 @@ export const buildLambdaSingleFile = async ({
   log.info(logPrefix, 'Building Lambda single file...');
 
   const webpackConfig: webpack.Configuration = {
-    entry: path.join(process.cwd(), lambdaInput),
-    mode: 'none',
+    entry: path.resolve(process.cwd(), lambdaInput),
+    mode: 'production',
     externals: ['aws-sdk', ...builtins, ...lambdaExternals],
     module: {
       rules: [
@@ -54,15 +54,16 @@ export const buildLambdaSingleFile = async ({
               esModuleInterop: true,
               declaration: false,
               target: 'es2017',
-              /**
-               * Fix https://stackoverflow.com/questions/65202242/how-to-use-rollup-js-to-create-a-common-js-and-named-export-bundle/65202822#65202822
-               */
               module: 'esnext',
               noEmit: false,
             },
           },
         },
       ],
+    },
+    optimization: {
+      // usedExports: true,
+      minimize: false,
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.json'],

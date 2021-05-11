@@ -1,6 +1,9 @@
 /* eslint-disable import/first */
+import AWS from 'aws-sdk';
 import faker from 'faker';
 import yargs from 'yargs';
+
+import { CLOUDFRONT_REGION } from '../../config';
 
 const destroyCloudFormationMock = jest.fn();
 
@@ -29,6 +32,28 @@ const parse = (options: any) =>
       resolve(argv);
     });
   });
+
+describe('region should be us-east-1', () => {
+  beforeEach(() => {
+    AWS.config.region = undefined;
+  });
+
+  test.each([
+    [undefined],
+    ['us-east-1'],
+    ['us-east-2'],
+    ['us-west-1'],
+    ['us-west-2'],
+    ['sa-east-1'],
+  ])('should return us-east-1 if region option is: %s', async () => {
+    const argv = await parse({});
+    expect(argv.region).toEqual(CLOUDFRONT_REGION);
+    expect(AWS.config.region).toEqual(CLOUDFRONT_REGION);
+    expect(deployStaticAppMock).toHaveBeenCalledWith(
+      expect.objectContaining({ region: CLOUDFRONT_REGION }),
+    );
+  });
+});
 
 describe('aliases implies acm', () => {
   test('should throw because alias is defined and acm not', () => {

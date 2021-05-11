@@ -4,6 +4,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
+    "prebuild": "yarn workspace carlin build",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "rm -rf build && yarn build && carlin deploy static-app",
@@ -11,15 +12,15 @@
     "clear": "docusaurus clear"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.70",
-    "@docusaurus/preset-classic": "2.0.0-alpha.70",
-    "@mdx-js/react": "^1.6.21",
+    "@docusaurus/core": "2.0.0-alpha.73",
+    "@docusaurus/preset-classic": "2.0.0-alpha.73",
+    "@mdx-js/react": "^1.6.22",
     "clsx": "^1.1.1",
-    "jsdoc-api": "^6.0.0",
-    "markdown-to-jsx": "^7.1.1",
-    "react": "^16.8.4",
-    "react-dom": "^16.8.4",
-    "unified": "^9.2.0"
+    "jsdoc-api": "^7.0.1",
+    "markdown-to-jsx": "^7.1.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "unified": "^9.2.1"
   },
   "browserslist": {
     "production": [
@@ -34,6 +35,6 @@
     ]
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^2.0.0-alpha.70"
+    "@docusaurus/module-type-aliases": "^2.0.0-alpha.75"
   }
 }

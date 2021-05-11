@@ -19,7 +19,17 @@
 //   getCicdTemplate: jest.fn().mockReturnValue(template),
 // }));
 
-// import { deployCicd } from './deployCicd';
+import { getLambdaInput } from './deployCicd';
+
+describe('lambda input directory', () => {
+  test('should read the .js file', () => {
+    expect(getLambdaInput('js')).toEqual(`${__dirname}/lambdas/index.js`);
+  });
+
+  test('should read the .ts file', () => {
+    expect(getLambdaInput('ts')).toEqual(`${__dirname}/lambdas/index.ts`);
+  });
+});
 
 // test('should call deploy method with correctly parameters', async () => {
 //   await deployCicd();

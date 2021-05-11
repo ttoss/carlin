@@ -6,6 +6,7 @@ module.exports = {
       'commands/deploy-base-stack',
       'commands/deploy-static-app',
       'commands/deploy-lambda-layer',
+      'commands/deploy-cicd',
     ],
   },
   api: {

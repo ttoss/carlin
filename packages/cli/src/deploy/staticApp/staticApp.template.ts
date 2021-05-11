@@ -315,7 +315,8 @@ export const getLambdaEdgeOriginRequestZipFile = ({
   );
 
   return formatCode(
-    `
+    uglify(
+      `
 'use strict';
 
 const { S3 } = require('aws-sdk');
@@ -427,6 +428,7 @@ exports.handler = async (event, context) => {
   };
 };
 `,
+    ),
   );
 };
 
@@ -441,7 +443,9 @@ export const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
 export const getLambdaEdgeOriginResponseZipFile = ({
   csp = {},
 }: { csp?: CSP } = {}) => {
-  return formatCode(`
+  return formatCode(
+    uglify(
+      `
 'use strict';
 
 exports.handler = async (event, context) => {
@@ -457,7 +461,9 @@ exports.handler = async (event, context) => {
   
   return response;
 };
-`);
+`,
+    ),
+  );
 };
 
 const getBaseTemplate = ({
@@ -650,9 +656,7 @@ const getCloudFrontEdgeLambdas = ({
       Type: 'AWS::Lambda::Function',
       Properties: {
         Code: {
-          ZipFile: uglify(
-            getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
-          ),
+          ZipFile: getLambdaEdgeOriginRequestZipFile({ gtmId, csp, region }),
         },
         Description: 'Lambda@Edge function serving as origin request.',
         Handler: 'index.handler',
@@ -677,7 +681,7 @@ const getCloudFrontEdgeLambdas = ({
     [LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID]: {
       Type: 'AWS::Lambda::Function',
       Properties: {
-        Code: { ZipFile: uglify(getLambdaEdgeOriginResponseZipFile({ csp })) },
+        Code: { ZipFile: getLambdaEdgeOriginResponseZipFile({ csp }) },
         Description: 'Lambda@Edge function serving as origin response.',
         Handler: 'index.handler',
         MemorySize: 128,

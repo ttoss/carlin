@@ -1,0 +1,83 @@
+---
+title: deploy cicd
+---
+
+import InnerHTML from '../../src/components/InnerHTML';
+import Template from '../../src/components/Template';
+
+import { carlinCicdConfig } from '../../.docusaurus/carlin/default/carlinCicdConfig.json';
+import { cicdTemplate } from '../../.docusaurus/carlin/default/cicdTemplate.json';
+import { cicdTemplateEcrRepository } from '../../.docusaurus/carlin/default/cicdTemplateEcrRepository.json';
+import { cicdTemplateGetEcrRepositoryComment } from '../../.docusaurus/carlin/default/cicdTemplateGetEcrRepositoryComment.json';
+
+## Overview
+
+This project was created to help anwsering the question:
+
+> How can we execute commands in our repository in a serverless way?
+
+In other words, how can we setup a structure to execute commands and only pays for the time consumed?
+
+Aiming to create such structure, we've create this CICD module. Let's understand the whole process before we run
+
+```
+carlin deploy cicd
+```
+
+## Serverless Repository
+
+This project was create using [GitHub](https://github.com).
+
+### Creating a SSH Key
+
+1. Create a folder in which you'll save the configurations of the CICD, for instance `cicd`.
+1. Create a SSH key following [these steps](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#generating-a-new-ssh-key).
+   1. You may want to save the keys inside the folder you've created. For example: `Enter file in which to save the key (/home/your-name/.ssh/id_ed25519): ./ssh-key`
+   1. Create a `.gitignore` file containing the name of the keys (`ssh-key*` in this example).
+1. Create a [deploy key](https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys).
+
+### Creating The CICD Stack
+
+1. Create a config file, for example, `carlin.yml` inside your CICD folder with the configuration:
+
+   <Template json={carlinCicdConfig} />
+
+1. Execute
+
+   ```
+   carlin deploy cicd
+   ```
+
+1. The CICD Stack will be created, whose full template is:
+
+   <Template json={cicdTemplate} />
+
+### Created Resources
+
+<InnerHTML html={cicdTemplateGetEcrRepositoryComment} />
+
+<Template json={cicdTemplateEcrRepository} />
+
+---
+
+You can test the created image in your local environment following theses steps:
+
+1. Perform a Docker login running the command if you're using AWS CLI v2:
+
+   ```sh
+   aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws-account-id>.dkr.ecr.<region>.amazonaws.com
+   ```
+
+1. Pull the image:
+
+   ```sh
+   docker pull <aws-account-id>.dkr.ecr.<region>.amazonaws.com/<repository-name>:latest
+   ```
+
+1. [Run bash in a disposable new container:](https://stackoverflow.com/a/43309168/8786986)
+
+   ```sh
+   docker run --rm -it --entrypoint bash <image-name-or-id>
+   ```
+
+1. Run `exit` to close the bash.

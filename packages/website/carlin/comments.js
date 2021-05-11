@@ -8,7 +8,7 @@ const getComment = ([pathFromDist, longname]) => {
     files: path.resolve(process.cwd(), '../cli/dist', pathFromDist),
   });
 
-  // if (pathFromDist === 'cli.js') {
+  // if (pathFromDist === 'deploy/cicd/cicd.template.js') {
   //   // eslint-disable-next-line no-console
   //   console.log(res);
   //   process.exit(0);
