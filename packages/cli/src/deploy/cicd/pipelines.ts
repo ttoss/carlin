@@ -20,6 +20,10 @@ export const getPrCommands = ({ branch }: { branch: string }) => [
    */
   `npx lerna run "test" --since --stream --parallel`,
   /**
+   * Build only modified packages.
+   */
+  `npx lerna run "build" --since --stream --parallel`,
+  /**
    * Deploy only the modified packages.
    */
   `npx lerna run "deploy" --since --stream --parallel`,
