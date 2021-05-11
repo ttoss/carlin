@@ -41,6 +41,10 @@ const parse = async (arg: any, context: any) => {
 };
 
 describe('environment type', () => {
+  beforeAll(() => {
+    delete process.env.CARLIN_ENVIRONMENT;
+  });
+
   test('throw error if it is an object', () => {
     expect(() =>
       parse(`print-args`, {
