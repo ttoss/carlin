@@ -35,9 +35,12 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
 ];
 
 export const getMainCommands = () => [
-  'yarn',
+  'git status',
   'git fetch',
   'git pull origin main',
-  'yarn test',
-  'CARLIN_ENVIRONMENT=Staging yarn deploy',
+  'yarn',
+  `export CARLIN_ENVIRONMENT=Staging`,
+  `npx lerna run "test" --stream --parallel`,
+  `npx lerna run "build" --stream --parallel`,
+  `npx lerna run "deploy" --stream --parallel`,
 ];
