@@ -88,6 +88,10 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
           'pull_request.synchronize',
         ],
         async ({ payload }) => {
+          if (payload.pull_request.draft) {
+            return;
+          }
+
           await executeTasks({
             commands: [
               shConditionalCommands({
