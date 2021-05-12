@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.1](https://github.com/ttoss/carlin/compare/v0.14.0...v0.14.1) (2021-05-12)
+
+### Bug Fixes
+
+- carlin.yml ([922d797](https://github.com/ttoss/carlin/commit/922d797b4fe035c07258636d89c471b7620051ae))
+- cicd commands ([6b33a38](https://github.com/ttoss/carlin/commit/6b33a38cbb60b2e45fba831f9c0cd1d4664fc945))
+- cicd commands ([#28](https://github.com/ttoss/carlin/issues/28)) ([57d3b30](https://github.com/ttoss/carlin/commit/57d3b30140bb990e4adacbe744dd08b844e530e2))
+- tests ([38e7ee4](https://github.com/ttoss/carlin/commit/38e7ee44fd6b333773eb2c6fb5a436fa5a04c8c0))
+
+### Features
+
+- cicd ([#27](https://github.com/ttoss/carlin/issues/27)) ([acc4039](https://github.com/ttoss/carlin/commit/acc40396f8267126fd860893f800fa63a8c882cc))
+- creating tag pipeline ([6908e72](https://github.com/ttoss/carlin/commit/6908e725e088185e86ed86e19ce2a47745272206))
+- ignore draft pr ([7f08e38](https://github.com/ttoss/carlin/commit/7f08e388f1c4305c8ec6aa90cdbf39b7d13a930e))
+- improve tests ([961b0f7](https://github.com/ttoss/carlin/commit/961b0f7cd9af6e14d816c22b60de0f7676992ced))
+- update staging commands ([7a6b553](https://github.com/ttoss/carlin/commit/7a6b553590f958b8e17957cdddfcccef3cd4f321))
+
 # [0.14.0](https://github.com/ttoss/carlin/compare/v0.13.4...v0.14.0) (2021-04-08)
 
 ### Features

@@ -178,7 +178,10 @@ module.exports = () => {
       const { createData } = actions;
 
       Object.entries(content).forEach(async ([key, value]) => {
-        await createData(`${key}.json`, JSON.stringify({ [key]: value }));
+        await createData(
+          `${key}.js`,
+          `module.exports.${key} = ${JSON.stringify(value, null, 2)}`,
+        );
       });
     },
   };

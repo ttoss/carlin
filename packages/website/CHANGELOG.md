@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.1](https://github.com/ttoss/carlin/compare/v0.14.0...v0.14.1) (2021-05-12)
+
+### Bug Fixes
+
+- carlin.yml ([922d797](https://github.com/ttoss/carlin/commit/922d797b4fe035c07258636d89c471b7620051ae))
+- cicd commands ([6b33a38](https://github.com/ttoss/carlin/commit/6b33a38cbb60b2e45fba831f9c0cd1d4664fc945))
+
+### Features
+
+- cicd ([#27](https://github.com/ttoss/carlin/issues/27)) ([acc4039](https://github.com/ttoss/carlin/commit/acc40396f8267126fd860893f800fa63a8c882cc))
+- improve tests ([961b0f7](https://github.com/ttoss/carlin/commit/961b0f7cd9af6e14d816c22b60de0f7676992ced))
+
 # [0.14.0](https://github.com/ttoss/carlin/compare/v0.13.4...v0.14.0) (2021-04-08)
 
 ### Features
