@@ -1,3 +1,4 @@
+import { pascalCase } from 'change-case';
 import yaml from 'js-yaml';
 
 import { CloudFormationTemplate, getIamPath } from '../../utils';
@@ -57,9 +58,11 @@ export const REPOSITORY_TASKS_ECS_TASK_DEFINITION_TASK_ROLE_LOGICAL_ID =
 export const PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID =
   'PipelinesArtifactStoreS3Bucket';
 
-export const PIPELINES_MAIN_ROLE_LOGICAL_ID = 'PipelinesMainIAMRole';
+export const PIPELINES_ROLE_LOGICAL_ID = 'PipelinesMainIAMRole';
 
 export const PIPELINES_MAIN_LOGICAL_ID = 'PipelinesMainCodePipeline';
+
+export const PIPELINES_TAG_LOGICAL_ID = 'PipelinesTagCodePipeline';
 
 export const PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
   'PipelinesHandlerLambdaFunction';
@@ -683,7 +686,7 @@ export const getCicdTemplate = ({
   /**
    * Pipelines
    */
-  if (pipelines.includes('main')) {
+  if (pipelines.includes('main') || pipelines.includes('tag')) {
     resources[PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID] = {
       Type: 'AWS::S3::Bucket',
       Properties: {
@@ -724,7 +727,7 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources[PIPELINES_MAIN_ROLE_LOGICAL_ID] = {
+    resources[PIPELINES_ROLE_LOGICAL_ID] = {
       Type: 'AWS::IAM::Role',
       Properties: {
         AssumeRolePolicyDocument: {
@@ -743,7 +746,7 @@ export const getCicdTemplate = ({
         Path: getIamPath(),
         Policies: [
           {
-            PolicyName: `${PIPELINES_MAIN_ROLE_LOGICAL_ID}Policy`,
+            PolicyName: `${PIPELINES_ROLE_LOGICAL_ID}Policy`,
             PolicyDocument: {
               Version: '2012-10-17',
               Statement: [
@@ -809,82 +812,94 @@ export const getCicdTemplate = ({
       },
     };
 
-    const pipelineMainS3SourceOutputName = 'PipelineMainS3SourceOutput';
+    const getCodePipelinePipeline = (pipeline: Pipeline) => {
+      const pipelinePascalCase = pascalCase(pipeline);
 
-    resources[PIPELINES_MAIN_LOGICAL_ID] = {
-      Type: 'AWS::CodePipeline::Pipeline',
-      Properties: {
-        ArtifactStore: {
-          Location: { Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID },
-          Type: 'S3',
-        },
-        RestartExecutionOnUpdate: false,
-        RoleArn: {
-          'Fn::GetAtt': [PIPELINES_MAIN_ROLE_LOGICAL_ID, 'Arn'],
-        },
-        Stages: [
-          {
-            Actions: [
-              {
-                ActionTypeId: {
-                  Category: 'Source',
-                  Owner: 'AWS',
-                  Provider: 'S3',
-                  Version: 1,
-                },
-                Configuration: {
-                  S3Bucket: {
-                    'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
-                  },
-                  S3ObjectKey: getTriggerPipelinesObjectKey('main'),
-                },
-                Name: 'PipelineMainS3SourceAction',
-                OutputArtifacts: [
-                  {
-                    Name: pipelineMainS3SourceOutputName,
-                  },
-                ],
-              },
-            ],
-            Name: 'PipelineMainS3SourceStage',
+      const pipelineS3SourceOutputName = `Pipeline${pipelinePascalCase}S3SourceOutput`;
+
+      return {
+        Type: 'AWS::CodePipeline::Pipeline',
+        Properties: {
+          ArtifactStore: {
+            Location: { Ref: PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID },
+            Type: 'S3',
           },
-          {
-            Actions: [
-              {
-                ActionTypeId: {
-                  Category: 'Invoke',
-                  Owner: 'AWS',
-                  Provider: 'Lambda',
-                  Version: 1,
-                },
-                Configuration: {
-                  FunctionName: {
-                    Ref: PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID,
-                  },
-                  UserParameters: ((): Pipeline => 'main')(),
-                },
-                InputArtifacts: [
-                  {
-                    Name: pipelineMainS3SourceOutputName,
-                  },
-                ],
-                Name: 'PipelineMainRunECSTasksAction',
-              },
-              {
-                ActionTypeId: {
-                  Category: 'Approval',
-                  Owner: 'AWS',
-                  Provider: 'Manual',
-                  Version: 1,
-                },
-                Name: 'PipelineMainRunECSTasksApproval',
-              },
-            ],
-            Name: 'PipelineMainRunECSTasksStage',
+          RestartExecutionOnUpdate: false,
+          RoleArn: {
+            'Fn::GetAtt': [PIPELINES_ROLE_LOGICAL_ID, 'Arn'],
           },
-        ],
-      },
+          Stages: [
+            {
+              Actions: [
+                {
+                  ActionTypeId: {
+                    Category: 'Source',
+                    Owner: 'AWS',
+                    Provider: 'S3',
+                    Version: 1,
+                  },
+                  Configuration: {
+                    S3Bucket: {
+                      'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+                    },
+                    S3ObjectKey: getTriggerPipelinesObjectKey(pipeline),
+                  },
+                  Name: `Pipeline${pipelinePascalCase}S3SourceAction`,
+                  OutputArtifacts: [
+                    {
+                      Name: pipelineS3SourceOutputName,
+                    },
+                  ],
+                },
+              ],
+              Name: `Pipeline${pipelinePascalCase}S3SourceStage`,
+            },
+            {
+              Actions: [
+                {
+                  ActionTypeId: {
+                    Category: 'Invoke',
+                    Owner: 'AWS',
+                    Provider: 'Lambda',
+                    Version: 1,
+                  },
+                  Configuration: {
+                    FunctionName: {
+                      Ref: PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID,
+                    },
+                    UserParameters: ((): Pipeline => pipeline)(),
+                  },
+                  InputArtifacts: [
+                    {
+                      Name: pipelineS3SourceOutputName,
+                    },
+                  ],
+                  Name: `Pipeline${pipelinePascalCase}RunECSTasksAction`,
+                },
+                {
+                  ActionTypeId: {
+                    Category: 'Approval',
+                    Owner: 'AWS',
+                    Provider: 'Manual',
+                    Version: 1,
+                  },
+                  Name: `Pipeline${pipelinePascalCase}RunECSTasksApproval`,
+                },
+              ],
+              Name: `Pipeline${pipelinePascalCase}RunECSTasksStage`,
+            },
+          ],
+        },
+      };
     };
+
+    if (pipelines.includes('main')) {
+      resources[PIPELINES_MAIN_LOGICAL_ID] = getCodePipelinePipeline('main');
+    }
+
+    if (pipelines.includes('tag')) {
+      resources[PIPELINES_TAG_LOGICAL_ID] = getCodePipelinePipeline('tag');
+    }
   }
 
   return {

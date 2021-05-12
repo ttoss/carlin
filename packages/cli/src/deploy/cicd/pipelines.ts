@@ -1,4 +1,4 @@
-export const pipelines = ['pr', 'main'] as const;
+export const pipelines = ['pr', 'main', 'tag'] as const;
 
 export type Pipelines = typeof pipelines;
 

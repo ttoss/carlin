@@ -130,6 +130,12 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
       });
     }
 
+    if (pipelines.includes('tag')) {
+      webhooks.on('push', async (details) => {
+        console.log(details);
+      });
+    }
+
     webhooks.onError((onErrorEvent) => {
       console.error('Webhooks on error.');
       console.error(JSON.stringify(onErrorEvent, null, 2));

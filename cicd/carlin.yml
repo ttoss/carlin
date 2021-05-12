@@ -1,4 +1,4 @@
 pipelines:
-  - main
+  - tag
 sshKey: './ssh-key'
 sshUrl: git@github.com:ttoss/carlin.git
