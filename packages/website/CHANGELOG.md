@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.2](https://github.com/ttoss/carlin/compare/v0.15.1...v0.15.2) (2021-05-13)
+
+### Bug Fixes
+
+- website carlin.ts cicd config ([de1113e](https://github.com/ttoss/carlin/commit/de1113ea0337433ec7e9b072805d9dc7235f294e))
+
 ## [0.15.1](https://github.com/ttoss/carlin/compare/v0.15.0...v0.15.1) (2021-05-13)
 
 ### Features
