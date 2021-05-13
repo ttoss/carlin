@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.3](https://github.com/ttoss/carlin/compare/v0.15.2...v0.15.3) (2021-05-13)
+
+### Bug Fixes
+
+- npmrc ([f92367a](https://github.com/ttoss/carlin/commit/f92367a630a872b276f22d0acb87792e222f0024))
+
 ## [0.15.2](https://github.com/ttoss/carlin/compare/v0.15.1...v0.15.2) (2021-05-13)
 
 ### Bug Fixes
