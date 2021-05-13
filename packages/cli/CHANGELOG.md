@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.1](https://github.com/ttoss/carlin/compare/v0.15.0...v0.15.1) (2021-05-13)
+
+### Features
+
+- add task environment ([4711e0c](https://github.com/ttoss/carlin/commit/4711e0c55e60b4d095d96667bab85c7a110d19c6))
+
 # [0.15.0](https://github.com/ttoss/carlin/compare/v0.14.2...v0.15.0) (2021-05-13)
 
 ### Features
