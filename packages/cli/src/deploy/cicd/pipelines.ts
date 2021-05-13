@@ -44,3 +44,14 @@ export const getMainCommands = () => [
   `npx lerna run "build" --stream --parallel`,
   `npx lerna run "deploy" --stream --parallel`,
 ];
+
+export const getTagCommands = ({ tag }: { tag: string }) => [
+  'git status',
+  'git fetch --tags',
+  `git checkout tags/${tag} -b ${tag}-branch`,
+  'yarn',
+  `export CARLIN_ENVIRONMENT=Production`,
+  `npx lerna run "test" --stream --parallel`,
+  `npx lerna run "build" --stream --parallel`,
+  `npx lerna run "deploy" --stream --parallel`,
+];

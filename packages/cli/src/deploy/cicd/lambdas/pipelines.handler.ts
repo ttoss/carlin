@@ -1,9 +1,10 @@
+import type { EventPayloadMap } from '@octokit/webhooks-types';
 import AdmZip from 'adm-zip';
 import { CodePipelineEvent, CodePipelineHandler } from 'aws-lambda';
 import { CodePipeline, S3 } from 'aws-sdk';
 import * as fs from 'fs';
 
-import { Pipeline, getMainCommands } from '../pipelines';
+import { Pipeline, getMainCommands, getTagCommands } from '../pipelines';
 
 import { executeTasks, shConditionalCommands } from './executeTasks';
 
@@ -66,27 +67,45 @@ const putJobFailureResult = (event: CodePipelineEvent, message: string) =>
     })
     .promise();
 
-const executeMainPipeline = async (event: CodePipelineEvent) => {
+const executeMainPipeline = async () => {
   const command = shConditionalCommands({
     conditionalCommands: getMainCommands(),
   });
   await executeTasks({ commands: [command] });
-  await putJobSuccessResult(event);
+};
+
+const executeTagPipeline = async ({
+  payload,
+}: {
+  payload: EventPayloadMap['push'];
+}) => {
+  const tag = payload.ref.split('/')[2];
+  const command = shConditionalCommands({
+    conditionalCommands: getTagCommands({ tag }),
+  });
+  await executeTasks({ commands: [command] });
 };
 
 export const pipelinesHandler: CodePipelineHandler = async (event) => {
   try {
     const { pipeline } = getUserParameters(event);
 
-    // const jobDetails = await getJobDetails(event);
+    const jobDetails = await getJobDetails(event);
 
     if (pipeline === 'main') {
-      await executeMainPipeline(event);
+      await executeMainPipeline();
+      await putJobSuccessResult(event);
+      return;
+    }
+
+    if (pipeline === 'tag') {
+      await executeTagPipeline(jobDetails);
+      await putJobSuccessResult(event);
       return;
     }
 
     throw new Error(`Pipeline ${pipeline} was not handled.`);
   } catch (error) {
-    await putJobFailureResult(event, error.message);
+    await putJobFailureResult(event, error.message.slice(0, 4999));
   }
 };

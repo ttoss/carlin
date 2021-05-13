@@ -25,21 +25,19 @@ const parse = (command: string, options: any = {}) =>
 
 test('should call deployCicd with ssh args', async () => {
   const sshKey = faker.random.word();
-  const sshKeyCoerced = faker.random.word();
+  const readSSHKeyMockedValue = faker.random.word();
   const sshUrl = faker.random.word();
 
-  (commandModule.sshKeyCoerce as jest.Mock) = jest
+  (commandModule.readSSHKey as jest.Mock) = jest
     .fn()
-    .mockReturnValue(sshKeyCoerced);
+    .mockReturnValue(readSSHKeyMockedValue);
 
   const argv = await parse(`cicd --ssh-key=${sshKey} --ssh-url=${sshUrl}`);
 
-  expect(argv).toEqual(
-    expect.objectContaining({ sshKey: sshKeyCoerced, sshUrl }),
-  );
+  expect(argv).toEqual(expect.objectContaining({ sshKey, sshUrl }));
   expect(deployCicdMock).toHaveBeenCalledWith(
     expect.objectContaining({
-      sshKey: sshKeyCoerced,
+      sshKey: readSSHKeyMockedValue,
       sshUrl,
     }),
   );

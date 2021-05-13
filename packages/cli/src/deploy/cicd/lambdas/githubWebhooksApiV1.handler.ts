@@ -25,11 +25,7 @@ const putJobDetails = async ({
 
   const content = JSON.stringify(details, null, 2);
 
-  zip.addFile(
-    pipeline,
-    Buffer.alloc(content.length, content),
-    'entry comment goes here',
-  );
+  zip.addFile(pipeline, Buffer.alloc(content.length + 1, content));
 
   return s3
     .putObject({
@@ -132,7 +128,9 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
 
     if (pipelines.includes('tag')) {
       webhooks.on('push', async (details) => {
-        console.log(details);
+        if (details.payload.ref.startsWith('refs/tags/')) {
+          await putJobDetails({ pipeline: 'tag', details });
+        }
       });
     }
 

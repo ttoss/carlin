@@ -15,7 +15,7 @@ const logPrefix = 'deploy-cicd';
 /**
  * Created to allow mocking.
  */
-export const sshKeyCoerce = (dir: string) => fs.readFileSync(dir, 'utf-8');
+export const readSSHKey = (dir: string) => fs.readFileSync(dir, 'utf-8');
 
 export const options = {
   cpu: {
@@ -32,11 +32,12 @@ export const options = {
     type: 'array',
   },
   'repository-update': {
+    alias: ['update-repository', 'ur', 'ru'],
+    description: 'Determine if the repository image will be updated.',
     default: true,
     type: 'boolean',
   },
   'ssh-key': {
-    coerce: (dir: string) => sshKeyCoerce(dir),
     demandOption: true,
     type: 'string',
   },
@@ -58,7 +59,10 @@ export const deployCicdCommand: CommandModule<
     if (destroy) {
       log.info(logPrefix, `${NAME} doesn't destroy CICD stack.`);
     } else {
-      deployCicd(rest as any);
+      deployCicd({
+        ...rest,
+        sshKey: readSSHKey(rest['ssh-key']),
+      } as any);
     }
   },
 };
