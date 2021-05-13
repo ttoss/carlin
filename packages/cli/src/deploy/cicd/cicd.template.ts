@@ -72,6 +72,7 @@ export const getCicdTemplate = ({
   cpu = ECS_TASK_DEFAULT_CPU,
   memory = ECS_TASK_DEFAULT_MEMORY,
   s3,
+  taskEnvironment = [],
 }: {
   pipelines: Pipeline[];
   cpu?: string;
@@ -81,6 +82,7 @@ export const getCicdTemplate = ({
     key: string;
     versionId: string;
   };
+  taskEnvironment?: Array<{ Name: string; Value: string }>;
 }): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
 
@@ -633,6 +635,7 @@ export const getCicdTemplate = ({
         ContainerDefinitions: [
           {
             Environment: [
+              ...taskEnvironment,
               {
                 /**
                  * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-metadata.html#enable-metadata

@@ -45,6 +45,23 @@ export const options = {
     demandOption: true,
     type: 'string',
   },
+  /**
+   * This option has the format:
+   *
+   * ```ts
+   * Array<{
+   *  Name: string,
+   *  Value: string,
+   * }>
+   * ```
+   */
+  'task-environment': {
+    alias: ['te'],
+    default: [],
+    describe:
+      'A list of environment variables that will be passed to the ECS container task.',
+    type: 'array',
+  },
 } as const;
 
 export const deployCicdCommand: CommandModule<

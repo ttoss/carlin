@@ -1,10 +1,4 @@
 environments:
-  Staging:
-    aliases:
-      - carlin.ttoss.dev
-    csp:
-      default-src: ["* 'unsafe-inline' 'unsafe-eval'", replace]
-    stackName: CarlinWebsite
   Production:
     aliases:
       - carlin.ttoss.dev

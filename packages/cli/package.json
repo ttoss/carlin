@@ -6,11 +6,15 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "prepare": "npm run test && rm -rf dist && npm run build"
+    "prepare": "npm run test && npm run build",
+    "deploy": "npm publish"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ttoss/carlin.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "keywords": [],
   "author": {

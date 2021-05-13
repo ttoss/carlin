@@ -89,6 +89,7 @@ export const deployCicd = async ({
   repositoryUpdate,
   sshKey,
   sshUrl,
+  taskEnvironment,
 }: {
   cpu?: string;
   memory?: string;
@@ -96,6 +97,7 @@ export const deployCicd = async ({
   repositoryUpdate?: boolean;
   sshKey: string;
   sshUrl: string;
+  taskEnvironment: Array<{ Name: string; Value: string }>;
 }) => {
   try {
     const { stackName } = await handleDeployInitialization({
@@ -109,6 +111,7 @@ export const deployCicd = async ({
         memory,
         pipelines,
         s3: await deployCicdLambdas({ stackName }),
+        taskEnvironment,
       }),
       params: {
         StackName: stackName,
