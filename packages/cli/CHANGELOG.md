@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/ttoss/carlin/compare/v0.14.2...v0.15.0) (2021-05-13)
+
+### Features
+
+- finished tag pipeline ([a096529](https://github.com/ttoss/carlin/commit/a0965298ffb3617d27caa5b7fcba1d66fe9f99a2))
+
 ## [0.14.2](https://github.com/ttoss/carlin/compare/v0.14.0...v0.14.2) (2021-05-12)
 
 ### Bug Fixes
