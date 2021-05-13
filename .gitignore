@@ -113,3 +113,4 @@ storybook-static/
 package-lock.json
 
 github-app/
+.npmrc
