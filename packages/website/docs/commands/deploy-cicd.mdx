@@ -2,6 +2,7 @@
 title: deploy cicd
 ---
 
+import CodeBlock from '../../src/components/CodeBlock';
 import InnerHTML from '../../src/components/InnerHTML';
 import Template from '../../src/components/Template';
 
@@ -38,9 +39,11 @@ This project was create using [GitHub](https://github.com).
 
 ### Creating The CICD Stack
 
-1. Create a config file, for example, `carlin.yml` inside your CICD folder with the configuration:
+1. Create a config file, for example, `carlin.ts` inside your CICD folder with the configuration:
 
-   <Template json={carlinCicdConfig} />
+   <CodeBlock className="ts">{carlinCicdConfig}</CodeBlock>
+
+   Don't forget to replace the values with your data.
 
 1. Execute
 

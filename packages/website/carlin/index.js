@@ -160,9 +160,9 @@ module.exports = () => {
           cloudfront: true,
           gtmId: 'GTM-XXXX',
         }),
-        carlinCicdConfig: yaml.load(
-          fs.readFileSync('../../cicd/carlin.yml', 'utf-8'),
-        ),
+        carlinCicdConfig: fs
+          .readFileSync('../../cicd/carlin.ts', 'utf-8')
+          .trim(),
         ...(() => {
           const cicdTemplate = getCicdTemplate({ pipelines: ['main'], s3 });
           return {
