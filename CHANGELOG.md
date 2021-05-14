@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.4](https://github.com/ttoss/carlin/compare/v0.15.3...v0.15.4) (2021-05-14)
+
+### Bug Fixes
+
+- pipelines commands. Update CICD docs ([a22ab66](https://github.com/ttoss/carlin/commit/a22ab6623fde12c910428ebf09df8b0ced2d2f56))
+
 ## [0.15.3](https://github.com/ttoss/carlin/compare/v0.15.2...v0.15.3) (2021-05-13)
 
 ### Bug Fixes
