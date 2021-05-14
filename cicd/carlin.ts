@@ -5,6 +5,9 @@ export default {
   sshKey: './ssh-key',
   sshUrl: 'git@github.com:ttoss/carlin.git',
   taskEnvironment: [
-    { Name: 'NPM_TOKEN', Value: fs.readFileSync('./npmtoken', 'utf-8') },
+    {
+      name: 'NPM_TOKEN',
+      value: fs.readFileSync('./npmtoken', 'utf-8'),
+    },
   ],
 };

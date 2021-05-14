@@ -97,7 +97,7 @@ export const deployCicd = async ({
   repositoryUpdate?: boolean;
   sshKey: string;
   sshUrl: string;
-  taskEnvironment: Array<{ Name: string; Value: string }>;
+  taskEnvironment: Array<{ name: string; value: string }>;
 }) => {
   try {
     const { stackName } = await handleDeployInitialization({

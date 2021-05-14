@@ -82,7 +82,7 @@ export const getCicdTemplate = ({
     key: string;
     versionId: string;
   };
-  taskEnvironment?: Array<{ Name: string; Value: string }>;
+  taskEnvironment?: Array<{ name: string; value: string }>;
 }): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
 
@@ -109,14 +109,12 @@ export const getCicdTemplate = ({
   };
 
   /**
-   * #### Elastic Container Registry
-   *
    * The algorithm will clone the repository and will create a Docker image
-   * to be used to perform commands. [Yarn cache](https://classic.yarnpkg.com/en/docs/cli/cache/)
-   * will also be saved together with the code to reduce tasks installation
+   * to be used to perform your commands. [Yarn cache](https://classic.yarnpkg.com/en/docs/cli/cache/)
+   * will also be saved together with the code to reduce packages installation
    * time. The created image will be pushed to [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/).
-   *
-   * A expiration rule is also defined. The registry only keeps the latest image.
+   * with a defined expiration rule is also defined. The registry only keeps
+   * the latest image.
    */
   const getEcrRepositoryResource = () => ({
     Type: 'AWS::ECR::Repository',
@@ -258,6 +256,9 @@ export const getCicdTemplate = ({
                   // Install Yarn
                   'RUN npm install -g yarn',
 
+                  // Install carlin CLI
+                  'RUN npm install -g carlin',
+
                   // Configure git
                   'RUN git config --global user.name carlin',
                   'RUN git config --global user.email carlin@ttoss.dev',
@@ -367,10 +368,7 @@ export const getCicdTemplate = ({
     };
   })();
 
-  /**
-   * API
-   */
-  (() => {
+  const createApiResources = () => {
     resources[API_LOGICAL_ID] = {
       Type: 'AWS::Serverless::Api',
       Properties: {
@@ -542,7 +540,9 @@ export const getCicdTemplate = ({
         Timeout: 60,
       },
     };
-  })();
+  };
+
+  createApiResources();
 
   /**
    * ECS
@@ -635,7 +635,6 @@ export const getCicdTemplate = ({
         ContainerDefinitions: [
           {
             Environment: [
-              ...taskEnvironment,
               {
                 /**
                  * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-metadata.html#enable-metadata
@@ -643,6 +642,14 @@ export const getCicdTemplate = ({
                 Name: 'ECS_ENABLE_CONTAINER_METADATA',
                 Value: 'true',
               },
+              {
+                Name: 'CI',
+                Value: 'true',
+              },
+              ...taskEnvironment.map((te) => ({
+                Name: te.name,
+                Value: te.value,
+              })),
             ],
             Image: {
               'Fn::Sub': [

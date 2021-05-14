@@ -23,9 +23,9 @@ const putJobDetails = async ({
 }) => {
   const zip = new AdmZip();
 
-  const content = JSON.stringify(details, null, 2);
+  const content = JSON.stringify(details);
 
-  zip.addFile(pipeline, Buffer.alloc(content.length + 1, content));
+  zip.addFile(pipeline, Buffer.from(content));
 
   return s3
     .putObject({

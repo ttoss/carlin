@@ -8,9 +8,27 @@ const getComment = ([pathFromDist, longname]) => {
     files: path.resolve(process.cwd(), '../cli/dist', pathFromDist),
   });
 
-  // if (pathFromDist === 'deploy/cicd/cicd.template.js') {
+  // if (pathFromDist === 'deploy/cicd/lambdas/cicdApiV1.handler.js') {
+  //   const printObj = res
+  //     .map((r) => ({
+  //       longname: r.longname,
+  //       description: r.description,
+  //     }))
+  //     .filter((r) => r.description);
+
   //   // eslint-disable-next-line no-console
-  //   console.log(res);
+  //   console.log(printObj);
+
+  //   // eslint-disable-next-line global-require
+  //   // require('fs').writeFileSync(
+  //   //   // eslint-disable-next-line global-require
+  //   //   require('path').join(__dirname, 'tmp_comments'),
+  //   //   JSON.stringify(
+  //   //     res.map((r) => ({ longname: r.longname, description: r.description })),
+  //   //     null,
+  //   //     2,
+  //   //   ),
+  //   // );
   //   process.exit(0);
   // }
 

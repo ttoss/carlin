@@ -59,6 +59,7 @@ module.exports = () => {
         deployApi: await cliApi('deploy'),
         deployStaticAppApi: await cliApi('deploy static-app'),
         deployLambdaLayerApi: await cliApi('deploy lambda-layer'),
+        deployCicdApi: await cliApi('deploy cicd'),
 
         ...getComments({
           deployComment: ['deploy/cloudFormation.core.js', 'deploy'],
@@ -104,6 +105,10 @@ module.exports = () => {
           cicdTemplateGetEcrRepositoryComment: [
             'deploy/cicd/cicd.template.js',
             'getCicdTemplate~getEcrRepositoryResource',
+          ],
+          cicdApiV1HandlerComment: [
+            'deploy/cicd/lambdas/cicdApiV1.handler.js',
+            'cicdApiV1Handler',
           ],
         }),
         stackNameComment: toHtml(

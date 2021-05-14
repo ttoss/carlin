@@ -43,12 +43,12 @@ export const executeTasks = async ({
   commands = [],
   cpu,
   memory,
-  environments = [],
+  taskEnvironment = [],
 }: {
   commands: string[];
   cpu?: string;
   memory?: string;
-  environments?: Array<{ name: string; value: string }>;
+  taskEnvironment?: Array<{ name: string; value: string }>;
 }) => {
   const command = compileCommands([
     /**
@@ -81,7 +81,6 @@ export const executeTasks = async ({
             command: ['sh', '-cv', command],
             name: getProcessEnvVariable('ECS_CONTAINER_NAME'),
             environment: [
-              ...environments,
               {
                 name: 'CI',
                 value: 'true',
@@ -90,6 +89,7 @@ export const executeTasks = async ({
                 name: 'ECS_ENABLE_CONTAINER_METADATA',
                 value: 'true',
               },
+              ...taskEnvironment,
             ],
           },
         ],

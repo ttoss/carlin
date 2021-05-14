@@ -50,8 +50,8 @@ export const options = {
    *
    * ```ts
    * Array<{
-   *  Name: string,
-   *  Value: string,
+   *  name: string,
+   *  value: string,
    * }>
    * ```
    */

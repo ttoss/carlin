@@ -14,6 +14,7 @@ module.exports = {
       'api-reference/deploy',
       'api-reference/deploy-static-app',
       'api-reference/deploy-lambda-layer',
+      'api-reference/deploy-cicd',
     ],
   },
 };
