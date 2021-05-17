@@ -44,11 +44,13 @@ export const executeTasks = async ({
   cpu,
   memory,
   taskEnvironment = [],
+  tags = [],
 }: {
   commands: string[];
   cpu?: string;
   memory?: string;
   taskEnvironment?: Array<{ name: string; value: string }>;
+  tags?: Array<{ key: string; value?: string }>;
 }) => {
   const command = compileCommands([
     /**
@@ -96,6 +98,7 @@ export const executeTasks = async ({
         cpu,
         memory,
       },
+      tags,
     })
     .promise();
 

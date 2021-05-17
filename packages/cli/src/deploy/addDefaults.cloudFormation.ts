@@ -1,5 +1,6 @@
 import { CloudFormation } from 'aws-sdk';
-import log from 'npmlog';
+
+import { NAME } from '../config';
 
 import {
   CloudFormationTemplate,
@@ -10,33 +11,29 @@ import {
   getProjectName,
 } from '../utils';
 
-const logPrefix = 'addDefaultsCloudFormation';
+// const logPrefix = 'addDefaultsCloudFormation';
 
 type CloudFormationParams =
   | CloudFormation.CreateStackInput
   | CloudFormation.UpdateStackInput;
 
-type Args = {
+export type Args = {
   params: CloudFormationParams;
   template: CloudFormationTemplate;
 };
 
+type TemplateModifier = (
+  template: CloudFormationTemplate,
+) => Promise<CloudFormationTemplate>;
+
 const addDefaultsParametersAndTagsToParams = async (
   params: CloudFormationParams,
 ): Promise<CloudFormationParams> => {
-  const [
-    branchName,
-    environment,
-    packageName,
-    packageVersion,
-    projectName,
-  ] = await Promise.all([
-    getCurrentBranch(),
-    getEnvironment(),
-    getPackageName(),
-    getPackageVersion(),
-    getProjectName(),
-  ]);
+  const branchName = await getCurrentBranch();
+  const environment = await getEnvironment();
+  const packageName = await getPackageName();
+  const packageVersion = await getPackageVersion();
+  const projectName = await getProjectName();
 
   return {
     ...params,
@@ -58,9 +55,7 @@ const addDefaultsParametersAndTagsToParams = async (
   };
 };
 
-const addDefaultParametersToTemplate = async (
-  template: CloudFormationTemplate,
-): Promise<CloudFormationTemplate> => {
+const addDefaultParametersToTemplate: TemplateModifier = async (template) => {
   const [environment, projectName] = await Promise.all([
     getEnvironment(),
     getProjectName(),
@@ -107,8 +102,6 @@ const addLogGroupToResources = (
       });
 
       if (!logGroup) {
-        log.info(logPrefix, `Adding log group to Lambda resource: ${key}.`);
-
         Resources[`${key}LogsLogGroup`] = {
           Type: 'AWS::Logs::LogGroup',
           DeletionPolicy: 'Delete',
@@ -123,9 +116,7 @@ const addLogGroupToResources = (
   return template;
 };
 
-const addEnvironmentsToLambdaResources = (
-  template: CloudFormationTemplate,
-): CloudFormationTemplate => {
+const addEnvironmentsToLambdaResources: TemplateModifier = async (template) => {
   const environment = getEnvironment();
 
   const { Resources } = template;
@@ -165,6 +156,29 @@ const addEnvironmentsToLambdaResources = (
   return template;
 };
 
+const addAppSyncApiOutputs: TemplateModifier = async (template) => {
+  const newTemplate = { ...template };
+
+  Object.entries(template.Resources).forEach(([key, resource]) => {
+    if (resource.Type === 'AWS::AppSync::GraphQLApi') {
+      newTemplate.Outputs = {
+        [key]: {
+          Description: `Automatically added by ${NAME}`,
+          Value: { 'Fn::GetAtt': [key, 'GraphQLUrl'] },
+          Export: {
+            Name: {
+              'Fn::Join': [':', [{ Ref: 'AWS::StackName' }, 'GraphQLApiUrl']],
+            },
+          },
+        },
+        ...newTemplate.Outputs,
+      };
+    }
+  });
+
+  return newTemplate;
+};
+
 export const addDefaults = async ({
   params,
   template,
@@ -173,6 +187,7 @@ export const addDefaults = async ({
     addDefaultParametersToTemplate,
     addLogGroupToResources,
     addEnvironmentsToLambdaResources,
+    addAppSyncApiOutputs,
   ].reduce(async (acc, addFn) => addFn(await acc), Promise.resolve(template));
 
   const response = {

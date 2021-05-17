@@ -20,15 +20,15 @@ export const getPrCommands = ({ branch }: { branch: string }) => [
   /**
    * Apply lint only on the modified files.
    */
-  `git diff --name-only HEAD..main | grep -E '\\.(j|t)sx?$' | xargs npx eslint --no-error-on-unmatched-pattern`,
-  /**
-   * Execute tests only on the modified packages.
-   */
-  `npx lerna run "test" --since=main --stream --parallel`,
+  `git diff --name-only HEAD..main | grep -E "\\.(j|t)sx?$" | xargs npx eslint --no-error-on-unmatched-pattern`,
   /**
    * Build only modified packages.
    */
   `npx lerna run "build" --since=main --stream --parallel`,
+  /**
+   * Execute tests only on the modified packages.
+   */
+  `npx lerna run "test" --since=main --stream --parallel`,
   /**
    * Deploy only the modified packages.
    */
@@ -54,8 +54,8 @@ export const getMainCommands = () => [
   'git rev-parse HEAD',
   'yarn',
   `export CARLIN_ENVIRONMENT=Staging`,
-  `npx lerna run "test" --stream --parallel`,
   `npx lerna run "build" --stream --parallel`,
+  `npx lerna run "test" --stream --parallel`,
   `npx lerna run "deploy" --stream --parallel`,
 ];
 
@@ -66,7 +66,7 @@ export const getTagCommands = ({ tag }: { tag: string }) => [
   'git rev-parse HEAD',
   'yarn',
   `export CARLIN_ENVIRONMENT=Production`,
-  `npx lerna run "test" --stream --parallel`,
   `npx lerna run "build" --stream --parallel`,
+  `npx lerna run "test" --stream --parallel`,
   `npx lerna run "deploy" --stream --parallel`,
 ];

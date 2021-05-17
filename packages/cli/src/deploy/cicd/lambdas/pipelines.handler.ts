@@ -67,11 +67,28 @@ const putJobFailureResult = (event: CodePipelineEvent, message: string) =>
     })
     .promise();
 
-const executeMainPipeline = async () => {
+const executeMainPipeline = async ({
+  payload,
+}: {
+  payload: EventPayloadMap['push'];
+}) => {
   const command = shConditionalCommands({
     conditionalCommands: getMainCommands(),
   });
-  await executeTasks({ commands: [command] });
+
+  await executeTasks({
+    commands: [command],
+    tags: [
+      {
+        key: 'Pipeline',
+        value: 'main',
+      },
+      {
+        key: 'AfterCommit',
+        value: payload.after,
+      },
+    ],
+  });
 };
 
 const executeTagPipeline = async ({
@@ -80,10 +97,28 @@ const executeTagPipeline = async ({
   payload: EventPayloadMap['push'];
 }) => {
   const tag = payload.ref.split('/')[2];
+
   const command = shConditionalCommands({
     conditionalCommands: getTagCommands({ tag }),
   });
-  await executeTasks({ commands: [command] });
+
+  await executeTasks({
+    commands: [command],
+    tags: [
+      {
+        key: 'Pipeline',
+        value: 'tag',
+      },
+      {
+        key: 'Tag',
+        value: tag,
+      },
+      {
+        key: 'AfterCommit',
+        value: payload.after,
+      },
+    ],
+  });
 };
 
 export const pipelinesHandler: CodePipelineHandler = async (event) => {
@@ -93,7 +128,7 @@ export const pipelinesHandler: CodePipelineHandler = async (event) => {
     const jobDetails = await getJobDetails(event);
 
     if (pipeline === 'main') {
-      await executeMainPipeline();
+      await executeMainPipeline(jobDetails);
       await putJobSuccessResult(event);
       return;
     }

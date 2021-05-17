@@ -96,6 +96,14 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
                 }),
               }),
             ],
+            tags: [
+              { key: 'Pipeline', value: 'pr' },
+              { key: 'PullRequest', value: payload.number.toString() },
+              { key: 'PullRequestTitle', value: payload.pull_request.title },
+              { key: 'PullRequestUrl', value: payload.pull_request.url },
+              { key: 'Action', value: payload.action },
+              { key: 'Branch', value: payload.pull_request.head.ref },
+            ],
           });
         },
       );
@@ -113,6 +121,14 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
                 branch: payload.pull_request.head.ref,
               }),
             }),
+          ],
+          tags: [
+            { key: 'Pipeline', value: 'pr' },
+            { key: 'PullRequest', value: payload.number.toString() },
+            { key: 'PullRequestTitle', value: payload.pull_request.title },
+            { key: 'PullRequestUrl', value: payload.pull_request.url },
+            { key: 'Action', value: payload.action },
+            { key: 'Branch', value: payload.pull_request.head.ref },
           ],
         });
       });

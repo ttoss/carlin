@@ -79,9 +79,13 @@ export const buildLambdaSingleFile = async ({
   const compiler = webpack(webpackConfig);
 
   return new Promise<void>((resolve, reject) => {
-    compiler.run((err) => {
+    compiler.run((err, stats) => {
       if (err) {
         return reject(err);
+      }
+
+      if (stats?.hasErrors()) {
+        return reject(stats.toJson().errors);
       }
 
       return resolve();
