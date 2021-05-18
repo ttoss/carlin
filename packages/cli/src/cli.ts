@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { constantCase, paramCase } from 'change-case';
-import deepmerge from 'deepmerge';
+import deepEqual from 'deep-equal';
+import deepMerge from 'deepmerge';
 import findUp from 'find-up';
 import path from 'path';
 import * as yargs from 'yargs';
@@ -135,7 +136,7 @@ const cli = () => {
      * Using configs.reverser() to get the most far config first. This way the
      * nearest configs will replace others.
      */
-    finalConfig = deepmerge.all(configs.reverse());
+    finalConfig = deepMerge.all(configs.reverse());
 
     return finalConfig;
   };
@@ -181,10 +182,11 @@ const cli = () => {
              * - Case 2 we determine if `argv[key] === finalConfig[key]`.
              * - Case 3 if the two above are falsy.
              */
-            const isKeyFormCli = (() => {
+            const isKeyFromCli = (() => {
               const paramCaseKey = paramCase(key);
 
               /**
+               * Case 1.
                * Fixes #16 https://github.com/ttoss/carlin/issues/16
                */
               if (parsed?.defaulted?.[paramCaseKey]) {
@@ -192,16 +194,20 @@ const cli = () => {
               }
 
               /**
+               * Case 2.
+               *
                * Fixes #13 https://github.com/ttoss/carlin/issues/13
+               *
+               * Deep equal because arg can be an array or object.
                */
-              if (argv[key] === finalConfig[key]) {
+              if (deepEqual(argv[key], finalConfig[key])) {
                 return false;
               }
 
               return true;
             })();
 
-            if (!isKeyFormCli) {
+            if (!isKeyFromCli) {
               argv[key] = value;
             }
           });

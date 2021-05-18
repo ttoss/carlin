@@ -4,12 +4,25 @@ import * as faker from 'faker';
 const region = faker.random.word();
 
 const optionsFromConfigFiles = {
-  option: faker.random.word(),
-  optionEnv: faker.random.word(),
+  option: 'option',
+  optionEnv: 'optionEnv',
+  optionEnvArray: ['optionEnvArray1', 'optionEnvArray2'],
+  optionEnvObj: {
+    a: 'optionEnvObjA',
+    b: 2,
+  },
   environments: {
     Production: {
       region,
-      optionEnv: faker.random.word(),
+      optionEnv: 'optionEnvProduction',
+      optionEnvArray: [
+        'optionEnvArrayProduction1',
+        'optionEnvArrayProduction2',
+      ],
+      optionEnvObj: {
+        a: 'optionEnvObjProductionA',
+        b: 3,
+      },
     },
   },
 };
@@ -153,6 +166,12 @@ describe('handle merge config correctly', () => {
     expect(argv.environment).toBe('Production');
     expect(argv.optionEnv).toEqual(
       optionsFromConfigFiles.environments.Production.optionEnv,
+    );
+    expect(argv.optionEnvArray).toEqual(
+      optionsFromConfigFiles.environments.Production.optionEnvArray,
+    );
+    expect(argv.optionEnvObj).toEqual(
+      optionsFromConfigFiles.environments.Production.optionEnvObj,
     );
   });
 
