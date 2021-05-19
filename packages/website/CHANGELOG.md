@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.6](https://github.com/ttoss/carlin/compare/v0.15.5...v0.15.6) (2021-05-19)
+
+### Bug Fixes
+
+- build website ([60787d7](https://github.com/ttoss/carlin/commit/60787d7fd0c59a5c0bda56be5e32485c9376d246))
+
 ## [0.15.5](https://github.com/ttoss/carlin/compare/v0.15.4...v0.15.5) (2021-05-19)
 
 ### Features
