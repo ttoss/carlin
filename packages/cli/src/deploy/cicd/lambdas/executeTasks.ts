@@ -8,11 +8,12 @@ const compileCommands = (commands: string[]) => {
   return commands.map((c) => c.replace(/;$/, '')).join(' && ');
 };
 
+const successCommands = ['carlin cicd-ecs-task-report --status=success'];
+
+const failureCommands = ['carlin cicd-ecs-task-report --status=failure'];
+
 export const shConditionalCommands = ({
   conditionalCommands,
-  successCommands = [],
-  failureCommands = [],
-  finallyCommands = [],
 }: {
   conditionalCommands: string[];
   successCommands?: string[];
@@ -31,10 +32,7 @@ export const shConditionalCommands = ({
     ...failureCommands,
   ]);
 
-  const finallyCommand = compileCommands([
-    'echo "Finally Command"',
-    ...finallyCommands,
-  ]);
+  const finallyCommand = compileCommands(['echo "Finally Command"']);
 
   return `if ${conditionalCommand}; then ${successCommand}; else ${failureCommand}; fi; ${finallyCommand}`;
 };
@@ -57,6 +55,7 @@ export const executeTasks = async ({
      * https://stackoverflow.com/questions/2853803/how-to-echo-shell-commands-as-they-are-executed/2853811
      */
     'set -x',
+    `ECS_TASK_ARN=$(curl -X GET "\${ECS_CONTAINER_METADATA_URI}/task" | jq ".TaskARN")`,
     ...commands,
   ]);
 

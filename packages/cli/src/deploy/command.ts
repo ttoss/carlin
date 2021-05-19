@@ -1,10 +1,8 @@
-import AWS from 'aws-sdk';
 import * as fs from 'fs';
 import log from 'npmlog';
 import * as path from 'path';
 import yargs, { CommandModule } from 'yargs';
 
-import { AWS_DEFAULT_REGION } from '../config';
 import { addGroupToOptions, getAwsAccountId } from '../utils';
 
 import { deployBaseStackCommand } from './baseStack/command';
@@ -107,12 +105,6 @@ export const options = {
       'A list of parameters that will be passed to CloudFormation Parameters when deploying. The format is the same as parameters from cloudformation create-stack CLI command.',
     type: 'array',
   },
-  region: {
-    alias: 'r',
-    default: AWS_DEFAULT_REGION,
-    describe: 'AWS region.',
-    type: 'string',
-  },
   'stack-name': {
     describe: 'CloudFormation Stack name.',
     type: 'string',
@@ -149,12 +141,6 @@ export const deployCommand: CommandModule<
     yargsBuilder
       .example(examples)
       .options(addGroupToOptions(options, 'Deploy Options'))
-      /**
-       * Set AWS region.
-       */
-      .middleware(({ region }) => {
-        AWS.config.region = region;
-      })
       /**
        * Set stack name.
        */

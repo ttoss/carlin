@@ -1,7 +1,8 @@
 /* eslint-disable import/first */
+import AWS from 'aws-sdk';
 import * as faker from 'faker';
 
-const region = faker.random.word();
+const region = 'us-east-1';
 
 const optionsFromConfigFiles = {
   option: 'option',
@@ -52,6 +53,12 @@ import { deployBaseStack } from './deploy/baseStack/deployBaseStack';
 const parse = async (arg: any, context: any) => {
   return cli().strict(false).parse(arg, context);
 };
+
+test('set AWS region', async () => {
+  const argv = await parse(`print-args --region=${region}`, {});
+  expect(argv.region).toEqual(region);
+  expect(AWS.config.region).toEqual(region);
+});
 
 describe('environment type', () => {
   beforeAll(() => {

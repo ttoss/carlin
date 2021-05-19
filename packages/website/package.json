@@ -8,7 +8,6 @@
     "prebuild": "yarn run build-carlin",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
-    "predeploy": "yarn run build-carlin",
     "deploy": "carlin deploy static-app",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear"

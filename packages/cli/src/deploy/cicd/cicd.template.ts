@@ -31,6 +31,9 @@ export const ECR_REPOSITORY_LOGICAL_ID = 'RepositoryECRRepository';
 
 export const FUNCTION_IAM_ROLE_LOGICAL_ID = 'ApiV1ServerlessFunctionIAMRole';
 
+export const ECS_TASK_REPORT_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
+  'EcsTaskReportHandler';
+
 export const PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME =
   'REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME';
 
@@ -245,6 +248,7 @@ export const getCicdTemplate = ({
 
                   'RUN apt-get install -y curl',
                   'RUN apt-get install -y git',
+                  'RUN apt-get install -y jq',
 
                   // Install Node.js
                   'RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -',
@@ -257,7 +261,7 @@ export const getCicdTemplate = ({
                   'RUN npm install -g yarn',
 
                   // Install carlin CLI
-                  'RUN npm install -g carlin',
+                  'RUN yarn global add carlin',
 
                   // Configure git
                   'RUN git config --global user.name carlin',
@@ -470,14 +474,37 @@ export const getCicdTemplate = ({
       },
     };
 
+    const commonFunctionProperties = {
+      CodeUri: {
+        Bucket: s3.bucket,
+        Key: s3.key,
+        Version: s3.versionId,
+      },
+      Role: {
+        'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
+      },
+      Runtime: 'nodejs14.x',
+      Timeout: 60,
+    };
+
+    /**
+     * Called during ECS task execution.
+     */
+    resources[ECS_TASK_REPORT_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID] = {
+      Type: 'AWS::Serverless::Function',
+      Properties: {
+        ...commonFunctionProperties,
+        Environment: {
+          Variables: {},
+        },
+        Handler: 'index.ecsTaskReportHandler',
+      },
+    };
+
     resources.CicdApiV1ServerlessFunction = {
       Type: 'AWS::Serverless::Function',
       Properties: {
-        CodeUri: {
-          Bucket: s3.bucket,
-          Key: s3.key,
-          Version: s3.versionId,
-        },
+        ...commonFunctionProperties,
         Events: {
           ApiEvent: {
             Type: 'Api',
@@ -497,22 +524,13 @@ export const getCicdTemplate = ({
           },
         },
         Handler: 'index.cicdApiV1Handler',
-        Role: {
-          'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
-        },
-        Runtime: 'nodejs14.x',
-        Timeout: 60,
       },
     };
 
     resources.GitHubWebhooksApiV1ServerlessFunction = {
       Type: 'AWS::Serverless::Function',
       Properties: {
-        CodeUri: {
-          Bucket: s3.bucket,
-          Key: s3.key,
-          Version: s3.versionId,
-        },
+        ...commonFunctionProperties,
         Events: {
           ApiEvent: {
             Type: 'Api',
@@ -533,11 +551,6 @@ export const getCicdTemplate = ({
           },
         },
         Handler: 'index.githubWebhooksApiV1Handler',
-        Role: {
-          'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
-        },
-        Runtime: 'nodejs14.x',
-        Timeout: 60,
       },
     };
   };

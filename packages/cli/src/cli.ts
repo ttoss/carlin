@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import AWS from 'aws-sdk';
 import { constantCase, paramCase } from 'change-case';
 import deepEqual from 'deep-equal';
 import deepMerge from 'deepmerge';
@@ -6,9 +7,11 @@ import findUp from 'find-up';
 import path from 'path';
 import * as yargs from 'yargs';
 
-import { NAME } from './config';
+import { AWS_DEFAULT_REGION, NAME } from './config';
 
 import { deployCommand } from './deploy/command';
+import { ecsTaskReportCommand } from './deploy/cicd/ecsTaskReportCommand';
+
 import {
   addGroupToOptions,
   EnvironmentVariables,
@@ -45,6 +48,12 @@ export const options = {
   project: {
     coerce: coerce('PROJECT'),
     require: false,
+    type: 'string',
+  },
+  region: {
+    alias: 'r',
+    default: AWS_DEFAULT_REGION,
+    describe: 'AWS region.',
     type: 'string',
   },
 } as const;
@@ -151,6 +160,12 @@ const cli = () => {
       .scriptName(NAME)
       .env(getEnv())
       .options(addGroupToOptions(options, 'Common Options'))
+      /**
+       * Set AWS region.
+       */
+      .middleware(({ region }) => {
+        AWS.config.region = region;
+      })
       .middleware(((argv: any, { parsed }: any) => {
         const { environment, environments } = argv;
 
@@ -236,6 +251,7 @@ const cli = () => {
         handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
       })
       .command(deployCommand)
+      .command(ecsTaskReportCommand)
       .epilogue(
         'For more information, find our manual at https://carlin.ttoss.dev',
       )
