@@ -1,6 +1,6 @@
 {
   "name": "carlin-website",
-  "version": "0.15.4",
+  "version": "0.15.5",
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
