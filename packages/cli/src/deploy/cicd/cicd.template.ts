@@ -286,6 +286,8 @@ export const getCicdTemplate = ({
                   'RUN yarn config set cache-folder /home/yarn-cache',
 
                   'RUN yarn install',
+
+                  'RUN git fetch --all',
                 ].join('\n'),
               },
             },
