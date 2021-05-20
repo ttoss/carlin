@@ -2,15 +2,25 @@ import { ECS } from 'aws-sdk';
 
 import { getProcessEnvVariable } from './getProcessEnvVariable';
 
+import type { Status } from './ecsTaskReport.handler';
+
 const ecs = new ECS({ apiVersion: '2014-11-13' });
 
 const compileCommands = (commands: string[]) => {
   return commands.map((c) => c.replace(/;$/, '')).join(' && ');
 };
 
-const successCommands = ['carlin cicd-ecs-task-report --status=success'];
+const approvedStatus: Status = 'Approved';
 
-const failureCommands = ['carlin cicd-ecs-task-report --status=failure'];
+const rejectedStatus: Status = 'Rejected';
+
+const successCommands = [
+  `carlin cicd-ecs-task-report --status=${approvedStatus}`,
+];
+
+const failureCommands = [
+  `carlin cicd-ecs-task-report --status=${rejectedStatus}`,
+];
 
 export const shConditionalCommands = ({
   conditionalCommands,
@@ -55,6 +65,9 @@ export const executeTasks = async ({
      * https://stackoverflow.com/questions/2853803/how-to-echo-shell-commands-as-they-are-executed/2853811
      */
     'set -x',
+    /**
+     * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint-v3.html
+     */
     `export ECS_TASK_ARN=$(curl -X GET "\${ECS_CONTAINER_METADATA_URI}/task" | jq ".TaskARN")`,
     ...commands,
   ]);

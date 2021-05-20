@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { Pipeline, getMainCommands, getTagCommands } from '../pipelines';
 
 import { executeTasks, shConditionalCommands } from './executeTasks';
+import { putApprovalResultManualTask } from './putApprovalResultManualTask';
 
 const codepipeline = new CodePipeline();
 
@@ -49,32 +50,27 @@ export const getJobDetails = async (event: CodePipelineEvent) => {
   const file = zip.readAsText(getUserParameters(event).pipeline);
 
   try {
-    return JSON.parse(file);
+    return JSON.parse(file) as { payload: any };
   } catch {
     throw new Error(`Job details is not a valid json. ${file}`);
   }
 };
 
-const putJobSuccessResult = (event: CodePipelineEvent) =>
-  codepipeline
-    .putJobSuccessResult({ jobId: event['CodePipeline.job'].id })
-    .promise();
-
-const putJobFailureResult = (event: CodePipelineEvent, message: string) =>
-  codepipeline
-    .putJobFailureResult({
-      jobId: event['CodePipeline.job'].id,
-      failureDetails: { type: 'JobFailed', message },
-    })
-    .promise();
-
 export const pipelinesHandler: CodePipelineHandler = async (event) => {
+  const jobId = event['CodePipeline.job'].id;
+
+  let pipelineName: string | undefined;
+
   try {
     const { pipeline } = getUserParameters(event);
 
-    const jobDetails = await getJobDetails(event);
+    const gitHubJobDetails = await getJobDetails(event);
 
-    const jobId = event['CodePipeline.job'].id;
+    const { jobDetails } = await codepipeline
+      .getJobDetails({ jobId })
+      .promise();
+
+    pipelineName = jobDetails?.data?.pipelineContext?.pipelineName;
 
     const executeTasksInput = (() => {
       const tags = [
@@ -84,20 +80,23 @@ export const pipelinesHandler: CodePipelineHandler = async (event) => {
         },
         {
           key: 'AfterCommit',
-          value: jobDetails.after,
-        },
-        {
-          key: 'PipelineJobId',
-          value: jobId,
+          value: gitHubJobDetails.payload.after,
         },
       ];
 
-      const taskEnvironment = [
-        {
-          name: 'PIPELINE_JOB_ID',
-          value: jobId,
-        },
-      ];
+      const taskEnvironment = [];
+
+      if (pipelineName) {
+        tags.push({
+          key: 'PipelineName',
+          value: pipelineName,
+        });
+
+        taskEnvironment.push({
+          name: 'PIPELINE_NAME',
+          value: pipelineName,
+        });
+      }
 
       if (pipeline === 'main') {
         return {
@@ -112,7 +111,7 @@ export const pipelinesHandler: CodePipelineHandler = async (event) => {
       }
 
       if (pipeline === 'tag') {
-        const tag = jobDetails.ref.split('/')[2];
+        const tag = gitHubJobDetails.payload.ref.split('/')[2];
 
         return {
           commands: [
@@ -140,8 +139,26 @@ export const pipelinesHandler: CodePipelineHandler = async (event) => {
 
     await executeTasks(executeTasksInput);
 
-    await putJobSuccessResult(event);
+    await codepipeline.putJobSuccessResult({ jobId }).promise();
   } catch (error) {
-    await putJobFailureResult(event, error.message.slice(0, 4999));
+    if (pipelineName) {
+      await putApprovalResultManualTask({
+        pipelineName,
+        /**
+         * https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ApprovalResult.html
+         */
+        result: { status: 'Rejected', summary: error.message.slice(0, 511) },
+      });
+    }
+
+    await codepipeline
+      .putJobFailureResult({
+        jobId,
+        failureDetails: {
+          type: 'JobFailed',
+          message: error.message.slice(0, 4999),
+        },
+      })
+      .promise();
   }
 };

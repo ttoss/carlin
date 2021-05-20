@@ -455,6 +455,9 @@ export const getCicdTemplate = ({
                 },
                 {
                   Action: [
+                    'codepipeline:PutApprovalResult',
+                    'codepipeline:GetJobDetails',
+                    'codepipeline:GetPipelineState',
                     'codepipeline:PutJobSuccessResult',
                     'codepipeline:PutJobFailureResult',
                   ],
@@ -496,14 +499,19 @@ export const getCicdTemplate = ({
     };
 
     /**
-     * Called during ECS task execution.
+     * Called after ECS task execution success or failure.
      */
     resources[ECS_TASK_REPORT_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID] = {
       Type: 'AWS::Serverless::Function',
       Properties: {
         ...commonFunctionProperties,
         Environment: {
-          Variables: {},
+          Variables: {
+            ECS_TASK_LOGS_LOG_GROUP: {
+              Ref: REPOSITORY_TASKS_ECS_CLUSTER_LOGS_LOG_GROUP_LOGICAL_ID,
+            },
+            ECS_TASK_CONTAINER_NAME: REPOSITORY_ECS_TASK_CONTAINER_NAME,
+          },
         },
         Handler: 'index.ecsTaskReportHandler',
       },

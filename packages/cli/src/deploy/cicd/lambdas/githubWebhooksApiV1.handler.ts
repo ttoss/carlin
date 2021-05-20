@@ -12,7 +12,7 @@ import { getProcessEnvVariable } from './getProcessEnvVariable';
 const s3 = new S3();
 
 /**
- * When this file is placed, a CodePipeline pipeline is started.
+ * When this file is saved on S3, a CodePipeline pipeline is started.
  */
 const putJobDetails = async ({
   pipeline,
