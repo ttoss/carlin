@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.16.0](https://github.com/ttoss/carlin/compare/v0.15.6...v0.16.0) (2021-05-20)
+
+### Features
+
+- ecs task report working ([e268483](https://github.com/ttoss/carlin/commit/e26848367ca307fe84fbc1b9e69f3116c5ea45c7))
+- upgrade cicd ([a070754](https://github.com/ttoss/carlin/commit/a070754bc8d89d43addf42e92fe72169a71ff274))
+
 ## [0.15.6](https://github.com/ttoss/carlin/compare/v0.15.5...v0.15.6) (2021-05-19)
 
 ### Bug Fixes
