@@ -2,7 +2,7 @@ import { Handler } from 'aws-lambda';
 
 import { putApprovalResultManualTask } from './putApprovalResultManualTask';
 
-const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
+export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   if (
     !process.env.ECS_TASK_CONTAINER_NAME ||
     !process.env.ECS_TASK_LOGS_LOG_GROUP
@@ -10,7 +10,13 @@ const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
     return undefined;
   }
 
-  const ecsTaskId = ecsTaskArn.split('/')[1];
+  /**
+   * Arn has the following format:
+   * arn:aws:ecs:us-east-1:483684946879:task/CarlinCicdCarlinMonorepo-RepositoryTasksECSCluster-1J6saGT91hCr/6fcc78682de442ae89a0b7339ac7d981
+   *
+   * We want the "6fcc78682de442ae89a0b7339ac7d981" part.
+   */
+  const ecsTaskId = ecsTaskArn.split('/')[2];
 
   const ecsTaskLogsUrl = [
     /**
