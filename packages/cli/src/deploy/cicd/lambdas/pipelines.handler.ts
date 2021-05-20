@@ -1,4 +1,3 @@
-import type { EventPayloadMap } from '@octokit/webhooks-types';
 import AdmZip from 'adm-zip';
 import { CodePipelineEvent, CodePipelineHandler } from 'aws-lambda';
 import { CodePipeline, S3 } from 'aws-sdk';
@@ -69,79 +68,79 @@ const putJobFailureResult = (event: CodePipelineEvent, message: string) =>
     })
     .promise();
 
-const executeMainPipeline = async ({
-  payload,
-}: {
-  payload: EventPayloadMap['push'];
-}) => {
-  const command = shConditionalCommands({
-    conditionalCommands: getMainCommands(),
-  });
-
-  await executeTasks({
-    commands: [command],
-    tags: [
-      {
-        key: 'Pipeline',
-        value: 'main',
-      },
-      {
-        key: 'AfterCommit',
-        value: payload.after,
-      },
-    ],
-  });
-};
-
-const executeTagPipeline = async ({
-  payload,
-}: {
-  payload: EventPayloadMap['push'];
-}) => {
-  const tag = payload.ref.split('/')[2];
-
-  const command = shConditionalCommands({
-    conditionalCommands: getTagCommands({ tag }),
-  });
-
-  await executeTasks({
-    commands: [command],
-    tags: [
-      {
-        key: 'Pipeline',
-        value: 'tag',
-      },
-      {
-        key: 'Tag',
-        value: tag,
-      },
-      {
-        key: 'AfterCommit',
-        value: payload.after,
-      },
-    ],
-  });
-};
-
 export const pipelinesHandler: CodePipelineHandler = async (event) => {
   try {
     const { pipeline } = getUserParameters(event);
 
     const jobDetails = await getJobDetails(event);
 
-    if (pipeline === 'main') {
-      await executeMainPipeline(jobDetails);
-      await putJobSuccessResult(event);
-      return;
+    const jobId = event['CodePipeline.job'].id;
+
+    const executeTasksInput = (() => {
+      const tags = [
+        {
+          key: 'Pipeline',
+          value: pipeline,
+        },
+        {
+          key: 'AfterCommit',
+          value: jobDetails.after,
+        },
+        {
+          key: 'PipelineJobId',
+          value: jobId,
+        },
+      ];
+
+      const taskEnvironment = [
+        {
+          name: 'PIPELINE_JOB_ID',
+          value: jobId,
+        },
+      ];
+
+      if (pipeline === 'main') {
+        return {
+          commands: [
+            shConditionalCommands({
+              conditionalCommands: getMainCommands(),
+            }),
+          ],
+          tags,
+          taskEnvironment,
+        };
+      }
+
+      if (pipeline === 'tag') {
+        const tag = jobDetails.ref.split('/')[2];
+
+        return {
+          commands: [
+            shConditionalCommands({
+              conditionalCommands: getTagCommands({ tag }),
+            }),
+          ],
+          tags: [
+            ...tags,
+            {
+              key: 'Tag',
+              value: tag,
+            },
+          ],
+          taskEnvironment,
+        };
+      }
+
+      return undefined;
+    })();
+
+    if (!executeTasksInput) {
+      throw new Error('executeTasksInputUndefined');
     }
 
-    if (pipeline === 'tag') {
-      await executeTagPipeline(jobDetails);
-      await putJobSuccessResult(event);
-      return;
-    }
+    await executeTasks(executeTasksInput);
 
-    throw new Error(`Pipeline ${pipeline} was not handled.`);
+    await putJobSuccessResult(event);
   } catch (error) {
     await putJobFailureResult(event, error.message.slice(0, 4999));
   }

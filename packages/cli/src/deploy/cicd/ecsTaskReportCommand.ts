@@ -21,6 +21,10 @@ const sendEcsTaskReport = async ({ status }: { status: Status }) => {
     payload.ecsTaskArn = process.env.ECS_TASK_ARN;
   }
 
+  if (process.env.PIPELINE_JOB_ID) {
+    payload.pipelineJobId = process.env.PIPELINE_JOB_ID;
+  }
+
   await lambda
     .invokeAsync({
       FunctionName: process.env.ECS_TASK_REPORT_HANDLER_NAME,

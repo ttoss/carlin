@@ -55,7 +55,7 @@ export const executeTasks = async ({
      * https://stackoverflow.com/questions/2853803/how-to-echo-shell-commands-as-they-are-executed/2853811
      */
     'set -x',
-    `ECS_TASK_ARN=$(curl -X GET "\${ECS_CONTAINER_METADATA_URI}/task" | jq ".TaskARN")`,
+    `export ECS_TASK_ARN=$(curl -X GET "\${ECS_CONTAINER_METADATA_URI}/task" | jq ".TaskARN")`,
     ...commands,
   ]);
 
@@ -89,6 +89,10 @@ export const executeTasks = async ({
               {
                 name: 'ECS_ENABLE_CONTAINER_METADATA',
                 value: 'true',
+              },
+              {
+                name: 'ECS_TASK_REPORT_HANDLER_NAME',
+                value: getProcessEnvVariable('ECS_TASK_REPORT_HANDLER_NAME'),
               },
               ...taskEnvironment,
             ],

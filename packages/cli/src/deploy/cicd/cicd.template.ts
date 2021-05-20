@@ -12,7 +12,12 @@ import {
 } from '../baseStack/config';
 
 import type { Pipeline } from './pipelines';
-import { ECS_TASK_DEFAULT_CPU, ECS_TASK_DEFAULT_MEMORY } from './config';
+import {
+  ECS_TASK_DEFAULT_CPU,
+  ECS_TASK_DEFAULT_MEMORY,
+  PIPELINE_ECS_TASK_EXECUTION_MANUAL_APPROVAL_ACTION_NAME,
+  PIPELINE_ECS_TASK_EXECUTION_STAGE_NAME,
+} from './config';
 
 import {
   getTriggerPipelinesObjectKey,
@@ -108,6 +113,9 @@ export const getCicdTemplate = ({
     },
     VPC_PUBLIC_SUBNET_2: {
       'Fn::ImportValue': BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
+    },
+    ECS_TASK_REPORT_HANDLER_NAME: {
+      Ref: ECS_TASK_REPORT_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID,
     },
   };
 
@@ -286,8 +294,6 @@ export const getCicdTemplate = ({
                   'RUN yarn config set cache-folder /home/yarn-cache',
 
                   'RUN yarn install',
-
-                  'RUN git fetch --all',
                 ].join('\n'),
               },
             },
@@ -908,10 +914,10 @@ export const getCicdTemplate = ({
                     Provider: 'Manual',
                     Version: 1,
                   },
-                  Name: `Pipeline${pipelinePascalCase}RunECSTasksApproval`,
+                  Name: PIPELINE_ECS_TASK_EXECUTION_MANUAL_APPROVAL_ACTION_NAME,
                 },
               ],
-              Name: `Pipeline${pipelinePascalCase}RunECSTasksStage`,
+              Name: PIPELINE_ECS_TASK_EXECUTION_STAGE_NAME,
             },
           ],
         },
