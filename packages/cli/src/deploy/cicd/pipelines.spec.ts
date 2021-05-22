@@ -49,7 +49,7 @@ test('getTagCommands', () => {
   ]);
 });
 
-test('asd', () => {
+test('getPrCommands', () => {
   expect(pipelinesModule.getPrCommands({ branch })).toEqual([
     'git status',
     'git fetch',

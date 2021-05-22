@@ -10,6 +10,7 @@ const Template = (props) => {
         fontSize: '0.9em',
         maxHeight: '600px',
         overflowY: 'auto',
+        marginBottom: '32px',
       }}
     >
       <ThemeCodeBlock {...props} />

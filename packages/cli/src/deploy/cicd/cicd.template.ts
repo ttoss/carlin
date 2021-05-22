@@ -75,6 +75,172 @@ export const PIPELINES_TAG_LOGICAL_ID = 'PipelinesTagCodePipeline';
 export const PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
   'PipelinesHandlerLambdaFunction';
 
+/**
+ * An [AWS CodeBuild](https://aws.amazon.com/codebuild/) project is created
+ * to build (create and update) repository images. It uses a
+ * [BUILD\_GENERAL1\_SMALL environment compute type](https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html)
+ * with Linux as operational system to build the image.
+ */
+export const getRepositoryImageBuilder = () => ({
+  Type: 'AWS::CodeBuild::Project',
+  Properties: {
+    Artifacts: {
+      Type: 'NO_ARTIFACTS',
+    },
+    Cache: {
+      Location: 'LOCAL',
+      Modes: ['LOCAL_DOCKER_LAYER_CACHE'],
+      Type: 'LOCAL',
+    },
+    Description: 'Create repository image.',
+    Environment: {
+      ComputeType: 'BUILD_GENERAL1_SMALL',
+      EnvironmentVariables: [
+        {
+          Name: 'AWS_ACCOUNT_ID',
+          Value: { Ref: 'AWS::AccountId' },
+        },
+        {
+          Name: 'AWS_REGION',
+          Value: { Ref: 'AWS::Region' },
+        },
+        {
+          Name: 'DOCKERFILE',
+          Value: {
+            'Fn::Sub': [
+              'FROM public.ecr.aws/ubuntu/ubuntu:latest',
+
+              // https://stackoverflow.com/a/59693182/8786986
+              'ENV DEBIAN_FRONTEND noninteractive',
+
+              // Make sure apt is up to date
+              'RUN apt-get update --fix-missing',
+
+              'RUN apt-get install -y curl',
+              'RUN apt-get install -y git',
+              'RUN apt-get install -y jq',
+
+              // Install Node.js
+              'RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -',
+              'RUN apt-get install -y nodejs',
+
+              // Clean cache
+              'RUN apt-get clean',
+
+              // Install Yarn
+              'RUN npm install -g yarn',
+
+              // Install carlin CLI
+              'RUN yarn global add carlin',
+
+              // Configure git
+              'RUN git config --global user.name carlin',
+              'RUN git config --global user.email carlin@ttoss.dev',
+
+              'RUN mkdir /root/.ssh/',
+              'COPY ./id_rsa /root/.ssh/id_rsa',
+              'RUN chmod 600 /root/.ssh/id_rsa',
+
+              // Make sure your domain is accepted
+              'RUN touch /root/.ssh/known_hosts',
+              'RUN ssh-keyscan github.com >> /root/.ssh/known_hosts',
+
+              // Copy repository
+              'COPY . /home',
+
+              // Go to repository directory
+              'WORKDIR /home/repository',
+
+              // Set Yarn cache
+              'RUN mkdir -p /home/yarn-cache',
+              'RUN yarn config set cache-folder /home/yarn-cache',
+
+              'RUN yarn install',
+            ].join('\n'),
+          },
+        },
+        {
+          Name: 'IMAGE_TAG',
+          Value: 'latest',
+        },
+        {
+          Name: 'REPOSITORY_ECR_REPOSITORY',
+          Value: { Ref: ECR_REPOSITORY_LOGICAL_ID },
+        },
+        {
+          Name: 'SSH_KEY',
+          Value: { Ref: 'SSHKey' },
+        },
+        {
+          Name: 'SSH_URL',
+          Value: { Ref: 'SSHUrl' },
+        },
+      ],
+      Image: 'aws/codebuild/standard:3.0',
+      ImagePullCredentialsType: 'CODEBUILD',
+      /**
+       * Enables running the Docker daemon inside a Docker container. Set to
+       * true only if the build project is used to build Docker images.
+       * Otherwise, a build that attempts to interact with the Docker daemon
+       * fails. The default setting is false."
+       * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codebuild-project-environment.html#cfn-codebuild-project-environment-privilegedmode
+       */
+      PrivilegedMode: true,
+      Type: 'LINUX_CONTAINER',
+    },
+    LogsConfig: {
+      CloudWatchLogs: {
+        Status: 'ENABLED',
+        GroupName: { Ref: CODE_BUILD_PROJECT_LOGS_LOGICAL_ID },
+      },
+    },
+    ServiceRole: {
+      'Fn::GetAtt': [CODE_BUILD_PROJECT_SERVICE_ROLE_LOGICAL_ID, 'Arn'],
+    },
+    Source: {
+      BuildSpec: yaml.dump({
+        version: '0.2',
+        phases: {
+          install: {
+            commands: [
+              'echo install started on `date`',
+              `echo "$SSH_KEY" > ~/.ssh/id_rsa`,
+              'chmod 600 ~/.ssh/id_rsa',
+              'rm -rf repository',
+              'git clone $SSH_URL repository',
+              'cd repository',
+              'ls',
+            ],
+          },
+          pre_build: {
+            commands: ['echo pre_build started on `date`'],
+          },
+          build: {
+            commands: [
+              'echo build started on `date`',
+              '$(aws ecr get-login --no-include-email --region $AWS_REGION)',
+              'echo Building the repository image...',
+              'cd ../',
+              'cp ~/.ssh/id_rsa .',
+              'echo "$DOCKERFILE" > Dockerfile',
+              'cat Dockerfile',
+              'docker build -t $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .',
+              'docker tag $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG',
+              'echo Pushing the repository image...',
+              'docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG',
+            ],
+          },
+          post_build: {
+            commands: ['echo post_build completed on `date`'],
+          },
+        },
+      }),
+      Type: 'NO_SOURCE',
+    },
+    TimeoutInMinutes: 15,
+  },
+});
+
 export const getCicdTemplate = ({
   pipelines = [],
   cpu = ECS_TASK_DEFAULT_CPU,
@@ -219,165 +385,9 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources[REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID] = {
-      Type: 'AWS::CodeBuild::Project',
-      Properties: {
-        Artifacts: {
-          Type: 'NO_ARTIFACTS',
-        },
-        Cache: {
-          Location: 'LOCAL',
-          Modes: ['LOCAL_DOCKER_LAYER_CACHE'],
-          Type: 'LOCAL',
-        },
-        Description: 'Create repository image.',
-        Environment: {
-          ComputeType: 'BUILD_GENERAL1_SMALL',
-          EnvironmentVariables: [
-            {
-              Name: 'AWS_ACCOUNT_ID',
-              Value: { Ref: 'AWS::AccountId' },
-            },
-            {
-              Name: 'AWS_REGION',
-              Value: { Ref: 'AWS::Region' },
-            },
-            {
-              Name: 'DOCKERFILE',
-              Value: {
-                'Fn::Sub': [
-                  'FROM public.ecr.aws/ubuntu/ubuntu:latest',
-
-                  // https://stackoverflow.com/a/59693182/8786986
-                  'ENV DEBIAN_FRONTEND noninteractive',
-
-                  // Make sure apt is up to date
-                  'RUN apt-get update --fix-missing',
-
-                  'RUN apt-get install -y curl',
-                  'RUN apt-get install -y git',
-                  'RUN apt-get install -y jq',
-
-                  // Install Node.js
-                  'RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -',
-                  'RUN apt-get install -y nodejs',
-
-                  // Clean cache
-                  'RUN apt-get clean',
-
-                  // Install Yarn
-                  'RUN npm install -g yarn',
-
-                  // Install carlin CLI
-                  'RUN yarn global add carlin',
-
-                  // Configure git
-                  'RUN git config --global user.name carlin',
-                  'RUN git config --global user.email carlin@ttoss.dev',
-
-                  'RUN mkdir /root/.ssh/',
-                  'COPY ./id_rsa /root/.ssh/id_rsa',
-                  'RUN chmod 600 /root/.ssh/id_rsa',
-
-                  // Make sure your domain is accepted
-                  'RUN touch /root/.ssh/known_hosts',
-                  'RUN ssh-keyscan github.com >> /root/.ssh/known_hosts',
-
-                  // Copy repository
-                  'COPY . /home',
-
-                  // Go to repository directory
-                  'WORKDIR /home/repository',
-
-                  // Set Yarn cache
-                  'RUN mkdir -p /home/yarn-cache',
-                  'RUN yarn config set cache-folder /home/yarn-cache',
-
-                  'RUN yarn install',
-                ].join('\n'),
-              },
-            },
-            {
-              Name: 'IMAGE_TAG',
-              Value: 'latest',
-            },
-            {
-              Name: 'REPOSITORY_ECR_REPOSITORY',
-              Value: { Ref: ECR_REPOSITORY_LOGICAL_ID },
-            },
-            {
-              Name: 'SSH_KEY',
-              Value: { Ref: 'SSHKey' },
-            },
-            {
-              Name: 'SSH_URL',
-              Value: { Ref: 'SSHUrl' },
-            },
-          ],
-          Image: 'aws/codebuild/standard:3.0',
-          ImagePullCredentialsType: 'CODEBUILD',
-          /**
-           * Enables running the Docker daemon inside a Docker container. Set to
-           * true only if the build project is used to build Docker images.
-           * Otherwise, a build that attempts to interact with the Docker daemon
-           * fails. The default setting is false."
-           * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codebuild-project-environment.html#cfn-codebuild-project-environment-privilegedmode
-           */
-          PrivilegedMode: true,
-          Type: 'LINUX_CONTAINER',
-        },
-        LogsConfig: {
-          CloudWatchLogs: {
-            Status: 'ENABLED',
-            GroupName: { Ref: CODE_BUILD_PROJECT_LOGS_LOGICAL_ID },
-          },
-        },
-        ServiceRole: {
-          'Fn::GetAtt': [CODE_BUILD_PROJECT_SERVICE_ROLE_LOGICAL_ID, 'Arn'],
-        },
-        Source: {
-          BuildSpec: yaml.dump({
-            version: '0.2',
-            phases: {
-              install: {
-                commands: [
-                  'echo install started on `date`',
-                  `echo "$SSH_KEY" > ~/.ssh/id_rsa`,
-                  'chmod 600 ~/.ssh/id_rsa',
-                  'rm -rf repository',
-                  'git clone $SSH_URL repository',
-                  'cd repository',
-                  'ls',
-                ],
-              },
-              pre_build: {
-                commands: ['echo pre_build started on `date`'],
-              },
-              build: {
-                commands: [
-                  'echo build started on `date`',
-                  '$(aws ecr get-login --no-include-email --region $AWS_REGION)',
-                  'echo Building the repository image...',
-                  'cd ../',
-                  'cp ~/.ssh/id_rsa .',
-                  'echo "$DOCKERFILE" > Dockerfile',
-                  'cat Dockerfile',
-                  'docker build -t $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .',
-                  'docker tag $REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG',
-                  'echo Pushing the repository image...',
-                  'docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_ECR_REPOSITORY:$IMAGE_TAG',
-                ],
-              },
-              post_build: {
-                commands: ['echo post_build completed on `date`'],
-              },
-            },
-          }),
-          Type: 'NO_SOURCE',
-        },
-        TimeoutInMinutes: 15,
-      },
-    };
+    resources[
+      REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID
+    ] = getRepositoryImageBuilder();
   })();
 
   const createApiResources = () => {

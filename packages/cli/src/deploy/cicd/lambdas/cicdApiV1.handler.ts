@@ -9,10 +9,10 @@ const codebuild = new CodeBuild({ apiVersion: '2016-10-06' });
 /**
  * The CI/CD REST API is responsible to update the image of the repository and
  * running tasks inside a container using [ECS Fargate](https://aws.amazon.com/fargate/).
- * The API URL has the format of an [AWS API Gateway] URL:
+ * The API URL has the format of an [AWS API Gateway](https://aws.amazon.com/api-gateway/) URL:
  *
  * ```sh
- * https://<api-id>.execute-api.<reegion>.amazonaws.com/v1
+ * https://<api-id>.execute-api.<region>.amazonaws.com/v1
  * ```
  *
  * It can be found on the "Outputs" tab if you access the CI/CD stack details

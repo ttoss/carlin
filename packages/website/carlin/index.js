@@ -27,6 +27,7 @@ const {
 
 const {
   getCicdTemplate,
+  getRepositoryImageBuilder,
   ECR_REPOSITORY_LOGICAL_ID,
 } = require('carlin/dist/deploy/cicd/cicd.template');
 
@@ -110,6 +111,10 @@ module.exports = () => {
             'deploy/cicd/lambdas/cicdApiV1.handler.js',
             'cicdApiV1Handler',
           ],
+          cicdTemplateGetRepositoryImageBuilderComment: [
+            'deploy/cicd/cicd.template.js',
+            'getRepositoryImageBuilder',
+          ],
         }),
         stackNameComment: toHtml(
           getComment(['deploy/stackName.js', 'getStackName']).split(
@@ -176,6 +181,11 @@ module.exports = () => {
               cicdTemplate.Resources[ECR_REPOSITORY_LOGICAL_ID],
           };
         })(),
+        carlinCicdRepositoryImageBuilderBuildSpec: getRepositoryImageBuilder()
+          .Properties.Source.BuildSpec,
+        carlinCicdRepositoryImageBuilderDockerfile: getRepositoryImageBuilder().Properties.Environment.EnvironmentVariables.find(
+          ({ Name }) => Name === 'DOCKERFILE',
+        ).Value['Fn::Sub'],
         testsCoverageThreshold: yaml.dump(testsCoverageThreshold),
       };
     },

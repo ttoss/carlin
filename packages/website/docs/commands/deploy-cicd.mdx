@@ -13,6 +13,9 @@ import { cicdApiV1HandlerComment } from '../../.docusaurus/carlin/default/cicdAp
 import { cicdTemplate } from '../../.docusaurus/carlin/default/cicdTemplate';
 import { cicdTemplateEcrRepository } from '../../.docusaurus/carlin/default/cicdTemplateEcrRepository';
 import { cicdTemplateGetEcrRepositoryComment } from '../../.docusaurus/carlin/default/cicdTemplateGetEcrRepositoryComment';
+import { cicdTemplateGetRepositoryImageBuilderComment } from '../../.docusaurus/carlin/default/cicdTemplateGetRepositoryImageBuilderComment';
+import { carlinCicdRepositoryImageBuilderBuildSpec } from '../../.docusaurus/carlin/default/carlinCicdRepositoryImageBuilderBuildSpec';
+import { carlinCicdRepositoryImageBuilderDockerfile } from '../../.docusaurus/carlin/default/carlinCicdRepositoryImageBuilderDockerfile';
 
 ## Overview
 
@@ -60,7 +63,13 @@ However, we've architected this stack to work with any Git provider, as [BitBuck
 
 ## Stack Resources
 
-### Elastic Container Registry (ECR)
+When deployed, the CI/CD create these resources:
+
+1. [Repository Image Registry](#repository-image-registry)
+1. [Repository Image Builder](#repository-image-builder)
+1. [CI/CD REST API](#cicd-rest-api)
+
+### Repository Image Registry
 
 <InnerHTML html={cicdTemplateGetEcrRepositoryComment} />
 
@@ -73,13 +82,13 @@ You can test the created image in your local environment following theses steps:
 1. Perform a Docker login running the command if you're using [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html):
 
    ```sh
-   aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+   aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
    ```
 
 1. Pull the image:
 
    ```sh
-   docker pull ${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPOSITORY_NAME}:latest
+   docker pull ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY_NAME}:latest
    ```
 
 1. [Run bash in a disposable new container:](https://stackoverflow.com/a/43309168/8786986)
@@ -89,6 +98,22 @@ You can test the created image in your local environment following theses steps:
    ```
 
 1. Run `exit` to close the bash.
+
+### Repository Image Builder
+
+<InnerHTML html={cicdTemplateGetRepositoryImageBuilderComment} />
+
+The [build specification (buildspec)](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html) of the repository image builder is show below:
+
+<CodeBlock className="yml">
+  {carlinCicdRepositoryImageBuilderBuildSpec}
+</CodeBlock>
+
+The [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the Docker image of the repository is:
+
+<CodeBlock className="dockerfile">
+  {carlinCicdRepositoryImageBuilderDockerfile}
+</CodeBlock>
 
 ### CI/CD REST API
 
