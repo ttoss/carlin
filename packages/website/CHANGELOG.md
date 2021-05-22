@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.2](https://github.com/ttoss/carlin/compare/v0.16.1...v0.16.2) (2021-05-22)
+
+**Note:** Version bump only for package carlin-website
+
 ## [0.16.1](https://github.com/ttoss/carlin/compare/v0.16.0...v0.16.1) (2021-05-20)
 
 **Note:** Version bump only for package carlin-website
