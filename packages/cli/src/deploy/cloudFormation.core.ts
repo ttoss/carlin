@@ -1,7 +1,19 @@
+import {
+  CloudFormationClient,
+  CreateStackCommand,
+  DescribeStackEventsCommand,
+  DescribeStackResourceCommand,
+  DescribeStackResourceCommandInput,
+  DescribeStacksCommand,
+  DeleteStackCommand,
+  ListStackResourcesCommand,
+  UpdateStackCommand,
+  UpdateTerminationProtectionCommand,
+} from '@aws-sdk/client-cloudformation';
 import AWS from 'aws-sdk';
 import log from 'npmlog';
 
-import { CloudFormationTemplate, getEnvironment } from '../utils';
+import { CloudFormationTemplate, getEnvironment, getEnvVar } from '../utils';
 
 import { addDefaults } from './addDefaults.cloudFormation';
 import { emptyS3Directory } from './s3';
@@ -44,14 +56,37 @@ const uploadTemplateToBaseStackBucket = async ({
   // });
 };
 
-export const cloudFormation = () =>
-  new AWS.CloudFormation({ apiVersion: '2010-05-15' });
+export const cloudFormation = () => {
+  return new CloudFormationClient({
+    apiVersion: '2010-05-15',
+    region: getEnvVar('REGION'),
+  });
+};
+
+export const cloudFormationV2 = () => {
+  return new AWS.CloudFormation({ apiVersion: '2010-05-15' });
+};
+
+export const describeStacks = async ({
+  stackName,
+}: { stackName?: string } = {}) => {
+  const { Stacks } = await cloudFormation().send(
+    new DescribeStacksCommand({ StackName: stackName }),
+  );
+  return Stacks;
+};
+
+export const describeStackResource = async (
+  input: DescribeStackResourceCommandInput,
+) => {
+  return cloudFormation().send(new DescribeStackResourceCommand(input));
+};
 
 export const doesStackExist = async ({ stackName }: { stackName: string }) => {
   log.info(logPrefix, `Checking if stack ${stackName} already exists...`);
 
   try {
-    await cloudFormation().describeStacks({ StackName: stackName }).promise();
+    await describeStacks({ stackName });
     log.info(logPrefix, `Stack ${stackName} already exists.`);
     return true;
   } catch (err) {
@@ -70,9 +105,9 @@ export const describeStackEvents = async ({
 }) => {
   log.error(logPrefix, 'Stack events:');
 
-  const { StackEvents } = await cloudFormation()
-    .describeStackEvents({ StackName: stackName })
-    .promise();
+  const { StackEvents } = await cloudFormation().send(
+    new DescribeStackEventsCommand({ StackName: stackName }),
+  );
 
   const events = (StackEvents || [])
     .filter(({ Timestamp }) => Date.now() - Number(Timestamp) < 10 * 60 * 1000)
@@ -89,25 +124,14 @@ export const describeStackEvents = async ({
   return events;
 };
 
-export const describeStacks = async ({
-  stackName,
-}: { stackName?: string } = {}) => {
-  const { Stacks } = await cloudFormation()
-    .describeStacks({ StackName: stackName })
-    .promise();
-  return Stacks;
-};
-
 export const describeStack = async ({ stackName }: { stackName: string }) => {
-  const { Stacks } = await cloudFormation()
-    .describeStacks({ StackName: stackName })
-    .promise();
+  const stacks = await describeStacks({ stackName });
 
-  if (!Stacks) {
+  if (!stacks) {
     throw new Error(`Stack ${stackName} not found and cannot be described.`);
   }
 
-  return Stacks[0];
+  return stacks[0];
 };
 
 export const getStackOutput = async ({
@@ -161,9 +185,9 @@ export const printStackOutputsAfterDeploy = async ({
 
 export const deleteStack = async ({ stackName }: { stackName: string }) => {
   log.info(logPrefix, `Deleting stack ${stackName}...`);
-  await cloudFormation().deleteStack({ StackName: stackName }).promise();
+  await cloudFormation().send(new DeleteStackCommand({ StackName: stackName }));
   try {
-    await cloudFormation()
+    await cloudFormationV2()
       .waitFor('stackDeleteComplete', { StackName: stackName })
       .promise();
   } catch (err) {
@@ -181,9 +205,9 @@ export const createStack = async ({
 }) => {
   const { StackName: stackName } = params;
   log.info(logPrefix, `Creating stack ${stackName}...`);
-  await cloudFormation().createStack(params).promise();
+  await cloudFormation().send(new CreateStackCommand(params));
   try {
-    await cloudFormation()
+    await cloudFormationV2()
       .waitFor('stackCreateComplete', { StackName: stackName })
       .promise();
   } catch (err) {
@@ -203,8 +227,8 @@ export const updateStack = async ({
   const { StackName: stackName } = params;
   log.info(logPrefix, `Updating stack ${stackName}...`);
   try {
-    await cloudFormation().updateStack(params).promise();
-    await cloudFormation()
+    await cloudFormation().send(new UpdateStackCommand(params));
+    await cloudFormationV2()
       .waitFor('stackUpdateComplete', { StackName: stackName })
       .promise();
   } catch (err) {
@@ -227,12 +251,12 @@ export const enableTerminationProtection = async ({
   log.info(logPrefix, `Enabling termination protection...`);
 
   try {
-    await cloudFormation()
-      .updateTerminationProtection({
+    await cloudFormation().send(
+      new UpdateTerminationProtectionCommand({
         EnableTerminationProtection: true,
         StackName: stackName,
-      })
-      .promise();
+      }),
+    );
   } catch (err) {
     log.error(
       logPrefix,
@@ -320,12 +344,12 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
   const buckets: string[] = [];
 
   await (async function getBuckets({ nextToken }: { nextToken?: string }) {
-    const {
-      NextToken,
-      StackResourceSummaries,
-    } = await cloudFormation()
-      .listStackResources({ StackName: stackName, NextToken: nextToken })
-      .promise();
+    const { NextToken, StackResourceSummaries } = await cloudFormation().send(
+      new ListStackResourcesCommand({
+        StackName: stackName,
+        NextToken: nextToken,
+      }),
+    );
 
     if (NextToken) {
       await getBuckets({ nextToken: NextToken });

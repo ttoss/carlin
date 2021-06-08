@@ -5,7 +5,7 @@ import semver from 'semver';
 
 import { getPackageVersion } from '../../utils';
 
-import { cloudFormation, deploy } from '../cloudFormation.core';
+import { describeStackResource, deploy } from '../cloudFormation.core';
 import {
   uploadDirectoryToS3,
   emptyS3Directory,
@@ -32,12 +32,8 @@ export const getStaticAppBucket = async ({
     LogicalResourceId: STATIC_APP_BUCKET_LOGICAL_ID,
     StackName: stackName,
   };
-
   try {
-    const {
-      StackResourceDetail,
-    } = await cloudFormation().describeStackResource(params).promise();
-
+    const { StackResourceDetail } = await describeStackResource(params);
     return StackResourceDetail?.PhysicalResourceId;
   } catch (error) {
     return undefined;

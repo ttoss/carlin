@@ -1,7 +1,14 @@
 /* eslint-disable import/first */
 
-import { CloudFormation } from 'aws-sdk';
+import { DescribeStackResourceCommand } from '@aws-sdk/client-cloudformation';
 import * as faker from 'faker';
+import * as fs from 'fs';
+
+// const readFileSyncMock = jest.fn();
+
+// jest.mock('fs', () => ({
+//   readFileSync: readFileSyncMock,
+// }));
 
 import { AWS_DEFAULT_REGION } from '../../config';
 
@@ -18,39 +25,36 @@ const notWorkingStackName = [
   workingStackNameWithoutPhysicalResourceId,
 ].join('-');
 
-jest.mock('aws-sdk', () => ({
-  ...(jest.requireActual('aws-sdk') as any),
-  CloudFormation: jest.fn(() => ({
-    describeStackResource: jest.fn(
-      ({ StackName }: CloudFormation.DescribeStackResourceInput) => ({
-        promise: jest.fn(
-          () =>
-            new Promise((resolve, reject) => {
-              if (StackName === workingStackName) {
-                resolve({
-                  StackResourceDetail: {
-                    PhysicalResourceId: workingStackBucketName,
-                  },
-                });
-              } else if (
-                StackName === workingStackNameWithoutPhysicalResourceId
-              ) {
-                resolve({ StackResourceDetail: {} });
-              } else {
-                reject();
-              }
-            }),
-        ),
-      }),
-    ),
+jest.mock('@aws-sdk/client-cloudformation', () => ({
+  ...(jest.requireActual('@aws-sdk/client-cloudformation') as any),
+  CloudFormationClient: jest.fn(() => ({
+    send: jest.fn((input: unknown) => {
+      if (input instanceof DescribeStackResourceCommand) {
+        const {
+          input: { StackName },
+        } = input;
+
+        return new Promise((resolve, reject) => {
+          if (StackName === workingStackName) {
+            resolve({
+              StackResourceDetail: {
+                PhysicalResourceId: workingStackBucketName,
+              },
+            });
+          } else if (StackName === workingStackNameWithoutPhysicalResourceId) {
+            resolve({ StackResourceDetail: {} });
+          } else {
+            reject();
+          }
+        });
+      }
+
+      return null;
+    }),
   })),
 }));
 
-const readFileSyncMock = jest.fn();
-
-jest.mock('fs', () => ({
-  readFileSync: readFileSyncMock,
-}));
+jest.mock('fs');
 
 jest.mock('../cloudFormation.core', () => ({
   ...(jest.requireActual('../cloudFormation.core') as any),
@@ -96,9 +100,12 @@ describe('Fixes #23 https://github.com/ttoss/carlin/issues/23', () => {
 
     const version = '2.4.7';
 
-    readFileSyncMock.mockReturnValue({
+    /**
+     * Mock packages/cli/src/utils/packageJson.ts read version.
+     */
+    jest.spyOn(fs, 'readFileSync').mockReturnValue({
       toString: () => JSON.stringify({ version }),
-    });
+    } as any);
 
     await staticAppModule.deployStaticApp({
       buildFolder,

@@ -1,5 +1,8 @@
 /* eslint-disable import/first */
-import { CloudFormation } from 'aws-sdk';
+import {
+  DescribeStacksCommand,
+  DescribeStacksOutput,
+} from '@aws-sdk/client-cloudformation';
 import * as faker from 'faker';
 
 // : CloudFormation.DescribeStacksOutput
@@ -29,26 +32,30 @@ const describeStacksOutput = {
   ],
 };
 
-jest.mock('aws-sdk', () => ({
-  ...(jest.requireActual('aws-sdk') as any),
-  CloudFormation: jest.fn(() => ({
-    describeStacks: jest.fn(
-      ({ StackName }: CloudFormation.DescribeStacksInput = {}) => ({
-        promise: jest.fn(() => {
-          return new Promise<CloudFormation.DescribeStacksOutput>((resolve) => {
-            if (!StackName) {
-              resolve(describeStacksOutput);
-            } else {
-              resolve({
-                Stacks: (describeStacksOutput.Stacks || []).filter(
-                  (stack) => stack.StackName === StackName,
-                ),
-              });
-            }
-          });
-        }),
-      }),
-    ),
+jest.mock('@aws-sdk/client-cloudformation', () => ({
+  ...(jest.requireActual('@aws-sdk/client-cloudformation') as any),
+  CloudFormationClient: jest.fn(() => ({
+    send: jest.fn((input: any) => {
+      if (input instanceof DescribeStacksCommand) {
+        const {
+          input: { StackName },
+        } = input;
+
+        return new Promise<DescribeStacksOutput>((resolve) => {
+          if (!StackName) {
+            resolve(describeStacksOutput);
+          } else {
+            resolve({
+              Stacks: (describeStacksOutput.Stacks || []).filter(
+                (stack) => stack.StackName === StackName,
+              ),
+            });
+          }
+        });
+      }
+
+      return null;
+    }),
   })),
 }));
 
@@ -64,12 +71,15 @@ describe('describe stack methods', () => {
     expect(stacks).toEqual(describeStacksOutput.Stacks);
   });
 
-  test('describeStack should return only one stack', async () => {
-    const stack = await describeStack({
-      stackName: describeStacksOutput.Stacks[1].StackName,
-    });
-    expect(stack).toEqual(describeStacksOutput.Stacks[1]);
-  });
+  test.each(describeStacksOutput.Stacks.map((stack) => stack))(
+    'describeStack should return only one stack %#',
+    async (outputStack) => {
+      const stack = await describeStack({
+        stackName: outputStack.StackName,
+      });
+      expect(stack).toEqual(outputStack);
+    },
+  );
 
   test('getStackOutput should return the output', async () => {
     const output = await getStackOutput({

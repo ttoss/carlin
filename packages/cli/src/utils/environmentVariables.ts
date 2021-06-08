@@ -6,6 +6,7 @@ export type EnvironmentVariables =
   | 'BRANCH'
   | 'ENVIRONMENT'
   | 'PROJECT'
+  | 'REGION'
   | 'STACK_NAME';
 
 export const getEnvVar = (key: EnvironmentVariables) => {
