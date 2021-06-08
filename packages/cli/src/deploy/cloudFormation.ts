@@ -12,7 +12,7 @@ import {
 
 import {
   canDestroyStack,
-  cloudFormation,
+  cloudFormationV2,
   deleteStack,
   deploy,
   doesStackExist,
@@ -99,7 +99,7 @@ export const deployCloudFormation = async ({
       return findAndReadCloudFormationTemplate({ templatePath });
     })();
 
-    await cloudFormation()
+    await cloudFormationV2()
       .validateTemplate({
         TemplateBody: JSON.stringify(cloudFormationTemplate, null, 2),
       })
@@ -207,7 +207,7 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
     const {
       NextToken,
       StackResourceSummaries,
-    } = await cloudFormation()
+    } = await cloudFormationV2()
       .listStackResources({ StackName: stackName, NextToken: nextToken })
       .promise();
 
