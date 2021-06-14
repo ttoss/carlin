@@ -2,6 +2,8 @@
 import AWS from 'aws-sdk';
 import * as faker from 'faker';
 
+import { cloudFormation } from './deploy/cloudFormation.core';
+
 const region = 'us-east-1';
 
 const optionsFromConfigFiles = {
@@ -58,6 +60,7 @@ test('set AWS region', async () => {
   const argv = await parse(`print-args --region=${region}`, {});
   expect(argv.region).toEqual(region);
   expect(AWS.config.region).toEqual(region);
+  expect(await cloudFormation().config.region()).toEqual(region);
 });
 
 describe('environment type', () => {

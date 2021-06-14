@@ -30,6 +30,37 @@ const parse = (command: string, options: any = {}) =>
     });
   });
 
+describe('testing skip-deploy flag', () => {
+  const mockExit = jest
+    .spyOn(process, 'exit')
+    .mockImplementation(() => null as never);
+
+  afterAll(() => {
+    mockExit.mockRestore();
+  });
+
+  beforeEach(() => {
+    mockExit.mockReset();
+  });
+
+  test('should skip deploy', async () => {
+    await parse('deploy', { skipDeploy: true });
+    expect(mockExit).toHaveBeenCalled();
+  });
+
+  test('should not skip deploy', async () => {
+    await parse('deploy', {
+      skipDeploy: false,
+      environments: {
+        Production: {
+          skipDeploy: true,
+        },
+      },
+    });
+    expect(mockExit).not.toHaveBeenCalled();
+  });
+});
+
 describe('stack name and cache', () => {
   beforeEach(() => {
     setPreDefinedStackName('');

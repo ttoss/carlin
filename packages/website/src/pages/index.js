@@ -57,6 +57,17 @@ function Feature({ imageUrl, title, description }) {
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
+
+  const redirectTo = useBaseUrl('/docs');
+
+  React.useEffect(() => {
+    window.location.href = redirectTo;
+  }, [redirectTo]);
+
+  if (redirectTo) {
+    return null;
+  }
+
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
@@ -72,6 +83,7 @@ function Home() {
                 'button button--outline button--secondary button--lg',
                 styles.getStarted,
               )}
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               to={useBaseUrl('docs/')}
             >
               Get Started

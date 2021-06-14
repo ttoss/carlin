@@ -19,7 +19,7 @@ import {
   readObjectFile,
 } from './utils';
 
-const coerce = (env: EnvironmentVariables) => (value: any) => {
+const coerceSetEnvVar = (env: EnvironmentVariables) => (value: any) => {
   if (value) {
     setEnvVar(env, value);
   }
@@ -28,7 +28,7 @@ const coerce = (env: EnvironmentVariables) => (value: any) => {
 
 export const options = {
   branch: {
-    coerce: coerce('BRANCH'),
+    coerce: coerceSetEnvVar('BRANCH'),
     require: false,
     type: 'string',
   },
@@ -41,17 +41,18 @@ export const options = {
   },
   environment: {
     alias: ['e', 'env'],
-    coerce: coerce('ENVIRONMENT'),
+    coerce: coerceSetEnvVar('ENVIRONMENT'),
     type: 'string',
   },
   environments: {},
   project: {
-    coerce: coerce('PROJECT'),
+    coerce: coerceSetEnvVar('PROJECT'),
     require: false,
     type: 'string',
   },
   region: {
     alias: 'r',
+    coerce: coerceSetEnvVar('REGION'),
     default: AWS_DEFAULT_REGION,
     describe: 'AWS region.',
     type: 'string',

@@ -105,6 +105,12 @@ export const options = {
       'A list of parameters that will be passed to CloudFormation Parameters when deploying. The format is the same as parameters from cloudformation create-stack CLI command.',
     type: 'array',
   },
+  'skip-deploy': {
+    alias: 'skip',
+    default: false,
+    describe: 'Skip deploy.',
+    type: 'boolean',
+  },
   'stack-name': {
     describe: 'CloudFormation Stack name.',
     type: 'string',
@@ -176,6 +182,15 @@ export const deployCommand: CommandModule<
           }
         },
       )
+      .middleware(({ skipDeploy }) => {
+        if (skipDeploy) {
+          log.error(
+            logPrefix,
+            'Skip deploy flag is true, then the deploy command was stopped.',
+          );
+          process.exit();
+        }
+      })
       .command(deployLambdaLayerCommand)
       .command(describeDeployCommand)
       .command(deployBaseStackCommand)
