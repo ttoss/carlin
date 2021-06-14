@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.17.0](https://github.com/ttoss/carlin/compare/v0.16.2...v0.17.0) (2021-06-14)
+
+### Bug Fixes
+
+- update jest ([4fd8b40](https://github.com/ttoss/carlin/commit/4fd8b4099193e07c4da4ba859cd5e28e90b3e568))
+
+### Features
+
+- add skip flag ([215dba1](https://github.com/ttoss/carlin/commit/215dba1f9990fad0484b41ca12ad679b661ceb3c))
+
 ## [0.16.2](https://github.com/ttoss/carlin/compare/v0.16.1...v0.16.2) (2021-05-22)
 
 **Note:** Version bump only for package carlin
