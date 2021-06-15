@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.17.3](https://github.com/ttoss/carlin/compare/v0.17.2...v0.17.3) (2021-06-15)
+
+### Bug Fixes
+
+- aws reregion ([647770c](https://github.com/ttoss/carlin/commit/647770c271e9d707c98c182c48d3f5fcc2302d78))
+
 ## [0.17.2](https://github.com/ttoss/carlin/compare/v0.17.1...v0.17.2) (2021-06-15)
 
 ### Bug Fixes
