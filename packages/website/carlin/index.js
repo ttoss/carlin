@@ -29,6 +29,7 @@ const {
   getCicdTemplate,
   getRepositoryImageBuilder,
   ECR_REPOSITORY_LOGICAL_ID,
+  REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
 } = require('carlin/dist/deploy/cicd/cicd.template');
 
 const { getComment, getComments, toHtml } = require('./comments');
@@ -186,6 +187,8 @@ module.exports = () => {
         carlinCicdRepositoryImageBuilderDockerfile: getRepositoryImageBuilder().Properties.Environment.EnvironmentVariables.find(
           ({ Name }) => Name === 'DOCKERFILE',
         ).Value['Fn::Sub'],
+        carlinCicdRepositoryEcsTaskDefinition: getCicdTemplate({ s3 })
+          .Resources[REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID].Properties,
         testsCoverageThreshold: yaml.dump(testsCoverageThreshold),
       };
     },

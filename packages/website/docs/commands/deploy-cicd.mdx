@@ -16,6 +16,7 @@ import { cicdTemplateGetEcrRepositoryComment } from '../../.docusaurus/carlin/de
 import { cicdTemplateGetRepositoryImageBuilderComment } from '../../.docusaurus/carlin/default/cicdTemplateGetRepositoryImageBuilderComment';
 import { carlinCicdRepositoryImageBuilderBuildSpec } from '../../.docusaurus/carlin/default/carlinCicdRepositoryImageBuilderBuildSpec';
 import { carlinCicdRepositoryImageBuilderDockerfile } from '../../.docusaurus/carlin/default/carlinCicdRepositoryImageBuilderDockerfile';
+import { carlinCicdRepositoryEcsTaskDefinition } from '../../.docusaurus/carlin/default/carlinCicdRepositoryEcsTaskDefinition';
 
 ## Overview
 
@@ -114,6 +115,13 @@ The [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to buil
 <CodeBlock className="dockerfile">
   {carlinCicdRepositoryImageBuilderDockerfile}
 </CodeBlock>
+
+### ECS Fargate Task
+
+Once we have the image on registry, the deploymend also creates an [ECS Fargate](https://aws.amazon.com/fargate) task definition. This task receives commands and execute them in a Docker container using the repository image.
+The code below shows that base task configuration.
+
+<Template json={carlinCicdRepositoryEcsTaskDefinition} />
 
 ### CI/CD REST API
 

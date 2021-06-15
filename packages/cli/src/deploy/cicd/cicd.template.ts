@@ -156,6 +156,9 @@ export const getRepositoryImageBuilder = () => ({
               'RUN yarn config set cache-folder /home/yarn-cache',
 
               'RUN yarn install',
+
+              // Used in case of yarn.lock is modified.
+              'RUN git checkout -- yarn.lock',
             ].join('\n'),
           },
         },
@@ -248,7 +251,7 @@ export const getCicdTemplate = ({
   s3,
   taskEnvironment = [],
 }: {
-  pipelines: Pipeline[];
+  pipelines?: Pipeline[];
   cpu?: string;
   memory?: string;
   s3: {
