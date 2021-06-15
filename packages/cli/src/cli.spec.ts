@@ -71,8 +71,13 @@ const parse = async (arg: any, context: any) => {
 
 describe('testing AWS region', () => {
   test.each([
+    /**
+     * Sometimes `CARLIN_ENVIRONMENT` is defined, then `-e=undefined` is
+     * necessary.
+     */
+    [`print-args -e=undefined`, AWS_DEFAULT_REGION],
     [`print-args --region=${region}`, region],
-    [`print-args`, AWS_DEFAULT_REGION],
+    [`print-args --environment=Production`, region],
     [
       `print-args -e=OtherRegion`,
       optionsFromConfigFiles.environments.OtherRegion.region,
