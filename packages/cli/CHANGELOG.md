@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.17.4](https://github.com/ttoss/carlin/compare/v0.17.3...v0.17.4) (2021-06-15)
+
+### Bug Fixes
+
+- tests with CARLIN_ENVIRONMENT ([a7979ef](https://github.com/ttoss/carlin/commit/a7979ef17256042adf7fab373f8968ef87ff1c3e))
+
 ## [0.17.3](https://github.com/ttoss/carlin/compare/v0.17.2...v0.17.3) (2021-06-15)
 
 ### Bug Fixes
