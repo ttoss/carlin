@@ -184,11 +184,11 @@ export const deployCommand: CommandModule<
       )
       .middleware(({ skipDeploy }) => {
         if (skipDeploy) {
-          log.error(
+          log.warn(
             logPrefix,
-            'Skip deploy flag is true, then the deploy command was stopped.',
+            "Skip deploy flag is true, then the deploy command wasn't executed.",
           );
-          process.exit();
+          process.exit(0);
         }
       })
       .command(deployLambdaLayerCommand)

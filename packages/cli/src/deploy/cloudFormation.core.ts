@@ -90,7 +90,7 @@ export const doesStackExist = async ({ stackName }: { stackName: string }) => {
     log.info(logPrefix, `Stack ${stackName} already exists.`);
     return true;
   } catch (err) {
-    if (err.code === 'ValidationError') {
+    if (err.Code === 'ValidationError') {
       log.info(logPrefix, `Stack ${stackName} does not exist.`);
       return false;
     }

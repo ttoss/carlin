@@ -45,7 +45,7 @@ describe('testing skip-deploy flag', () => {
 
   test('should skip deploy', async () => {
     await parse('deploy', { skipDeploy: true });
-    expect(mockExit).toHaveBeenCalled();
+    expect(mockExit).toHaveBeenCalledWith(0);
   });
 
   test('should not skip deploy', async () => {

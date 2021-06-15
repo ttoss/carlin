@@ -41,15 +41,26 @@ jest.mock('@aws-sdk/client-cloudformation', () => ({
           input: { StackName },
         } = input;
 
-        return new Promise<DescribeStacksOutput>((resolve) => {
+        return new Promise<DescribeStacksOutput>((resolve, reject) => {
           if (!StackName) {
             resolve(describeStacksOutput);
           } else {
-            resolve({
-              Stacks: (describeStacksOutput.Stacks || []).filter(
-                (stack) => stack.StackName === StackName,
-              ),
-            });
+            const stacks = (describeStacksOutput.Stacks || []).filter(
+              (stack) => stack.StackName === StackName,
+            );
+
+            if (stacks.length > 0) {
+              resolve({
+                Stacks: (describeStacksOutput.Stacks || []).filter(
+                  (stack) => stack.StackName === StackName,
+                ),
+              });
+            } else {
+              // eslint-disable-next-line prefer-promise-reject-errors
+              reject({
+                Code: 'ValidationError',
+              });
+            }
           }
         });
       }
@@ -62,8 +73,26 @@ jest.mock('@aws-sdk/client-cloudformation', () => ({
 import {
   describeStacks,
   describeStack,
+  doesStackExist,
   getStackOutput,
 } from './cloudFormation.core';
+
+describe('doesStackExist method', () => {
+  test.each(describeStacksOutput.Stacks.map((stack) => stack.StackName))(
+    'should return true if stack exists: %s',
+    (stackName) => {
+      return expect(doesStackExist({ stackName })).resolves.toEqual(true);
+    },
+  );
+
+  test("should return false when stack doesn't exist", () => {
+    const stackName = describeStacksOutput.Stacks.map(
+      (stack) => stack.StackName,
+    ).join('-');
+
+    return expect(doesStackExist({ stackName })).resolves.toEqual(false);
+  });
+});
 
 describe('describe stack methods', () => {
   test('describeStacks should return all stacks', async () => {

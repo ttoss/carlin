@@ -274,7 +274,6 @@ export const deployStaticApp = async ({
     if (bucket) {
       if (!skipUpload) {
         await uploadBuiltAppToS3({ buildFolder, bucket, cloudfront });
-        await removeOldVersions({ bucket });
       }
 
       const { Outputs } = await deploy({ params, template });
@@ -283,11 +282,15 @@ export const deployStaticApp = async ({
         await invalidateCloudFront({ outputs: Outputs });
       }
 
+      if (!skipUpload) {
+        await removeOldVersions({ bucket });
+      }
+    } else {
       /**
        * Stack doesn't exist. Deploy CloudFormation first, get the bucket name,
        * and upload files to S3.
        */
-    } else {
+
       await deploy({ params, template });
 
       const newBucket = await getStaticAppBucket({ stackName });

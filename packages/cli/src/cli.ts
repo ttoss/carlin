@@ -52,7 +52,7 @@ export const options = {
   },
   region: {
     alias: 'r',
-    coerce: coerceSetEnvVar('REGION'),
+    // coerce: coerceSetEnvVar('REGION'),
     default: AWS_DEFAULT_REGION,
     describe: 'AWS region.',
     type: 'string',
@@ -161,12 +161,6 @@ const cli = () => {
       .scriptName(NAME)
       .env(getEnv())
       .options(addGroupToOptions(options, 'Common Options'))
-      /**
-       * Set AWS region.
-       */
-      .middleware(({ region }) => {
-        AWS.config.region = region;
-      })
       .middleware(((argv: any, { parsed }: any) => {
         const { environment, environments } = argv;
 
@@ -240,6 +234,13 @@ const cli = () => {
             )}`,
           );
         }
+      })
+      /**
+       * Set AWS region.
+       */
+      .middleware(({ region }) => {
+        AWS.config.region = region;
+        setEnvVar('REGION', region);
       })
       .pkgConf(getPkgConfig())
       .config(getConfig())

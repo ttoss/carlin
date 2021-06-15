@@ -1,5 +1,7 @@
+skipDeploy: true
 environments:
   Production:
+    skipDeploy: false
     aliases:
       - carlin.ttoss.dev
     csp:

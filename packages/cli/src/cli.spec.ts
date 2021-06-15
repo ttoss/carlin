@@ -2,9 +2,14 @@
 import AWS from 'aws-sdk';
 import * as faker from 'faker';
 
+import { AWS_DEFAULT_REGION } from './config';
+
 import { cloudFormation } from './deploy/cloudFormation.core';
 
-const region = 'us-east-1';
+/**
+ * Not equal `AWS_DEFAULT_REGION`.
+ */
+const region = 'us-east-2';
 
 const optionsFromConfigFiles = {
   option: 'option',
@@ -15,6 +20,9 @@ const optionsFromConfigFiles = {
     b: 2,
   },
   environments: {
+    OtherRegion: {
+      region: 'us-east-3',
+    },
     Production: {
       region,
       optionEnv: 'optionEnvProduction',
@@ -46,7 +54,12 @@ jest.mock('./deploy/baseStack/deployBaseStack', () => ({
   deployBaseStack: jest.fn(),
 }));
 
-import { getCurrentBranch, getEnvironment, getProjectName } from './utils';
+import {
+  getCurrentBranch,
+  getEnvironment,
+  getEnvVar,
+  getProjectName,
+} from './utils';
 
 import cli from './cli';
 
@@ -56,11 +69,22 @@ const parse = async (arg: any, context: any) => {
   return cli().strict(false).parse(arg, context);
 };
 
-test('set AWS region', async () => {
-  const argv = await parse(`print-args --region=${region}`, {});
-  expect(argv.region).toEqual(region);
-  expect(AWS.config.region).toEqual(region);
-  expect(await cloudFormation().config.region()).toEqual(region);
+describe('testing AWS region', () => {
+  test.each([
+    [`print-args --region=${region}`, region],
+    [`print-args`, AWS_DEFAULT_REGION],
+    [
+      `print-args -e=OtherRegion`,
+      optionsFromConfigFiles.environments.OtherRegion.region,
+    ],
+    [`print-args -e=OtherRegion --region=${region}`, region],
+  ])('%#: %p', async (command, result) => {
+    const argv = await parse(command, {});
+    expect(argv.region).toEqual(result);
+    expect(AWS.config.region).toEqual(result);
+    expect(await cloudFormation().config.region()).toEqual(result);
+    expect(getEnvVar('REGION')).toEqual(result);
+  });
 });
 
 describe('environment type', () => {
