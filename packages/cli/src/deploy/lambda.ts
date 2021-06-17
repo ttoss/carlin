@@ -85,7 +85,7 @@ export const buildLambdaSingleFile = async ({
       }
 
       if (stats?.hasErrors()) {
-        return reject(stats.toJson().errors);
+        return reject(stats.toString());
       }
 
       return resolve();
