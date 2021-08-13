@@ -14,6 +14,9 @@ import { deployStaticAppComment } from '../../.docusaurus/carlin/default/deployS
 import { deployStaticAppOptions } from '../../.docusaurus/carlin/default/deployStaticAppOptions';
 import { publishLambdaVersionZipFileComment } from '../../.docusaurus/carlin/default/publishLambdaVersionZipFileComment';
 import { removeOldVersionsComment } from '../../.docusaurus/carlin/default/removeOldVersionsComment';
+import { staticAppCspStringWithoutReplace } from '../../.docusaurus/carlin/default/staticAppCspStringWithoutReplace';
+import { staticAppCspStringWithReplace } from '../../.docusaurus/carlin/default/staticAppCspStringWithReplace';
+import { staticAppCspStringDefault } from '../../.docusaurus/carlin/default/staticAppCspStringDefault';
 import { staticAppCloudFrontTemplate } from '../../.docusaurus/carlin/default/staticAppCloudFrontTemplate';
 import { staticAppGtmIdTemplate } from '../../.docusaurus/carlin/default/staticAppGtmIdTemplate';
 import { staticAppLambdaEdgeOriginRequestAlgorithmComment } from '../../.docusaurus/carlin/default/staticAppLambdaEdgeOriginRequestAlgorithmComment';
@@ -138,7 +141,7 @@ carlin deploy static-app --gtm-id GTM-XXXX
 
 <InnerHTML html={staticAppLambdaEdgeOriginRequestDescriptionComment} />
 
-#### Lamdba@Edge Origin Request code and algorithm
+#### Lamdba@Edge Origin Request Code and Algorithm
 
 :::note Algorithm
 
@@ -152,3 +155,47 @@ carlin deploy static-app --gtm-id GTM-XXXX
       .ZipFile
   }
 </CodeBlock>
+
+### Content Security Policy
+
+By default, the algorithm adds these [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) headers to the deployment:
+
+<CodeBlock className="txt">{staticAppCspStringDefault}</CodeBlock>
+
+#### Disabling CSP
+
+If you want to remove the default CSP headers, you can use the <OptionAliasesInline options={deployStaticAppOptions} option="csp" to="/docs/api-reference/deploy-static-app#csp" /> flag as `false`.
+
+```
+carlin deploy static-app --csp false
+```
+
+#### Appending CSP
+
+If you want to append directives to the default CSP, you can pass a object to the <OptionAliasesInline options={deployStaticAppOptions} option="csp" to="/docs/api-reference/deploy-static-app#csp" /> flag with the values you want to append.
+
+```yaml title="carlin.yml"
+csp:
+  'default-src': 'https'
+  'script-src': "'self'"
+  'connect-src': 'https://my.api.com/'
+```
+
+Whose result is:
+
+<CodeBlock className="txt">{staticAppCspStringWithoutReplace}</CodeBlock>
+
+#### Replacing CSP
+
+If you want to replace directives to the default CSP, you can pass a object to the <OptionAliasesInline options={deployStaticAppOptions} option="csp" to="/docs/api-reference/deploy-static-app#csp" /> flag with the values you want to replace in an array `["value", "replace"]`.
+
+```yaml title="carlin.yml"
+csp:
+  'default-src': ['https', 'replace'],
+  'script-src': ["'self'", 'replace'],
+  'connect-src': ['https://my.api.com/', 'replace'],
+```
+
+Whose result is:
+
+<CodeBlock className="txt">{staticAppCspStringWithReplace}</CodeBlock>

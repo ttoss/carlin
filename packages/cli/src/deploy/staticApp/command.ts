@@ -35,6 +35,13 @@ export const options = {
     type: 'boolean',
   },
   csp: {
+    coerce: (value: any) => {
+      if (value === 'false') {
+        return false;
+      }
+
+      return value;
+    },
     describe: 'CSP headers to be added to Lambda@Edge origin response.',
   },
   'gtm-id': {
@@ -89,11 +96,9 @@ export const deployStaticAppCommand: CommandModule<
         AWS.config.region = CLOUDFRONT_REGION;
       })
       .middleware((argv: any) => {
-        const { acm, aliases, csp, gtmId, spa } = argv;
+        const { acm, aliases, csp, gtmId } = argv;
 
-        const someDefined = [acm, aliases, csp, gtmId, spa].some(
-          (value) => !!value,
-        );
+        const someDefined = [acm, aliases, csp, gtmId].some((value) => !!value);
 
         if (someDefined) {
           argv.cloudfront = true;

@@ -13,7 +13,10 @@ const {
 const { defaultTemplatePaths } = require('carlin/dist/deploy/cloudFormation');
 
 const {
+  generateCspString,
+  getDefaultCsp,
   getStaticAppTemplate,
+  updateCspObject,
 } = require('carlin/dist/deploy/staticApp/staticApp.template');
 
 const {
@@ -44,6 +47,36 @@ const cliApi = async (cmd) =>
       resolve(output);
     });
   });
+
+const getStaticAppCsp = () => {
+  const cspWithReplace = {
+    'default-src': ['https', 'replace'],
+    'script-src': ["'self'", 'replace'],
+    'connect-src': ['https://my.api.com/', 'replace'],
+  };
+
+  const cspWithoutReplace = {
+    'default-src': 'https',
+    'script-src': "'self'",
+    'connect-src': 'https://my.api.com/',
+  };
+
+  return {
+    staticAppCspStringDefault: generateCspString().replace(/; /g, ';\n'),
+    staticAppCspStringWithoutReplace: generateCspString({
+      csp: updateCspObject({
+        csp: cspWithoutReplace,
+        currentCsp: getDefaultCsp(),
+      }),
+    }).replace(/; /g, ';\n'),
+    staticAppCspStringWithReplace: generateCspString({
+      csp: updateCspObject({
+        csp: cspWithReplace,
+        currentCsp: getDefaultCsp(),
+      }),
+    }).replace(/; /g, ';\n'),
+  };
+};
 
 module.exports = () => {
   return {
@@ -139,6 +172,8 @@ module.exports = () => {
             'getLambdaEdgeOriginRequestZipFile',
           ]).split('## Algorithm')[1],
         ),
+
+        ...getStaticAppCsp(),
 
         deployExamples: require('carlin/dist/deploy/command').examples,
 
