@@ -61,12 +61,12 @@ exports.handler = (event, context) => {
 }
 `);
 
-export type CSP = { [key: string]: string | string[] };
+export type CSP = { [key: string]: string | string[] } | false;
 
 /**
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
  */
-const getDefaultCsp = (): CSP => ({
+export const getDefaultCsp = (): CSP => ({
   'default-src': "'self'",
   /**
    * Fetch APIs, only if start with HTTPS.
@@ -80,7 +80,16 @@ const getDefaultCsp = (): CSP => ({
   'object-src': "'none'",
 });
 
-const updateCspObject = ({ csp, currentCsp }: { csp: CSP; currentCsp: CSP }) =>
+/**
+ * Add data from `csp` to `cspDefault`. `csp` takes precedence over `cspDefault`.
+ */
+export const updateCspObject = ({
+  csp,
+  currentCsp,
+}: {
+  csp: CSP;
+  currentCsp: CSP;
+}) =>
   Object.entries(csp).reduce(
     (acc, [key, value]) => {
       if (Array.isArray(value)) {
@@ -118,7 +127,7 @@ export const generateCspString = ({
   );
 };
 
-const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
+export const LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID = 'LambdaEdgeOriginRequest';
 
 export const LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID =
   'LambdaEdgeVersionOriginRequest';
@@ -161,12 +170,16 @@ const assignSecurityHeaders = ({ csp }: { csp?: CSP }) => {
       value: 'max-age=63072000; includeSubdomains; preload'
     }
   ];  
-  headers['content-security-policy'] = [
+  ${
+    csp !== false
+      ? `headers['content-security-policy'] = [
     {
       key: 'Content-Security-Policy',
       value: "${generateCspString({ csp })}"
     },
-  ];
+  ]`
+      : ''
+  };
   headers['x-content-type-options'] = [
     {
       key: 'X-Content-Type-Options',
@@ -208,7 +221,7 @@ const assignSecurityHeaders = ({ csp }: { csp?: CSP }) => {
  * 1. handles the `nonce` values on scripts and CSP headers.
  *
  * It's not possible to change the HTML body from S3 origin thought Lambda@Edge
- * response. The implementation was made considering this questions and
+ * response. The implementation was made considering these questions and
  * responses:
  *
  * - [How can I modify a page's HTML with AWS Cloudfront running a Lambda@Edge function?](https://stackoverflow.com/questions/62893845/how-can-i-modify-a-pages-html-with-aws-cloudfront-running-a-lambdaedge-functio)
@@ -217,7 +230,7 @@ const assignSecurityHeaders = ({ csp }: { csp?: CSP }) => {
  * ## Algorithm
  *
  * 1. Add `.html` or `/index.html` to URL if needed.
- * 1. If the URL doesn't ends with `.html`, the request is forwarded to origin.
+ * 1. If the URL doesn't ends with `.html`, the request is forwarded to origin, otherwise Lambda will get `.html` using S3 directly.
  * 1. Add CSP headers, including the `nonce` value to `script-src` and `frame-src`.
  * 1. Get the `.html` file using [S3 API `getObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html).
  * 1. If the file doesn't exist, forward the request to origin.
@@ -229,90 +242,96 @@ const assignSecurityHeaders = ({ csp }: { csp?: CSP }) => {
 export const getLambdaEdgeOriginRequestZipFile = ({
   gtmId,
   region,
-  csp = {},
+  csp,
 }: {
   gtmId?: string;
   region: string;
   csp?: CSP;
 }) => {
-  const fullCsp = [
-    getDefaultCsp(),
-    csp,
-    /**
-     * Add CSP to allow Google Marketing Platform works.
-     * {@link https://developers.google.com/tag-manager/web/csp}
-     */
-    ...(gtmId
-      ? [
-          /**
-           * 'script-src' and 'img-src' must have 'self' default because when
-           * Lambda@Edge will append the policies, these values will have values and
-           * it won't have 'self'. This way self scripts and images won't work.
-           * Issue #17 https://github.com/ttoss/carlin/issues/17.
-           */
-          {
-            'script-src': "'self'",
-            'img-src': "'self'",
-          },
-          {
-            'frame-src': "'self'",
-          },
-          /**
-           * https://developers.google.com/tag-manager/web/csp#enabling_the_google_tag_manager_snippet
-           */
-          {
-            'img-src': 'www.googletagmanager.com',
-          },
-          /**
-           * https://developers.google.com/tag-manager/web/csp#preview_mode
-           */
-          {
-            'script-src': 'https://tagmanager.google.com',
-            'style-src':
-              'https://tagmanager.google.com https://fonts.googleapis.com',
-            'img-src':
-              'https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com data:',
-            'font-src': 'data:',
-          },
-          /**
-           * https://developers.google.com/tag-manager/web/csp#universal_analytics_google_analytics
-           */
-          {
-            'script-src':
-              'https://www.google-analytics.com https://ssl.google-analytics.com',
-            'img-src': 'https://www.google-analytics.com',
-            'connect-src': 'https://www.google-analytics.com',
-          },
-          /**
-           * https://developers.google.com/tag-manager/web/csp#google_optimize
-           */
-          {
-            'script-src': 'https://www.google-analytics.com',
-          },
-          /**
-           * https://developers.google.com/tag-manager/web/csp#google_ads_conversions
-           */
-          {
-            'script-src':
-              'https://www.googleadservices.com https://www.google.com',
-            'img-src':
-              'https://googleads.g.doubleclick.net https://www.google.com',
-          },
-          /**
-           * https://developers.google.com/tag-manager/web/csp#google_ads_remarketing
-           */
-          {
-            'script-src':
-              'https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com',
-            'img-src': 'https://www.google.com',
-            'frame-src': 'https://bid.g.doubleclick.net',
-          },
-        ]
-      : []),
-  ].reduce(
-    (acc, curCsp) => updateCspObject({ csp: curCsp, currentCsp: acc }),
-    {},
-  );
+  const fullCsp = (() => {
+    if (csp === false) {
+      return false;
+    }
+
+    return [
+      getDefaultCsp(),
+      csp || {},
+      /**
+       * Add CSP to allow Google Marketing Platform works.
+       * {@link https://developers.google.com/tag-manager/web/csp}
+       */
+      ...(gtmId
+        ? [
+            /**
+             * 'script-src' and 'img-src' must have 'self' default because when
+             * Lambda@Edge will append the policies, these values will have values and
+             * it won't have 'self'. This way self scripts and images won't work.
+             * Issue #17 https://github.com/ttoss/carlin/issues/17.
+             */
+            {
+              'script-src': "'self'",
+              'img-src': "'self'",
+            },
+            {
+              'frame-src': "'self'",
+            },
+            /**
+             * https://developers.google.com/tag-manager/web/csp#enabling_the_google_tag_manager_snippet
+             */
+            {
+              'img-src': 'www.googletagmanager.com',
+            },
+            /**
+             * https://developers.google.com/tag-manager/web/csp#preview_mode
+             */
+            {
+              'script-src': 'https://tagmanager.google.com',
+              'style-src':
+                'https://tagmanager.google.com https://fonts.googleapis.com',
+              'img-src':
+                'https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com data:',
+              'font-src': 'data:',
+            },
+            /**
+             * https://developers.google.com/tag-manager/web/csp#universal_analytics_google_analytics
+             */
+            {
+              'script-src':
+                'https://www.google-analytics.com https://ssl.google-analytics.com',
+              'img-src': 'https://www.google-analytics.com',
+              'connect-src': 'https://www.google-analytics.com',
+            },
+            /**
+             * https://developers.google.com/tag-manager/web/csp#google_optimize
+             */
+            {
+              'script-src': 'https://www.google-analytics.com',
+            },
+            /**
+             * https://developers.google.com/tag-manager/web/csp#google_ads_conversions
+             */
+            {
+              'script-src':
+                'https://www.googleadservices.com https://www.google.com',
+              'img-src':
+                'https://googleads.g.doubleclick.net https://www.google.com',
+            },
+            /**
+             * https://developers.google.com/tag-manager/web/csp#google_ads_remarketing
+             */
+            {
+              'script-src':
+                'https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com',
+              'img-src': 'https://www.google.com',
+              'frame-src': 'https://bid.g.doubleclick.net',
+            },
+          ]
+        : []),
+    ].reduce(
+      (acc, curCsp) => updateCspObject({ csp: curCsp, currentCsp: acc }),
+      {},
+    );
+  })();
 
   return formatCode(
     uglify(
@@ -381,12 +400,14 @@ exports.handler = async (event, context) => {
     
     const gtmScriptBody = \`<noscript><iframe nonce='\${nonce}' src='https://www.googletagmanager.com/ns.html?id=${gtmId}' height='0' width='0' style='display:none;visibility:hidden'></iframe></noscript>\`;
 
-    const cspValue = headers['content-security-policy'][0]
-      .value
-      .replace("script-src", \`script-src 'nonce-\${nonce}'\`)
-      .replace("frame-src", \`frame-src 'nonce-\${nonce}'\`);
+    if(headers['content-security-policy']?.[0]?.value) {
+      const cspValue = headers['content-security-policy'][0]
+        .value
+        .replace("script-src", \`script-src 'nonce-\${nonce}'\`)
+        .replace("frame-src", \`frame-src 'nonce-\${nonce}'\`);
 
-    headers['content-security-policy'][0].value = cspValue;
+      headers['content-security-policy'][0].value = cspValue;
+    }
 
     await (async () => {
       try {
@@ -432,7 +453,8 @@ exports.handler = async (event, context) => {
   );
 };
 
-const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID = 'LambdaEdgeOriginResponse';
+export const LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID =
+  'LambdaEdgeOriginResponse';
 
 export const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
   'LambdaEdgeVersionOriginResponse';
@@ -441,8 +463,16 @@ export const LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID =
  * This method is only triggered if origin request doesn't return a body.
  */
 export const getLambdaEdgeOriginResponseZipFile = ({
-  csp = {},
+  csp,
 }: { csp?: CSP } = {}) => {
+  const finalCsp = (() => {
+    if (csp === false) {
+      return false;
+    }
+
+    return updateCspObject({ csp: csp || {}, currentCsp: getDefaultCsp() });
+  })();
+
   return formatCode(
     uglify(
       `
@@ -453,9 +483,7 @@ exports.handler = async (event, context) => {
   const response = event.Records[0].cf.response;
   const headers = response.headers;
 
-  ${assignSecurityHeaders({
-    csp: updateCspObject({ csp, currentCsp: getDefaultCsp() }),
-  })}
+  ${assignSecurityHeaders({ csp: finalCsp })}
 
   ${assignCachingHeaders({})}
   

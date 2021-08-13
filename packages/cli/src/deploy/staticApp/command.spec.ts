@@ -133,9 +133,6 @@ describe('should set cloudfront', () => {
       {
         gtmId: faker.random.word(),
       },
-      {
-        spa: true,
-      },
     ];
 
     return expect(testHelper(options, true)).resolves.toBeTruthy();
@@ -153,7 +150,7 @@ describe('should set cloudfront', () => {
         skipUpload: false,
       },
       {
-        spa: false,
+        spa: true,
       },
     ];
 

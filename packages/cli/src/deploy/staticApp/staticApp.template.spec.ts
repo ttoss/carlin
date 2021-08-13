@@ -65,6 +65,8 @@ import {
   LAMBDA_EDGE_IAM_ROLE_LOGICAL_ID,
   LAMBDA_EDGE_VERSION_ORIGIN_REQUEST_LOGICAL_ID,
   LAMBDA_EDGE_VERSION_ORIGIN_RESPONSE_LOGICAL_ID,
+  LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID,
+  LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID,
 } from './staticApp.template';
 
 const defaultCspString =
@@ -233,10 +235,18 @@ describe('Issue #26 https://github.com/ttoss/carlin/issues/26', () => {
     ],
   };
 
-  const handler = () => eval(getLambdaEdgeOriginResponseZipFile())(event);
+  test('should not add CSP headers if csp is false', async () => {
+    const response = await eval(
+      getLambdaEdgeOriginResponseZipFile({ csp: false }),
+    )(JSON.parse(JSON.stringify(event)));
+    expect(response.headers['content-security-policy']).toBeUndefined();
+  });
 
   test('headers should be added properly', async () => {
-    const response = await handler();
+    const response = await eval(getLambdaEdgeOriginResponseZipFile())(
+      JSON.parse(JSON.stringify(event)),
+    );
+    expect(response.headers['content-security-policy']).toBeTruthy();
     expect(response.headers).toEqual(expect.objectContaining(securityHeaders));
     expect(response.headers).toEqual(expect.objectContaining(cachingHeaders));
   });
@@ -344,13 +354,22 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { 'cache-control': _, ...requestHeaders } = record.cf.request.headers;
 
-    const handler = (event: any = defaultEvent) =>
+    const handler = (event: any = defaultEvent, args: any = {}) =>
       eval(
-        getLambdaEdgeOriginRequestZipFile({ region }).replace(
+        getLambdaEdgeOriginRequestZipFile({ region, ...args }).replace(
           'let body = undefined;',
           'let body = "<html />";',
         ),
       )(event);
+
+    test('should not add content-security-policy if csp is false', async () => {
+      const newRecord = JSON.parse(JSON.stringify(record));
+      const response = await handler(
+        { Records: [newRecord] },
+        { csp: false, gtmId },
+      );
+      expect(response.headers['content-security-policy']).toBeUndefined();
+    });
 
     test('request (without body) should forward the headers', async () => {
       const newRecord = JSON.parse(JSON.stringify(record));
@@ -367,6 +386,7 @@ describe('testing getLambdaEdgeOriginRequestZipFile', () => {
       newRecord.cf.request.uri = newUri;
       const response = await handler({ Records: [newRecord] });
       expect(response.body).toBeDefined();
+      expect(response.headers['content-security-policy']).toBeDefined();
       expect(response.headers).toEqual(
         expect.objectContaining(securityHeaders),
       );
@@ -646,5 +666,37 @@ describe("fix issue 'PWA doesn't redirect correctly when browser URL has a path'
         ResponsePagePath: `/index.html`,
       }),
     ]);
+  });
+
+  test('cloudfront CSP, csp={}. Should have CSP headers', () => {
+    const resources = getStaticAppTemplate({
+      cloudfront: true,
+      csp: {},
+      region,
+    }).Resources;
+
+    expect(
+      resources[LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID].Properties.Code.ZipFile,
+    ).toContain('content-security-policy');
+
+    expect(
+      resources[LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID].Properties.Code.ZipFile,
+    ).toContain('content-security-policy');
+  });
+
+  test('cloudfront CSP, csp=false. Should not have CSP headers', () => {
+    const resources = getStaticAppTemplate({
+      cloudfront: true,
+      csp: false,
+      region,
+    }).Resources;
+
+    expect(
+      resources[LAMBDA_EDGE_ORIGIN_REQUEST_LOGICAL_ID].Properties.Code.ZipFile,
+    ).not.toContain('content-security-policy');
+
+    expect(
+      resources[LAMBDA_EDGE_ORIGIN_RESPONSE_LOGICAL_ID].Properties.Code.ZipFile,
+    ).not.toContain('content-security-policy');
   });
 });
