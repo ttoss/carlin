@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/ttoss/carlin/compare/v0.17.4...v0.18.0) (2021-08-13)
+
+
+### Features
+
+* add csp false ([#29](https://github.com/ttoss/carlin/issues/29)) ([5635347](https://github.com/ttoss/carlin/commit/563534753e27f3fe98c6c3fa1f55bda9def88ff4))
+
+
+
+
+
 ## [0.17.4](https://github.com/ttoss/carlin/compare/v0.17.3...v0.17.4) (2021-06-15)
 
 ### Bug Fixes
