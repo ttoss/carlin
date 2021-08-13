@@ -10,5 +10,4 @@ module.exports = {
   },
   preset: 'ts-jest',
   setupFiles: ['<rootDir>/setupTests.js'],
-  silent: true,
 };

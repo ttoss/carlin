@@ -86,7 +86,7 @@ module.exports = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
     },
-    sidebarCollapsible: false,
+    // sidebarCollapsible: false,
   },
   plugins: [path.resolve(__dirname, 'carlin')],
   presets: [
