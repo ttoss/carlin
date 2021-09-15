@@ -1,3 +1,4 @@
+import Carlin from '../src/components/Carlin';
 import InnerHTML from '../src/components/InnerHTML';
 import OptionAliasesInline from '../src/components/OptionAliasesInline';
 import OptionHeader from '../src/components/OptionHeader';
@@ -33,12 +34,25 @@ The options below, if defined, is passed to all commands, but a command might no
 
 <OptionHeader option="environment" options={cliOptions} />
 
-We can set the environment of your deployment. Every deploy operation allow we set the <OptionAliasesInline option="environment" options={cliOptions} /> option that defines our environment.
-Deployments with an environment commonly tends to be a deploy with permanent resources, like staging and production. Due to this, when environment is defined, some properties changes. For instance:
+We can set the environment of your deployment. Every deploy operation allows us to set the <OptionAliasesInline option="environment" options={cliOptions} /> option that defines our environment.
+Deployments with an environment commonly tend to be deployment with permanent resources, like `Staging` and `Production`. Due to this, when the environment is defined, some properties changes. For instance:
 
 - [Termination protection](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-protect-stacks.html) is automatically enabled.
 
-On the other hand, not defining an environment generally means that the resources are ephemeral. These kind of deploy is used to create parts of applications to be tested by the QA team.
+On the other hand, not defining an environment generally means that the resources are ephemeral. You can use this kind of deployment to create parts of your applications for your QA team to test before shipping to production.
+
+As <Carlin /> passes this option to CloudFormation as a parameter, you can restrict the deployment to specifics environments:
+
+```yaml title="cloudformation.yml"
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - Staging
+      - Production
+```
+
+This way, the algorithm will ignore deployments without an environment or other than `Staging` and `Production`.
 
 ### environments
 

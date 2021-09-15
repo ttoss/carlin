@@ -31,8 +31,8 @@ export const options = {
     description: 'Pipelines that will be implemented with the CICD stack.',
     type: 'array',
   },
-  'repository-update': {
-    alias: ['update-repository', 'ur', 'ru'],
+  'update-repository': {
+    alias: ['ur'],
     description: 'Determine if the repository image will be updated.',
     default: true,
     type: 'boolean',

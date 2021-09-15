@@ -1,10 +1,10 @@
 import AdmZip from 'adm-zip';
 import { CodeBuild } from 'aws-sdk';
 import builtins from 'builtin-modules';
+import * as esbuild from 'esbuild';
 import fs from 'fs';
 import log from 'npmlog';
 import path from 'path';
-import webpack from 'webpack';
 
 import { AWS_DEFAULT_REGION } from '../config';
 import { waitCodeBuildFinish, getPackageVersion } from '../utils';
@@ -19,7 +19,7 @@ const logPrefix = 'lambda';
 
 const outFolder = 'dist';
 
-const webpackOutputFilename = 'index.js';
+const outFile = 'index.js';
 
 /**
  * Using Webpack because of issue #8.
@@ -34,63 +34,22 @@ export const buildLambdaSingleFile = async ({
 }) => {
   log.info(logPrefix, 'Building Lambda single file...');
 
-  const webpackConfig: webpack.Configuration = {
-    entry: path.resolve(process.cwd(), lambdaInput),
-    mode: 'production',
-    externals: ['aws-sdk', ...builtins, ...lambdaExternals],
-    module: {
-      rules: [
-        {
-          exclude: /node_modules/,
-          test: /\.tsx?$/,
-          loader: require.resolve('ts-loader'),
-          options: {
-            compilerOptions: {
-              /**
-               * Packages like 'serverless-http' cannot be used without this
-               * property.
-               */
-              allowSyntheticDefaultImports: true,
-              esModuleInterop: true,
-              declaration: false,
-              target: 'es2017',
-              module: 'esnext',
-              noEmit: false,
-            },
-          },
-        },
-      ],
+  const { errors } = esbuild.buildSync({
+    banner: {
+      js: '// Powered by carlin (https://carlin.ttoss.dev)',
     },
-    optimization: {
-      // usedExports: true,
-      minimize: false,
-    },
-    resolve: {
-      extensions: ['.tsx', '.ts', '.js', '.json'],
-    },
-    target: 'node',
-    output: {
-      filename: webpackOutputFilename,
-      libraryTarget: 'commonjs',
-      path: path.join(process.cwd(), outFolder),
-    },
-  };
-
-  const compiler = webpack(webpackConfig);
-
-  return new Promise<void>((resolve, reject) => {
-    compiler.run((err, stats) => {
-      if (err) {
-        return reject(err);
-      }
-
-      if (stats?.hasErrors()) {
-        return reject(stats.toString());
-      }
-
-      return resolve();
-    });
+    bundle: true,
+    entryPoints: [path.resolve(process.cwd(), lambdaInput)],
+    external: ['aws-sdk', ...builtins, ...lambdaExternals],
+    platform: 'node',
+    outfile: path.join(process.cwd(), outFolder, outFile),
+    target: 'node12',
+    treeShaking: true,
   });
+
+  if (errors.length > 0) {
+    throw errors;
+  }
 };
 
 export const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
@@ -98,9 +57,7 @@ export const uploadCodeToS3 = async ({ stackName }: { stackName: string }) => {
 
   const zip = new AdmZip();
 
-  const code = fs.readFileSync(
-    path.join(process.cwd(), outFolder, webpackOutputFilename),
-  );
+  const code = fs.readFileSync(path.join(process.cwd(), outFolder, outFile));
 
   zip.addFile('index.js', code);
 
@@ -142,7 +99,7 @@ export const deployLambdaLayers = async ({
     try {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       return require(path.resolve(process.cwd(), 'package.json')) || {};
-    } catch (err) {
+    } catch (err: any) {
       log.error(
         logPrefix,
         'Cannot read package.json. Error message: %j',

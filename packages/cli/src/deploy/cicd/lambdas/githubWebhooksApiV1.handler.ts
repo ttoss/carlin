@@ -168,7 +168,7 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
     });
 
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
     return { statusCode: error.status || 500, body: error.message };
   }

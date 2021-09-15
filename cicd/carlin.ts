@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 export default {
-  pipelines: ['tag'],
+  pipelines: ['main', 'tag'],
   sshKey: './ssh-key',
   sshUrl: 'git@github.com:ttoss/carlin.git',
   taskEnvironment: [

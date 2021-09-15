@@ -1,8 +1,11 @@
-export const pipelines = ['pr', 'main', 'tag'] as const;
+export const pipelines = ['pr', 'closed-pr', 'main', 'tag'] as const;
 
 export type Pipelines = typeof pipelines;
 
 export type Pipeline = Pipelines[number];
+
+const executeCommandFile = (pipeline: Pipeline) =>
+  `chmod +x ./cicd/commands/${pipeline} && ./cicd/commands/${pipeline}`;
 
 export const getPrCommands = ({ branch }: { branch: string }) => [
   'git status',
@@ -16,23 +19,7 @@ export const getPrCommands = ({ branch }: { branch: string }) => [
   'git rev-parse HEAD',
   'git status',
   'yarn',
-  'npx lerna ls --since=main',
-  /**
-   * Apply lint only on the modified files.
-   */
-  `git diff --name-only HEAD..main | grep -E "\\.(j|t)sx?$" | xargs npx eslint --no-error-on-unmatched-pattern`,
-  /**
-   * Build only modified packages.
-   */
-  `npx lerna run "build" --since=main --stream --parallel`,
-  /**
-   * Execute tests only on the modified packages.
-   */
-  `npx lerna run "test" --since=main --stream --parallel`,
-  /**
-   * Deploy only the modified packages.
-   */
-  `npx lerna run "deploy" --since=main --stream --parallel`,
+  executeCommandFile('pr'),
 ];
 
 export const getClosedPrCommands = ({ branch }: { branch: string }) => [
@@ -44,29 +31,25 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
   'git pull origin main',
   'git rev-parse HEAD',
   `export CARLIN_BRANCH=${branch}`,
-  `npx lerna run "deploy" --stream --parallel -- --destroy`,
+  executeCommandFile('closed-pr'),
 ];
 
 export const getMainCommands = () => [
+  `export CARLIN_ENVIRONMENT=Staging`,
   'git status',
   'git fetch',
   'git pull origin main',
   'git rev-parse HEAD',
   'yarn',
-  `export CARLIN_ENVIRONMENT=Staging`,
-  `npx lerna run "build" --stream --parallel`,
-  `npx lerna run "test" --stream --parallel`,
-  `npx lerna run "deploy" --stream --parallel`,
+  executeCommandFile('main'),
 ];
 
 export const getTagCommands = ({ tag }: { tag: string }) => [
+  `export CARLIN_ENVIRONMENT=Production`,
   'git status',
   'git fetch --tags',
   `git checkout tags/${tag} -b ${tag}-branch`,
   'git rev-parse HEAD',
   'yarn',
-  `export CARLIN_ENVIRONMENT=Production`,
-  `npx lerna run "build" --stream --parallel`,
-  `npx lerna run "test" --stream --parallel`,
-  `npx lerna run "deploy" --stream --parallel`,
+  executeCommandFile('tag'),
 ];
