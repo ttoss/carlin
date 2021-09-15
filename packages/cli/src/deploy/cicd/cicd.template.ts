@@ -249,6 +249,7 @@ export const getCicdTemplate = ({
   cpu = ECS_TASK_DEFAULT_CPU,
   memory = ECS_TASK_DEFAULT_MEMORY,
   s3,
+  slackWebhookUrl,
   taskEnvironment = [],
 }: {
   pipelines?: Pipeline[];
@@ -259,6 +260,7 @@ export const getCicdTemplate = ({
     key: string;
     versionId: string;
   };
+  slackWebhookUrl?: string;
   taskEnvironment?: Array<{ name: string; value: string }>;
 }): CloudFormationTemplate => {
   const resources: CloudFormationTemplate['Resources'] = {};
@@ -524,6 +526,7 @@ export const getCicdTemplate = ({
               Ref: REPOSITORY_TASKS_ECS_CLUSTER_LOGS_LOG_GROUP_LOGICAL_ID,
             },
             ECS_TASK_CONTAINER_NAME: REPOSITORY_ECS_TASK_CONTAINER_NAME,
+            SLACK_WEBHOOK_URL: slackWebhookUrl,
           },
         },
         Handler: 'index.ecsTaskReportHandler',

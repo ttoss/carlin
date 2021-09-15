@@ -1,3 +1,4 @@
+import { IncomingWebhook } from '@slack/webhook';
 import { Handler } from 'aws-lambda';
 
 import { putApprovalResultManualTask } from './putApprovalResultManualTask';
@@ -35,6 +36,23 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   return ecsTaskLogsUrl;
 };
 
+const slackNotification = async () => {
+  const url = process.env.SLACK_WEBHOOK_URL;
+
+  if (!url) {
+    return;
+  }
+
+  const webhook = new IncomingWebhook(url);
+
+  // Send the notification
+  (async () => {
+    await webhook.send({
+      text: "I've got news for you...",
+    });
+  })();
+};
+
 export type Status = 'Approved' | 'Rejected';
 
 export type Event = {
@@ -63,6 +81,8 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
       },
     });
   }
+
+  await slackNotification();
 
   return { statusCode: 200, body: 'ok' };
 };

@@ -45,6 +45,9 @@ export const options = {
     demandOption: true,
     type: 'string',
   },
+  'slack-webhook-url': {
+    type: 'string',
+  },
   /**
    * This option has the format:
    *

@@ -31,6 +31,7 @@
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.18.0",
     "@octokit/webhooks": "^9.6.0",
+    "@slack/webhook": "^6.0.0",
     "adm-zip": "^0.5.5",
     "app-root-path": "^3.0.0",
     "aws-sdk": "^2.906.0",

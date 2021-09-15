@@ -87,6 +87,7 @@ export const deployCicd = async ({
   memory,
   pipelines,
   repositoryUpdate,
+  slackWebhookUrl,
   sshKey,
   sshUrl,
   taskEnvironment,
@@ -95,6 +96,7 @@ export const deployCicd = async ({
   memory?: string;
   pipelines: Pipeline[];
   repositoryUpdate?: boolean;
+  slackWebhookUrl?: string;
   sshKey: string;
   sshUrl: string;
   taskEnvironment: Array<{ name: string; value: string }>;
@@ -111,6 +113,7 @@ export const deployCicd = async ({
         memory,
         pipelines,
         s3: await deployCicdLambdas({ stackName }),
+        slackWebhookUrl,
         taskEnvironment,
       }),
       params: {
@@ -126,7 +129,7 @@ export const deployCicd = async ({
     if (repositoryUpdate) {
       await waitRepositoryImageUpdate({ stackName });
     }
-  } catch (error) {
+  } catch (error: any) {
     handleDeployError({ error, logPrefix });
   }
 };
