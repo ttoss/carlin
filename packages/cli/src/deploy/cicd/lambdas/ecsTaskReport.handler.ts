@@ -76,11 +76,21 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
 
     const webhook = new IncomingWebhook(url);
 
-    (async () => {
-      await webhook.send({
-        text: "I've got news for you...",
-      });
-    })();
+    await webhook.send({
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `\`\`\`${JSON.stringify({
+              status,
+              pipelineName,
+              logs,
+            })}\`\`\``,
+          },
+        },
+      ],
+    });
   };
 
   await Promise.all([handleApprovalResult(), handleStackNotification()]);

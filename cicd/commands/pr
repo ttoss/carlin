@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+npx lerna run "build" --stream --parallel
+npx lerna run "test" --stream --parallel
