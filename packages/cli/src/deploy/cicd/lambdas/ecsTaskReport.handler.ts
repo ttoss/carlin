@@ -76,6 +76,10 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
 
     const webhook = new IncomingWebhook(url);
 
+    /**
+     * Block Kit Builder: https://app.slack.com/block-kit-builder/TJ79J0ZU3#%7B%22blocks%22:%5B%5D%7D
+     * Formatting: https://api.slack.com/reference/surfaces/formatting
+     */
     await webhook.send({
       blocks: [
         {
