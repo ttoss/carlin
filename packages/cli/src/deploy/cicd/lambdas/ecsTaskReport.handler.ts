@@ -24,14 +24,15 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
      * https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
      */
     `https://console.aws.amazon.com/cloudwatch/home?region=${process.env.AWS_REGION}#logsV2:log-groups`,
-    'log-group',
+    '/log-group/',
     process.env.ECS_TASK_LOGS_LOG_GROUP,
-    'log-events',
+    '/log-events',
     `ecs/${process.env.ECS_TASK_CONTAINER_NAME}/${ecsTaskId}`.replace(
       /\//g,
       '%252F',
     ),
-  ].join('/');
+    '$3Fstart$3D-43200000',
+  ].join('');
 
   return ecsTaskLogsUrl;
 };
@@ -82,11 +83,21 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `\`\`\`${JSON.stringify({
-              status,
-              pipelineName,
-              logs,
-            })}\`\`\``,
+            text: `<${logs}|Logs>`,
+          },
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `\`\`\`${JSON.stringify(
+              {
+                status,
+                pipelineName,
+              },
+              null,
+              2,
+            )}\`\`\``,
           },
         },
       ],
