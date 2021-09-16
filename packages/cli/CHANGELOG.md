@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.4](https://github.com/ttoss/carlin/compare/v0.19.3...v0.19.4) (2021-09-16)
+
+### Bug Fixes
+
+- main tag report ([2a47c1c](https://github.com/ttoss/carlin/commit/2a47c1c03e4b60f59141e032b6dc083a9b019b06))
+
 ## [0.19.3](https://github.com/ttoss/carlin/compare/v0.19.2...v0.19.3) (2021-09-16)
 
 ### Bug Fixes
