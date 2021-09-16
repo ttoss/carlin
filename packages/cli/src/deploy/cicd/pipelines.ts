@@ -40,7 +40,7 @@ export const getMainCommands = () => [
   'git fetch',
   'git pull origin main',
   'git rev-parse HEAD',
-  'git describe --abbrev=0 --tags && echo "Found a tag" && exit 0',
+  'if git describe --exact-match; then echo "Tag found" && exit 0; fi',
   'yarn',
   executeCommandFile('main'),
 ];
