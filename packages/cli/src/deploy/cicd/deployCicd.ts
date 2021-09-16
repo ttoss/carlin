@@ -86,7 +86,7 @@ export const deployCicd = async ({
   cpu,
   memory,
   pipelines,
-  repositoryUpdate,
+  updateRepository,
   slackWebhookUrl,
   sshKey,
   sshUrl,
@@ -95,7 +95,7 @@ export const deployCicd = async ({
   cpu?: string;
   memory?: string;
   pipelines: Pipeline[];
-  repositoryUpdate?: boolean;
+  updateRepository?: boolean;
   slackWebhookUrl?: string;
   sshKey: string;
   sshUrl: string;
@@ -126,7 +126,7 @@ export const deployCicd = async ({
       terminationProtection: true,
     });
 
-    if (repositoryUpdate) {
+    if (updateRepository) {
       await waitRepositoryImageUpdate({ stackName });
     }
   } catch (error: any) {
