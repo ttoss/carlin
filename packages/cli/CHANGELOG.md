@@ -3,16 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [0.18.0](https://github.com/ttoss/carlin/compare/v0.17.4...v0.18.0) (2021-08-13)
+# [0.19.0](https://github.com/ttoss/carlin/compare/v0.18.0...v0.19.0) (2021-09-16)
 
+### Bug Fixes
+
+- repository update ([303344d](https://github.com/ttoss/carlin/commit/303344d0c2aba2291c624d8c3fd1e7ca07fbf3b6))
 
 ### Features
 
-* add csp false ([#29](https://github.com/ttoss/carlin/issues/29)) ([5635347](https://github.com/ttoss/carlin/commit/563534753e27f3fe98c6c3fa1f55bda9def88ff4))
+- change slack message ([d27285c](https://github.com/ttoss/carlin/commit/d27285c939b33f6f1cd5e99142c39d34a93fd278))
+- slack first integration ([e00b061](https://github.com/ttoss/carlin/commit/e00b061b52d70c9249bf53bd8d6bdf023410a41d))
+- update commands pattern ([88b0444](https://github.com/ttoss/carlin/commit/88b0444d6455a1ad1e1b1749320070087edac1dc))
+- update slack message ([dcc4f8a](https://github.com/ttoss/carlin/commit/dcc4f8af35820dea8b9e5eb38176d7f67079a6e1))
+- update slack message ([905c07e](https://github.com/ttoss/carlin/commit/905c07e58d18035bb81ce78e3c7d91e61a3351bd))
 
+# [0.18.0](https://github.com/ttoss/carlin/compare/v0.17.4...v0.18.0) (2021-08-13)
 
+### Features
 
-
+- add csp false ([#29](https://github.com/ttoss/carlin/issues/29)) ([5635347](https://github.com/ttoss/carlin/commit/563534753e27f3fe98c6c3fa1f55bda9def88ff4))
 
 ## [0.17.4](https://github.com/ttoss/carlin/compare/v0.17.3...v0.17.4) (2021-06-15)
 
