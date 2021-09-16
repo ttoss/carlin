@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.3](https://github.com/ttoss/carlin/compare/v0.19.2...v0.19.3) (2021-09-16)
+
+### Bug Fixes
+
+- main pipeline loop ([0fa7b44](https://github.com/ttoss/carlin/commit/0fa7b44504248904f570ed2aa1eb3e6e09bf062f))
+- stop main if tag found ([cd5d4b7](https://github.com/ttoss/carlin/commit/cd5d4b7e986716313a714544e1aa2c5c682560ec))
+
 ## [0.19.2](https://github.com/ttoss/carlin/compare/v0.19.1...v0.19.2) (2021-09-16)
 
 **Note:** Version bump only for package carlin-monorepo
