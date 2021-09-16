@@ -40,7 +40,10 @@ export const getMainCommands = () => [
   'git fetch',
   'git pull origin main',
   'git rev-parse HEAD',
-  'if git describe --exact-match; then echo "Tag found" && exit 0; fi',
+  /**
+   * Reporting `MainTagFound` before exiting the process.
+   */
+  'if git describe --exact-match; then echo "Tag found" && carlin cicd-ecs-task-report --status=MainTagFound && exit 0; fi',
   'yarn',
   executeCommandFile('main'),
 ];

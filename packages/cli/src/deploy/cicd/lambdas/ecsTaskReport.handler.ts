@@ -36,7 +36,7 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   return ecsTaskLogsUrl;
 };
 
-export type Status = 'Approved' | 'Rejected';
+export type Status = 'Approved' | 'Rejected' | 'MainTagFound';
 
 export type Event = {
   status: Status;
@@ -60,7 +60,7 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
       await putApprovalResultManualTask({
         pipelineName,
         result: {
-          status,
+          status: status === 'MainTagFound' ? 'Approved' : status,
           summary: JSON.stringify({ status, logs }),
         },
       });
@@ -68,6 +68,13 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
   };
 
   const handleStackNotification = async () => {
+    /**
+     * Do not send a notification if the task was main pipeline with tag.
+     */
+    if (status === 'MainTagFound') {
+      return;
+    }
+
     const url = process.env.SLACK_WEBHOOK_URL;
 
     if (!url) {

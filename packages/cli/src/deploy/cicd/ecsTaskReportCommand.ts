@@ -41,7 +41,7 @@ const sendEcsTaskReport = async ({ status }: { status: Status }) => {
 
 const options = {
   status: {
-    choices: ['Approved', 'Rejected'] as Status[],
+    choices: ['Approved', 'Rejected', 'MainTagFound'] as Status[],
     demandOption: true,
     type: 'string',
   },
