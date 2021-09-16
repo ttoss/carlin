@@ -36,23 +36,6 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   return ecsTaskLogsUrl;
 };
 
-const slackNotification = async () => {
-  const url = process.env.SLACK_WEBHOOK_URL;
-
-  if (!url) {
-    return;
-  }
-
-  const webhook = new IncomingWebhook(url);
-
-  // Send the notification
-  (async () => {
-    await webhook.send({
-      text: "I've got news for you...",
-    });
-  })();
-};
-
 export type Status = 'Approved' | 'Rejected';
 
 export type Event = {
@@ -72,17 +55,35 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
 }) => {
   const logs = ecsTaskArn && getEcsTaskLogsUrl({ ecsTaskArn });
 
-  if (pipelineName) {
-    await putApprovalResultManualTask({
-      pipelineName,
-      result: {
-        status,
-        summary: JSON.stringify({ status, logs }),
-      },
-    });
-  }
+  const handleApprovalResult = async () => {
+    if (pipelineName) {
+      await putApprovalResultManualTask({
+        pipelineName,
+        result: {
+          status,
+          summary: JSON.stringify({ status, logs }),
+        },
+      });
+    }
+  };
 
-  await slackNotification();
+  const handleStackNotification = async () => {
+    const url = process.env.SLACK_WEBHOOK_URL;
+
+    if (!url) {
+      return;
+    }
+
+    const webhook = new IncomingWebhook(url);
+
+    (async () => {
+      await webhook.send({
+        text: "I've got news for you...",
+      });
+    })();
+  };
+
+  await Promise.all([handleApprovalResult(), handleStackNotification()]);
 
   return { statusCode: 200, body: 'ok' };
 };
