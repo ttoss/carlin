@@ -41,4 +41,12 @@ describe('testing getEcsTaskLogsUrl', () => {
       `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${ecsTaskLogsLogGroup}/log-events/ecs%252F${ecsTaskContainerName}%252F${taskId}`,
     );
   });
+
+  test('return url even with ecsTaskArn ending in "', () => {
+    process.env.ECS_TASK_CONTAINER_NAME = ecsTaskContainerName;
+    process.env.ECS_TASK_LOGS_LOG_GROUP = ecsTaskLogsLogGroup;
+    expect(getEcsTaskLogsUrl({ ecsTaskArn: `${ecsTaskArn}"` })).toEqual(
+      `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${ecsTaskLogsLogGroup}/log-events/ecs%252F${ecsTaskContainerName}%252F${taskId}`,
+    );
+  });
 });

@@ -140,7 +140,7 @@ export const pipelinesHandler: CodePipelineHandler = async (event) => {
     await executeTasks(executeTasksInput);
 
     await codepipeline.putJobSuccessResult({ jobId }).promise();
-  } catch (error) {
+  } catch (error: any) {
     if (pipelineName) {
       await putApprovalResultManualTask({
         pipelineName,

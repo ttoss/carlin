@@ -123,10 +123,10 @@ export const cicdApiV1Handler: ProxyHandler = async (event) => {
       statusCode: 403,
       body: 'Execute access forbidden',
     };
-  } catch (err) {
+  } catch (error: any) {
     return {
       statusCode: 400,
-      body: err.message,
+      body: error.message,
     };
   }
 };
