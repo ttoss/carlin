@@ -3,5 +3,5 @@ export const getProcessEnvVariable = (env: string): string => {
     return process.env[env] as string;
   }
 
-  throw new Error(`process.env.${env} doesn't exist.`);
+  throw new Error(`process.env.${env} is not defined.`);
 };

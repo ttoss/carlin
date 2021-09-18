@@ -1,4 +1,13 @@
+/* eslint-disable import/first */
 import type { Pipeline } from './pipelines';
+
+const projectName = 'my-project';
+
+jest.mock('../../utils', () => ({
+  ...(jest.requireActual('../../utils') as any),
+  getProjectName: jest.fn(() => projectName),
+}));
+
 import {
   API_LOGICAL_ID,
   PIPELINES_ARTIFACT_STORE_S3_BUCKET_LOGICAL_ID,
@@ -24,6 +33,10 @@ describe('testing CICD template', () => {
     expect(template.Resources[API_LOGICAL_ID].Type).toEqual(
       'AWS::Serverless::Api',
     );
+    expect(
+      template.Resources.GitHubWebhooksApiV1ServerlessFunction.Properties
+        .Environment.Variables.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX,
+    ).toEqual(`cicd/pipelines/triggers/${projectName}`);
   });
 });
 

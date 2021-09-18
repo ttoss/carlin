@@ -12,6 +12,11 @@ import { getProcessEnvVariable } from './getProcessEnvVariable';
 const s3 = new S3();
 
 /**
+ * Put outside of the handler to be able to spy on it.
+ */
+export const webhooks = new Webhooks({ secret: '123' });
+
+/**
  * When this file is saved on S3, a CodePipeline pipeline is started.
  */
 const putJobDetails = async ({
@@ -21,6 +26,8 @@ const putJobDetails = async ({
   pipeline: Pipeline;
   details: any;
 }) => {
+  const prefix = getProcessEnvVariable('TRIGGER_PIPELINES_OBJECT_KEY_PREFIX');
+
   const zip = new AdmZip();
 
   const content = JSON.stringify(details);
@@ -31,7 +38,7 @@ const putJobDetails = async ({
     .putObject({
       Body: zip.toBuffer(),
       Bucket: getProcessEnvVariable('BASE_STACK_BUCKET_NAME'),
-      Key: getTriggerPipelinesObjectKey(pipeline),
+      Key: getTriggerPipelinesObjectKey({ prefix, pipeline }),
     })
     .promise();
 };
@@ -69,8 +76,6 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
       throw new Error("X-Hub-Signature-256 or X-Hub-Signature doesn't exist.");
     }
 
-    const webhooks = new Webhooks({ secret: '123' });
-
     const pipelines: Pipeline[] = JSON.parse(
       process.env.PIPELINES_JSON || JSON.stringify([]),
     );
@@ -107,7 +112,9 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
           });
         },
       );
+    }
 
+    if (pipelines.includes('closed-pr')) {
       webhooks.on(['pull_request.closed'], async ({ payload }) => {
         /**
          * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
@@ -151,8 +158,6 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
     }
 
     webhooks.onError((onErrorEvent) => {
-      console.error('Webhooks on error.');
-      console.error(JSON.stringify(onErrorEvent, null, 2));
       throw onErrorEvent;
     });
 

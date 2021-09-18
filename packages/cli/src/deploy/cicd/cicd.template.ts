@@ -1,7 +1,11 @@
 import { pascalCase } from 'change-case';
 import yaml from 'js-yaml';
 
-import { CloudFormationTemplate, getIamPath } from '../../utils';
+import {
+  CloudFormationTemplate,
+  getIamPath,
+  getProjectName,
+} from '../../utils';
 
 import {
   BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
@@ -19,10 +23,7 @@ import {
   PIPELINE_ECS_TASK_EXECUTION_STAGE_NAME,
 } from './config';
 
-import {
-  getTriggerPipelinesObjectKey,
-  TRIGGER_PIPELINES_OBJECT_KEY_PREFIX,
-} from './getTriggerPipelineObjectKey';
+import { getTriggerPipelinesObjectKey } from './getTriggerPipelineObjectKey';
 
 export const API_LOGICAL_ID = 'ApiV1ServerlessApi';
 
@@ -243,6 +244,17 @@ export const getRepositoryImageBuilder = () => ({
     TimeoutInMinutes: 15,
   },
 });
+
+/**
+ * This variable is used inside GitHub webhooks to identify the object key
+ * prefix of the file that triggers the pipelines.
+ */
+const triggerPipelinesObjectKeyPrefix = [
+  'cicd',
+  'pipelines',
+  'triggers',
+  getProjectName(),
+].join('/');
 
 export const getCicdTemplate = ({
   pipelines = [],
@@ -484,7 +496,7 @@ export const getCicdTemplate = ({
                   Effect: 'Allow',
                   Resource: {
                     'Fn::Sub': [
-                      `arn:aws:s3:::\${BucketName}/${TRIGGER_PIPELINES_OBJECT_KEY_PREFIX}*`,
+                      `arn:aws:s3:::\${BucketName}/${triggerPipelinesObjectKeyPrefix}*`,
                       {
                         BucketName: {
                           'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
@@ -578,6 +590,7 @@ export const getCicdTemplate = ({
             BASE_STACK_BUCKET_NAME: {
               'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
             },
+            TRIGGER_PIPELINES_OBJECT_KEY_PREFIX: triggerPipelinesObjectKeyPrefix,
             PIPELINES_JSON: JSON.stringify(pipelines),
             ...executeEcsTaskVariables,
           },
@@ -837,7 +850,7 @@ export const getCicdTemplate = ({
                   Action: 's3:*',
                   Resource: {
                     'Fn::Sub': [
-                      `arn:aws:s3:::\${BucketName}/${TRIGGER_PIPELINES_OBJECT_KEY_PREFIX}*`,
+                      `arn:aws:s3:::\${BucketName}/${triggerPipelinesObjectKeyPrefix}*`,
                       {
                         BucketName: {
                           'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
@@ -897,7 +910,10 @@ export const getCicdTemplate = ({
                     S3Bucket: {
                       'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
                     },
-                    S3ObjectKey: getTriggerPipelinesObjectKey(pipeline),
+                    S3ObjectKey: getTriggerPipelinesObjectKey({
+                      prefix: triggerPipelinesObjectKeyPrefix,
+                      pipeline,
+                    }),
                   },
                   Name: `Pipeline${pipelinePascalCase}S3SourceAction`,
                   OutputArtifacts: [

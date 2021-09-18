@@ -1,9 +1,12 @@
+import * as faker from 'faker';
+
 import { getTriggerPipelinesObjectKey } from './getTriggerPipelineObjectKey';
+import { Pipeline } from './pipelines';
 
-test('main pipeline', () => {
-  expect(getTriggerPipelinesObjectKey('main')).toContain('/main.zip');
-});
+const prefix = faker.random.word();
 
-test('tag pipeline', () => {
-  expect(getTriggerPipelinesObjectKey('tag')).toContain('/tag.zip');
+test.each<[Pipeline]>([['tag'], ['main']])('main pipeline', (pipeline) => {
+  expect(getTriggerPipelinesObjectKey({ prefix, pipeline })).toContain(
+    `${prefix}/${pipeline}.zip`,
+  );
 });
