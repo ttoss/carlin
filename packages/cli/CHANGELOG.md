@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.6](https://github.com/ttoss/carlin/compare/v0.19.5...v0.19.6) (2021-09-18)
+
+### Bug Fixes
+
+- pipeline bucket object duplication ([3090748](https://github.com/ttoss/carlin/commit/3090748258818af3c5ca8a38a1c65c0fc1b21760))
+
 ## [0.19.5](https://github.com/ttoss/carlin/compare/v0.19.4...v0.19.5) (2021-09-17)
 
 ### Bug Fixes
