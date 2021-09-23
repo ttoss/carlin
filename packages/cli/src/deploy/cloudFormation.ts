@@ -195,7 +195,7 @@ export const deployCloudFormation = async ({
     });
 
     return output;
-  } catch (error) {
+  } catch (error: any) {
     return handleDeployError({ error, logPrefix });
   }
 };
@@ -270,7 +270,7 @@ export const destroyCloudFormation = async ({
     const stackName = defaultStackName || (await getStackName());
     log.info(logPrefix, `stackName: ${stackName}`);
     await destroy({ stackName });
-  } catch (error) {
+  } catch (error: any) {
     handleDeployError({ error, logPrefix });
   }
 };

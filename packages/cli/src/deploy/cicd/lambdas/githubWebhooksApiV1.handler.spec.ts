@@ -1,16 +1,5 @@
 /* eslint-disable import/first */
 
-// const webhooksOnErrorMock = jest.fn();
-
-// const webhooksReceiveMock = jest.fn();
-
-// jest.mock('@octokit/webhooks', () => ({
-//   Webhooks: jest.fn().mockReturnValue({
-//     onError: webhooksOnErrorMock,
-//     receive: webhooksReceiveMock,
-//   }),
-// }));
-
 const putObjectMock = jest.fn().mockReturnValue({ promise: jest.fn() });
 
 jest.mock('aws-sdk', () => ({
@@ -18,6 +7,13 @@ jest.mock('aws-sdk', () => ({
   S3: jest.fn().mockReturnValue({
     putObject: putObjectMock,
   }),
+}));
+
+const executeTasksMock = jest.fn();
+
+jest.mock('./executeTasks', () => ({
+  executeTasks: executeTasksMock,
+  shConditionalCommands: jest.fn(),
 }));
 
 import {
@@ -44,12 +40,78 @@ beforeEach(() => {
   delete process.env.PIPELINES_JSON;
   delete process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX;
   delete process.env.BASE_STACK_BUCKET_NAME;
-
-  webhooksReceiveMock.mockClear();
 });
 
-test('should call S3 putObject', async () => {
-  process.env.PIPELINES_JSON = JSON.stringify(['main']);
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
+test.each([['opened'], ['reopened'], ['synchronize']])(
+  'should execute pr handler with action %s',
+  async (action) => {
+    process.env.PIPELINES_JSON = JSON.stringify(['main', 'pr']);
+
+    const response = await handler({
+      headers: {
+        'X-GitHub-Delivery': xGitHubDelivery,
+        'X-GitHub-Event': 'pull_request',
+        'X-Hub-Signature-256': xHubSignature,
+      },
+      body: JSON.stringify({
+        action,
+        number: 1,
+        pull_request: {
+          draft: false,
+          head: {},
+        },
+      }),
+    });
+
+    expect(executeTasksMock).toHaveBeenCalledTimes(1);
+
+    expect(response).toMatchObject({ body: '{"ok":true}', statusCode: 200 });
+  },
+);
+
+test('should execute main handler only one time per webhook', async () => {
+  process.env.PIPELINES_JSON = JSON.stringify(['main', 'pr']);
+  process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX = 'some/prefix';
+  process.env.BASE_STACK_BUCKET_NAME = 'base-stack';
+
+  /**
+   * Execute first to add the main and pr listeners.
+   */
+  await handler({
+    headers: {
+      'X-GitHub-Delivery': xGitHubDelivery,
+      'X-GitHub-Event': 'push',
+      'X-Hub-Signature-256': xHubSignature,
+    },
+    body: JSON.stringify({}),
+  });
+
+  await handler({
+    headers: {
+      'X-GitHub-Delivery': xGitHubDelivery,
+      'X-GitHub-Event': 'push',
+      'X-Hub-Signature-256': xHubSignature,
+    },
+    body: JSON.stringify({ ref: 'refs/heads/main' }),
+  });
+
+  expect(putObjectMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      Body: expect.any(Buffer),
+      Bucket: 'base-stack',
+      Key: 'some/prefix/main.zip',
+    }),
+  );
+
+  expect(putObjectMock).toHaveBeenCalledTimes(1);
+});
+
+test('should call S3 putObject for tag', async () => {
+  process.env.PIPELINES_JSON = JSON.stringify(['tag', 'main']);
   process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX = 'some/prefix';
   process.env.BASE_STACK_BUCKET_NAME = 'base-stack';
 
@@ -71,6 +133,37 @@ test('should call S3 putObject', async () => {
       Key: 'some/prefix/main.zip',
     }),
   );
+
+  expect(putObjectMock).toHaveBeenCalledTimes(1);
+
+  expect(response).toMatchObject({ body: '{"ok":true}', statusCode: 200 });
+});
+
+test('should call S3 putObject for main', async () => {
+  process.env.PIPELINES_JSON = JSON.stringify(['tag', 'main']);
+  process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX = 'some/prefix';
+  process.env.BASE_STACK_BUCKET_NAME = 'base-stack';
+
+  const body = { ref: 'refs/tags/' };
+
+  const response: any = await handler({
+    headers: {
+      'X-GitHub-Delivery': xGitHubDelivery,
+      'X-GitHub-Event': 'push',
+      'X-Hub-Signature-256': xHubSignature,
+    },
+    body: JSON.stringify(body),
+  });
+
+  expect(putObjectMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      Body: expect.any(Buffer),
+      Bucket: 'base-stack',
+      Key: 'some/prefix/tag.zip',
+    }),
+  );
+
+  expect(putObjectMock).toHaveBeenCalledTimes(1);
 
   expect(response).toMatchObject({ body: '{"ok":true}', statusCode: 200 });
 });
