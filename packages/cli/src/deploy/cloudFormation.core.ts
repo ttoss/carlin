@@ -11,12 +11,15 @@ import {
   UpdateTerminationProtectionCommand,
 } from '@aws-sdk/client-cloudformation';
 import AWS from 'aws-sdk';
+import * as fs from 'fs';
 import log from 'npmlog';
+import * as path from 'path';
 
 import { CloudFormationTemplate, getEnvironment, getEnvVar } from '../utils';
 
 import { addDefaults } from './addDefaults.cloudFormation';
 import { emptyS3Directory } from './s3';
+import { getStackName } from './stackName';
 
 const logPrefix = 'cloudformation';
 log.addLevel('event', 10000, { fg: 'yellow' });
@@ -89,12 +92,12 @@ export const doesStackExist = async ({ stackName }: { stackName: string }) => {
     await describeStacks({ stackName });
     log.info(logPrefix, `Stack ${stackName} already exists.`);
     return true;
-  } catch (err) {
-    if (err.Code === 'ValidationError') {
+  } catch (error: any) {
+    if (error.Code === 'ValidationError') {
       log.info(logPrefix, `Stack ${stackName} does not exist.`);
       return false;
     }
-    throw err;
+    throw error;
   }
 };
 
@@ -152,6 +155,26 @@ export const getStackOutput = async ({
   return output;
 };
 
+const saveEnvironmentOutput = async ({
+  outputs,
+}: {
+  outputs: AWS.CloudFormation.Output[];
+}) => {
+  const stackName = await getStackName();
+
+  const envFile: any = { stackName, outputs };
+
+  const dotCarlinFolderPath = path.join(process.cwd(), '.carlin');
+
+  if (!fs.existsSync(dotCarlinFolderPath)) {
+    await fs.promises.mkdir(dotCarlinFolderPath);
+  }
+
+  const filePath = path.join(dotCarlinFolderPath, `${stackName}.json`);
+
+  await fs.promises.writeFile(filePath, JSON.stringify(envFile, null, 2));
+};
+
 export const printStackOutputsAfterDeploy = async ({
   stackName,
 }: {
@@ -160,27 +183,27 @@ export const printStackOutputsAfterDeploy = async ({
   const {
     EnableTerminationProtection,
     StackName,
-    Outputs,
+    Outputs = [],
   } = await describeStack({ stackName });
+
+  await saveEnvironmentOutput({ outputs: Outputs });
 
   log.output('Describe Stack');
   log.output('StackName', StackName);
   log.output('EnableTerminationProtection', EnableTerminationProtection);
-  (Outputs || []).forEach(
-    ({ OutputKey, OutputValue, Description, ExportName }) => {
-      log.output(
-        `${OutputKey}`,
-        [
-          '',
-          `OutputKey: ${OutputKey}`,
-          `OutputValue: ${OutputValue}`,
-          `Description: ${Description}`,
-          `ExportName: ${ExportName}`,
-          '',
-        ].join('\n'),
-      );
-    },
-  );
+  Outputs.forEach(({ OutputKey, OutputValue, Description, ExportName }) => {
+    log.output(
+      `${OutputKey}`,
+      [
+        '',
+        `OutputKey: ${OutputKey}`,
+        `OutputValue: ${OutputValue}`,
+        `Description: ${Description}`,
+        `ExportName: ${ExportName}`,
+        '',
+      ].join('\n'),
+    );
+  });
 };
 
 export const deleteStack = async ({ stackName }: { stackName: string }) => {
@@ -231,14 +254,14 @@ export const updateStack = async ({
     await cloudFormationV2()
       .waitFor('stackUpdateComplete', { StackName: stackName })
       .promise();
-  } catch (err) {
-    if (err.message === 'No updates are to be performed.') {
-      log.info(logPrefix, err.message);
+  } catch (error: any) {
+    if (error.message === 'No updates are to be performed.') {
+      log.info(logPrefix, error.message);
       return;
     }
     log.error(logPrefix, 'An error occurred when updating stack.');
     await describeStackEvents({ stackName });
-    throw err;
+    throw error;
   }
   log.info(logPrefix, `Stack ${stackName} was updated.`);
 };

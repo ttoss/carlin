@@ -12,11 +12,6 @@ import { getProcessEnvVariable } from './getProcessEnvVariable';
 const s3 = new S3();
 
 /**
- * Put outside of the handler to be able to spy on it.
- */
-export const webhooks = new Webhooks({ secret: '123' });
-
-/**
  * When this file is saved on S3, a CodePipeline pipeline is started.
  */
 const putJobDetails = async ({
@@ -42,6 +37,99 @@ const putJobDetails = async ({
     })
     .promise();
 };
+
+/**
+ * Put outside of the handler to be able to spy on it.
+ */
+export const webhooks = new Webhooks({ secret: '123' });
+
+const getPipelines = () => {
+  const pipelines: Pipeline[] = JSON.parse(
+    process.env.PIPELINES_JSON || JSON.stringify([]),
+  );
+
+  return pipelines;
+};
+
+webhooks.on('push', async (details) => {
+  if (!getPipelines().includes('tag')) {
+    return;
+  }
+
+  if (details.payload.ref.startsWith('refs/tags/')) {
+    await putJobDetails({ pipeline: 'tag', details });
+  }
+});
+
+webhooks.on('push', async (details) => {
+  if (!getPipelines().includes('main')) {
+    return;
+  }
+
+  if (details.payload.ref === 'refs/heads/main') {
+    await putJobDetails({ pipeline: 'main', details });
+  }
+});
+
+webhooks.on(
+  ['pull_request.opened', 'pull_request.reopened', 'pull_request.synchronize'],
+  async ({ payload }) => {
+    if (!getPipelines().includes('pr')) {
+      return;
+    }
+
+    if (payload.pull_request.draft) {
+      return;
+    }
+
+    await executeTasks({
+      commands: [
+        shConditionalCommands({
+          conditionalCommands: getPrCommands({
+            branch: payload.pull_request.head.ref,
+          }),
+        }),
+      ],
+      tags: [
+        { key: 'Pipeline', value: 'pr' },
+        { key: 'PullRequest', value: payload.number.toString() },
+        { key: 'PullRequestTitle', value: payload.pull_request.title },
+        { key: 'PullRequestUrl', value: payload.pull_request.url },
+        { key: 'Action', value: payload.action },
+        { key: 'Branch', value: payload.pull_request.head.ref },
+      ],
+    });
+  },
+);
+
+webhooks.on(['pull_request.closed'], async ({ payload }) => {
+  if (!getPipelines().includes('closed-pr')) {
+    return;
+  }
+
+  /**
+   * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+   */
+  await executeTasks({
+    cpu: '256',
+    memory: '512',
+    commands: [
+      shConditionalCommands({
+        conditionalCommands: getClosedPrCommands({
+          branch: payload.pull_request.head.ref,
+        }),
+      }),
+    ],
+    tags: [
+      { key: 'Pipeline', value: 'pr' },
+      { key: 'PullRequest', value: payload.number.toString() },
+      { key: 'PullRequestTitle', value: payload.pull_request.title },
+      { key: 'PullRequestUrl', value: payload.pull_request.url },
+      { key: 'Action', value: payload.action },
+      { key: 'Branch', value: payload.pull_request.head.ref },
+    ],
+  });
+});
 
 export const githubWebhooksApiV1Handler: ProxyHandler = async (
   event,
@@ -74,87 +162,6 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
 
     if (!xHubSignature) {
       throw new Error("X-Hub-Signature-256 or X-Hub-Signature doesn't exist.");
-    }
-
-    const pipelines: Pipeline[] = JSON.parse(
-      process.env.PIPELINES_JSON || JSON.stringify([]),
-    );
-
-    if (pipelines.includes('pr')) {
-      webhooks.on(
-        [
-          'pull_request.opened',
-          'pull_request.reopened',
-          'pull_request.ready_for_review',
-          'pull_request.synchronize',
-        ],
-        async ({ payload }) => {
-          if (payload.pull_request.draft) {
-            return;
-          }
-
-          await executeTasks({
-            commands: [
-              shConditionalCommands({
-                conditionalCommands: getPrCommands({
-                  branch: payload.pull_request.head.ref,
-                }),
-              }),
-            ],
-            tags: [
-              { key: 'Pipeline', value: 'pr' },
-              { key: 'PullRequest', value: payload.number.toString() },
-              { key: 'PullRequestTitle', value: payload.pull_request.title },
-              { key: 'PullRequestUrl', value: payload.pull_request.url },
-              { key: 'Action', value: payload.action },
-              { key: 'Branch', value: payload.pull_request.head.ref },
-            ],
-          });
-        },
-      );
-    }
-
-    if (pipelines.includes('closed-pr')) {
-      webhooks.on(['pull_request.closed'], async ({ payload }) => {
-        /**
-         * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-         */
-        await executeTasks({
-          cpu: '256',
-          memory: '512',
-          commands: [
-            shConditionalCommands({
-              conditionalCommands: getClosedPrCommands({
-                branch: payload.pull_request.head.ref,
-              }),
-            }),
-          ],
-          tags: [
-            { key: 'Pipeline', value: 'pr' },
-            { key: 'PullRequest', value: payload.number.toString() },
-            { key: 'PullRequestTitle', value: payload.pull_request.title },
-            { key: 'PullRequestUrl', value: payload.pull_request.url },
-            { key: 'Action', value: payload.action },
-            { key: 'Branch', value: payload.pull_request.head.ref },
-          ],
-        });
-      });
-    }
-
-    if (pipelines.includes('main')) {
-      webhooks.on('push', async (details) => {
-        if (details.payload.ref === 'refs/heads/main') {
-          await putJobDetails({ pipeline: 'main', details });
-        }
-      });
-    }
-
-    if (pipelines.includes('tag')) {
-      webhooks.on('push', async (details) => {
-        if (details.payload.ref.startsWith('refs/tags/')) {
-          await putJobDetails({ pipeline: 'tag', details });
-        }
-      });
     }
 
     webhooks.onError((onErrorEvent) => {
