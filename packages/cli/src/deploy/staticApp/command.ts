@@ -94,15 +94,6 @@ export const deployStaticAppCommand: CommandModule<
        */
       .middleware(() => {
         AWS.config.region = CLOUDFRONT_REGION;
-      })
-      .middleware((argv: any) => {
-        const { acm, aliases, csp, gtmId } = argv;
-
-        const someDefined = [acm, aliases, csp, gtmId].some((value) => !!value);
-
-        if (someDefined) {
-          argv.cloudfront = true;
-        }
       }),
   handler: ({ destroy, ...rest }) => {
     if (destroy) {

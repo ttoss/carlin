@@ -118,20 +118,7 @@ describe('should set cloudfront', () => {
   test('cloudfront must be true', () => {
     const options = [
       {
-        acm: 'some string',
-      },
-      {
-        acm: faker.random.word(),
-        aliases: [faker.random.word()],
-      },
-      {
         cloudfront: true,
-      },
-      {
-        csp: {},
-      },
-      {
-        gtmId: faker.random.word(),
       },
     ];
 
@@ -151,6 +138,19 @@ describe('should set cloudfront', () => {
       },
       {
         spa: true,
+      },
+      {
+        csp: {},
+      },
+      {
+        gtmId: faker.random.word(),
+      },
+      {
+        acm: 'some string',
+      },
+      {
+        acm: faker.random.word(),
+        aliases: [faker.random.word()],
       },
     ];
 

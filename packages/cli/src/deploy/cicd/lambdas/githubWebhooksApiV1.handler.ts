@@ -103,7 +103,7 @@ webhooks.on(
 );
 
 webhooks.on(['pull_request.closed'], async ({ payload }) => {
-  if (!getPipelines().includes('closed-pr')) {
+  if (!getPipelines().includes('pr')) {
     return;
   }
 

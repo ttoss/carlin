@@ -1,10 +1,10 @@
-export const pipelines = ['pr', 'closed-pr', 'main', 'tag'] as const;
+export const pipelines = ['pr', 'main', 'tag'] as const;
 
 export type Pipelines = typeof pipelines;
 
 export type Pipeline = Pipelines[number];
 
-const executeCommandFile = (pipeline: Pipeline) =>
+const executeCommandFile = (pipeline: Pipeline | 'closed-pr') =>
   `chmod +x ./cicd/commands/${pipeline} && ./cicd/commands/${pipeline}`;
 
 export const getPrCommands = ({ branch }: { branch: string }) => [
