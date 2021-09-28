@@ -2,5 +2,5 @@
 
 set -e
 
-yarn lerna run "build" --stream --parallel
-yarn lerna run "test" --stream --parallel
+yarn lerna run "build" --stream
+yarn lerna run "test" --stream

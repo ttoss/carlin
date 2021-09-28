@@ -6,6 +6,9 @@
       "conventionalCommits": true,
       "message": "chore: publish new version"
     },
+    "run": {
+      "stream": true
+    },
     "version": {
       "forcePublish": true
     }

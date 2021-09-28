@@ -24,7 +24,7 @@
     "name": "Pedro Arantes",
     "url": "https://twitter.com/arantespp"
   },
-  "license": "MIT",
+  "license": "GPL-3.0",
   "devDependencies": {
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",

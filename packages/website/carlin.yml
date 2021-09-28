@@ -1,9 +1,10 @@
 skipDeploy: true
 environments:
   Production:
-    skipDeploy: false
     aliases:
       - carlin.ttoss.dev
     csp:
       default-src: ["* 'unsafe-inline' 'unsafe-eval'", replace]
+    cloudfront: true
+    skipDeploy: false
     stackName: CarlinWebsite
