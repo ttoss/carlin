@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.14](https://github.com/ttoss/carlin/compare/v0.19.9...v0.19.14) (2021-12-09)
+
+### Bug Fixes
+
+- issue [#34](https://github.com/ttoss/carlin/issues/34) cloudfront default root object ([#33](https://github.com/ttoss/carlin/issues/33)) ([33b9fbb](https://github.com/ttoss/carlin/commit/33b9fbb08b2a4814e8fc2a36b442533eb96019c9))
+- issue [#35](https://github.com/ttoss/carlin/issues/35) ([#36](https://github.com/ttoss/carlin/issues/36)) ([4386ad0](https://github.com/ttoss/carlin/commit/4386ad08120c6f1b995d9cbe70ed8d605b6ca895)), closes [#34](https://github.com/ttoss/carlin/issues/34)
+
 ## [0.19.9](https://github.com/ttoss/carlin/compare/v0.19.8...v0.19.9) (2021-09-28)
 
 ### Bug Fixes
