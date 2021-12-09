@@ -839,7 +839,15 @@ const getCloudFrontTemplate = ({
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
           },
-          DefaultRootObject: 'index.html',
+          /**
+           * Do not add `DefaultRootObject` property to the distribution because
+           * it is handled by Lambda@Edge. Adding this property will cause URL
+           * doesn't return the file and instead, return Denied Error.
+           *
+           * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DefaultRootObject.html
+           *
+           * DefaultRootObject: 'index.html',
+           */
           Enabled: true,
           HttpVersion: 'http2',
           Origins: [
