@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.9](https://github.com/ttoss/carlin/compare/v0.19.8...v0.19.9) (2021-09-28)
+
+### Bug Fixes
+
+- website deploy configuration ([b46c373](https://github.com/ttoss/carlin/commit/b46c3730b41d7cd37d9051534db5e959cf045418))
+
 ## [0.19.8](https://github.com/ttoss/carlin/compare/v0.19.7...v0.19.8) (2021-09-24)
 
 **Note:** Version bump only for package carlin-website
