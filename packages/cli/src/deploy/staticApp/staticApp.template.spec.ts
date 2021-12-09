@@ -620,11 +620,17 @@ describe("fix issue 'Add Google Marketing Platform to CSP' #3 https://github.com
 
 describe("fix issue 'PWA doesn't redirect correctly when browser URL has a path' #1 https://github.com/ttoss/carlin/issues/1", () => {
   test('cloudfront', () => {
+    const template = getStaticAppTemplate({ cloudfront: true, region });
+
     expect(
-      getStaticAppTemplate({ cloudfront: true, region }).Resources[
-        CLOUDFRONT_DISTRIBUTION_LOGICAL_ID
-      ].Properties.DistributionConfig.Origins[0].OriginPath,
+      template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].Properties
+        .DistributionConfig.Origins[0].OriginPath,
     ).toEqual(`/${PACKAGE_VERSION}`);
+
+    expect(
+      template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].Properties
+        .DistributionConfig.DefaultRootObject,
+    ).toBeUndefined();
   });
 
   test('cloudfront CustomErrorResponses, spa=false', () => {
