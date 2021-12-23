@@ -160,6 +160,9 @@ export const getRepositoryImageBuilder = () => ({
 
               // Used in case of yarn.lock is modified.
               'RUN git checkout -- yarn.lock',
+
+              // set -e stops the execution of a script if a command or pipeline has an error.
+              'RUN set -e',
             ].join('\n'),
           },
         },
