@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.15](https://github.com/ttoss/carlin/compare/v0.19.14...v0.19.15) (2021-12-23)
+
+### Bug Fixes
+
+- improve cicd docs ([3265dbc](https://github.com/ttoss/carlin/commit/3265dbc9a353cdd176aa6d79b2adb638db30931a))
+
 ## [0.19.14](https://github.com/ttoss/carlin/compare/v0.19.9...v0.19.14) (2021-12-09)
 
 ### Bug Fixes
