@@ -17,6 +17,9 @@ import { getStackName, setPreDefinedStackName } from './stackName';
 
 import * as commandModule from './command';
 
+import * as deployStaticAppModule from './staticApp/staticApp';
+import * as deployLambdaLayerModule from './lambdaLayer/deployLambdaLayer';
+
 const cli = yargs.command(commandModule.deployCommand);
 
 const parse = (command: string, options: any = {}) =>
@@ -29,6 +32,10 @@ const parse = (command: string, options: any = {}) =>
       resolve(argv);
     });
   });
+
+beforeEach(() => {
+  jest.resetAllMocks();
+});
 
 describe('testing skip-deploy flag', () => {
   const mockExit = jest
@@ -117,7 +124,29 @@ describe('lambda-dockerfile', () => {
 describe('handlers', () => {
   test('should call deployCloudFormation', async () => {
     await parse('deploy');
-    expect(deployCloudFormationMock).toHaveBeenCalled();
+    expect(deployCloudFormationMock).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    {
+      module: deployLambdaLayerModule,
+      method: 'deployLambdaLayer',
+      command: 'deploy lambda-layer --packages carlin@1.2.3',
+    },
+    {
+      module: deployStaticAppModule,
+      method: 'deployStaticApp',
+      command: 'deploy static-app',
+    },
+  ])('should call $method', async ({ module, method, command }) => {
+    const mock = jest
+      .spyOn(module as any, method)
+      .mockImplementation(() => Promise.resolve());
+
+    await parse(command);
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(deployCloudFormationMock).not.toHaveBeenCalled();
   });
 
   test('should call destroyCloudFormation', async () => {

@@ -56,7 +56,7 @@ export const deployBaseStack = async () => {
       params: { StackName: stackName },
       terminationProtection: true,
     });
-  } catch (error) {
+  } catch (error: any) {
     handleDeployError({ error, logPrefix });
   }
 };

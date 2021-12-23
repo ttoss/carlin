@@ -23,8 +23,8 @@ const checkAwsAccountId = async (awsAccountId: string) => {
         `AWS account id does not match. Current is "${currentAwsAccountId}" but the defined in configuration files is "${awsAccountId}".`,
       );
     }
-  } catch (err) {
-    log.error(logPrefix, err.message);
+  } catch (error: any) {
+    log.error(logPrefix, error.message);
     process.exit();
   }
 };
@@ -36,8 +36,8 @@ const describeDeployCommand: CommandModule = {
     try {
       const newStackName = (stackName as string) || (await getStackName());
       await printStackOutputsAfterDeploy({ stackName: newStackName });
-    } catch (err) {
-      log.info(logPrefix, 'Cannot describe stack. Message: %s', err.message);
+    } catch (error: any) {
+      log.info(logPrefix, 'Cannot describe stack. Message: %s', error.message);
     }
   },
 };
@@ -190,12 +190,25 @@ export const deployCommand: CommandModule<
           );
           process.exit(0);
         }
-      })
-      .command(deployLambdaLayerCommand)
-      .command(describeDeployCommand)
-      .command(deployBaseStackCommand)
-      .command(deployStaticAppCommand)
-      .command(deployCicdCommand);
+      });
+
+    const commands = [
+      deployLambdaLayerCommand,
+      describeDeployCommand,
+      deployBaseStackCommand,
+      deployStaticAppCommand,
+      deployCicdCommand,
+    ];
+
+    yargsBuilder.positional('deploy', {
+      choices: commands.map(({ command }) => command as string),
+      describe: 'Type of deployment.',
+      type: 'string',
+    });
+
+    commands.forEach((command) =>
+      yargsBuilder.command(command as yargs.CommandModule),
+    );
 
     return yargsBuilder;
   },
@@ -203,6 +216,7 @@ export const deployCommand: CommandModule<
     if (destroy) {
       destroyCloudFormation();
     } else {
+      console.log(rest);
       deployCloudFormation(rest as any);
     }
   },

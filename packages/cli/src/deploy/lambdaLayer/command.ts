@@ -9,19 +9,19 @@ import { deployLambdaLayer } from './deployLambdaLayer';
 
 const logPrefix = 'deploy-lambda-layer';
 
-export const options = {
-  packages: {
-    array: true,
-    describe: "NPM packages' names to be deployed as Lambda Layers. ",
-    required: true,
-    type: 'string',
-  },
-} as const;
-
 /**
  * https://stackoverflow.com/a/64880672/8786986
  */
 const packageNameRegex = /@[~^]?([\dvx*]+(?:[-.](?:[\dx*]+|alpha|beta))*)/;
+
+export const options = {
+  packages: {
+    array: true,
+    describe: `NPM packages' names to be deployed as Lambda Layers. It must follow the format: ${packageNameRegex.toString()}.`,
+    required: true,
+    type: 'string',
+  },
+} as const;
 
 export const deployLambdaLayerCommand: CommandModule<
   any,
@@ -41,7 +41,9 @@ export const deployLambdaLayerCommand: CommandModule<
 
         if (invalidPackages.length > 0) {
           throw new Error(
-            `Some package names are invalid: ${invalidPackages.join(', ')}`,
+            `Some package names are invalid: ${invalidPackages.join(
+              ', ',
+            )}. The package must follow the pattern: ${packageNameRegex.toString()}.`,
           );
         } else {
           return true;

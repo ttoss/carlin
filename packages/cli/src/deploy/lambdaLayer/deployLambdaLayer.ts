@@ -179,7 +179,7 @@ export const deployLambdaLayer = async ({
           terminationProtection: true,
           params: { StackName: getPackageLambdaLayerStackName(packageName) },
         });
-      } catch (error) {
+      } catch (error: any) {
         handleDeployError({ error, logPrefix });
       }
     };
@@ -189,7 +189,7 @@ export const deployLambdaLayer = async ({
         deployLambdaLayerSinglePackage(packageName),
       ),
     );
-  } catch (error) {
+  } catch (error: any) {
     handleDeployError({ error, logPrefix });
   }
 };
