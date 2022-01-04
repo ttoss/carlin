@@ -5,3 +5,25 @@ test('pipelines', () => {
     expect.arrayContaining(['pr', 'main', 'tag']),
   );
 });
+
+test('set +x', () => {
+  const branch = 'some-branch';
+
+  const tag = 'some-tag';
+
+  expect(pipelinesModule.getPrCommands({ branch })).toMatchObject(
+    expect.arrayContaining(['set -e']),
+  );
+
+  expect(pipelinesModule.getMainCommands()).toMatchObject(
+    expect.arrayContaining(['set -e']),
+  );
+
+  expect(pipelinesModule.getTagCommands({ tag })).toMatchObject(
+    expect.arrayContaining(['set -e']),
+  );
+
+  expect(pipelinesModule.getClosedPrCommands({ branch })).not.toMatchObject(
+    expect.arrayContaining(['set -e']),
+  );
+});

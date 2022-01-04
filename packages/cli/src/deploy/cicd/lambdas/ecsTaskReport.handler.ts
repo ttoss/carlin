@@ -40,6 +40,10 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   return ecsTaskLogsUrl.href;
 };
 
+/**
+ * - MainTagFound: means that the main has a tag, so the main pipeline should
+ * be skipped because the push was only to update versions and changelogs.
+ */
 export type Status = 'Approved' | 'Rejected' | 'MainTagFound';
 
 export type Event = {

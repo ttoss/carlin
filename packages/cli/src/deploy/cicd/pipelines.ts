@@ -8,6 +8,7 @@ const executeCommandFile = (pipeline: Pipeline | 'closed-pr') =>
   `chmod +x ./cicd/commands/${pipeline} && ./cicd/commands/${pipeline}`;
 
 export const getPrCommands = ({ branch }: { branch: string }) => [
+  'set -e',
   'git status',
   'git fetch',
   /**
@@ -35,6 +36,7 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
 ];
 
 export const getMainCommands = () => [
+  'set -e',
   `export CARLIN_ENVIRONMENT=Staging`,
   'git status',
   'git fetch',
@@ -49,6 +51,7 @@ export const getMainCommands = () => [
 ];
 
 export const getTagCommands = ({ tag }: { tag: string }) => [
+  'set -e',
   `export CARLIN_ENVIRONMENT=Production`,
   'git status',
   'git fetch --tags',
