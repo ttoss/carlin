@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.16](https://github.com/ttoss/carlin/compare/v0.19.15...v0.19.16) (2022-01-04)
+
+### Bug Fixes
+
+- add set -e to cicd pipelines ([95ba9a7](https://github.com/ttoss/carlin/commit/95ba9a7317e02a8e60b579a6f50132ef7629c1f8))
+
 ## [0.19.15](https://github.com/ttoss/carlin/compare/v0.19.14...v0.19.15) (2021-12-23)
 
 ### Bug Fixes
