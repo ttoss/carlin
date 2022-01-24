@@ -4,8 +4,8 @@ export type Pipelines = typeof pipelines;
 
 export type Pipeline = Pipelines[number];
 
-const executeCommandFile = (pipeline: Pipeline | 'closed-pr') =>
-  `chmod +x ./cicd/commands/${pipeline} && ./cicd/commands/${pipeline}`;
+export const getCommandFileDir = (pipeline: Pipeline | 'closed-pr') =>
+  `./cicd/commands/${pipeline}`;
 
 export const getPrCommands = ({ branch }: { branch: string }) => [
   'set -e',
@@ -20,7 +20,7 @@ export const getPrCommands = ({ branch }: { branch: string }) => [
   'git rev-parse HEAD',
   'git status',
   'yarn',
-  executeCommandFile('pr'),
+  `sh -e ${getCommandFileDir('pr')}`,
 ];
 
 export const getClosedPrCommands = ({ branch }: { branch: string }) => [
@@ -32,7 +32,7 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
   'git pull origin main',
   'git rev-parse HEAD',
   `export CARLIN_BRANCH=${branch}`,
-  executeCommandFile('closed-pr'),
+  `sh ${getCommandFileDir('closed-pr')} || true`,
 ];
 
 export const getMainCommands = () => [
@@ -47,7 +47,7 @@ export const getMainCommands = () => [
    */
   'if git describe --exact-match; then echo "Tag found" && carlin cicd-ecs-task-report --status=MainTagFound && exit 0; fi',
   'yarn',
-  executeCommandFile('main'),
+  `sh -e ${getCommandFileDir('main')}`,
 ];
 
 export const getTagCommands = ({ tag }: { tag: string }) => [
@@ -58,5 +58,5 @@ export const getTagCommands = ({ tag }: { tag: string }) => [
   `git checkout tags/${tag} -b ${tag}-branch`,
   'git rev-parse HEAD',
   'yarn',
-  executeCommandFile('tag'),
+  `sh -e ${getCommandFileDir('tag')}`,
 ];
