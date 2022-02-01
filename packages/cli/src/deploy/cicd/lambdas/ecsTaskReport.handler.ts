@@ -1,7 +1,34 @@
 import { IncomingWebhook } from '@slack/webhook';
 import { Handler } from 'aws-lambda';
+import { ECS } from 'aws-sdk';
 
 import { putApprovalResultManualTask } from './putApprovalResultManualTask';
+
+const ecs = new ECS({ apiVersion: '2014-11-13' });
+
+const getEcsTaskId = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
+  /**
+   * Arn has the following format:
+   * arn:aws:ecs:us-east-1:483684946879:task/CarlinCicdCarlinMonorepo-RepositoryTasksECSCluster-1J6saGT91hCr/6fcc78682de442ae89a0b7339ac7d981
+   *
+   * We want the "6fcc78682de442ae89a0b7339ac7d981" part.
+   */
+  const ecsTaskId = ecsTaskArn.split('/')[2];
+
+  return ecsTaskId;
+};
+
+const getEcsTaskCluster = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
+  /**
+   * Arn has the following format:
+   * arn:aws:ecs:us-east-1:483684946879:task/CarlinCicdCarlinMonorepo-RepositoryTasksECSCluster-1J6saGT91hCr/6fcc78682de442ae89a0b7339ac7d981
+   *
+   * We want the "CarlinCicdCarlinMonorepo-RepositoryTasksECSCluster-1J6saGT91hCr" part.
+   */
+  const ecsTaskCluster = ecsTaskArn.split('/')[1];
+
+  return ecsTaskCluster;
+};
 
 export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   if (
@@ -11,13 +38,7 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
     return undefined;
   }
 
-  /**
-   * Arn has the following format:
-   * arn:aws:ecs:us-east-1:483684946879:task/CarlinCicdCarlinMonorepo-RepositoryTasksECSCluster-1J6saGT91hCr/6fcc78682de442ae89a0b7339ac7d981
-   *
-   * We want the "6fcc78682de442ae89a0b7339ac7d981" part.
-   */
-  const ecsTaskId = ecsTaskArn.split('/')[2];
+  const ecsTaskId = getEcsTaskId({ ecsTaskArn });
 
   const ecsTaskLogsUrl = new URL(
     [
@@ -38,6 +59,28 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
   );
 
   return ecsTaskLogsUrl.href;
+};
+
+export const getEcsTaskTags = async ({
+  ecsTaskArn,
+}: {
+  ecsTaskArn: string;
+}) => {
+  const cluster = getEcsTaskCluster({ ecsTaskArn });
+
+  const taskId = getEcsTaskId({ ecsTaskArn });
+
+  const { tasks } = await ecs
+    .describeTasks({ cluster, include: ['TAGS'], tasks: [taskId] })
+    .promise();
+
+  const task = tasks?.[0];
+
+  if (!task) {
+    return undefined;
+  }
+
+  return task.tags;
 };
 
 /**
@@ -74,6 +117,8 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
       });
     }
   };
+
+  const ecsTaskTags = ecsTaskArn && (await getEcsTaskTags({ ecsTaskArn }));
 
   const handleStackNotification = async () => {
     /**
@@ -112,6 +157,7 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
               {
                 status,
                 pipelineName,
+                ecsTaskTags,
               },
               null,
               2,
