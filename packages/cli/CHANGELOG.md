@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.20.0](https://github.com/ttoss/carlin/compare/v0.19.17...v0.20.0) (2022-02-01)
+
+### Bug Fixes
+
+- update cloudfront protocol ([13678cd](https://github.com/ttoss/carlin/commit/13678cd3551924aa47d72ec322ea3d8c0e0502bc))
+
+### Features
+
+- add tags to ecs report ([d0bf69d](https://github.com/ttoss/carlin/commit/d0bf69d82a737053a539356d8ba7afba966dacc3))
+
 ## [0.19.17](https://github.com/ttoss/carlin/compare/v0.19.16...v0.19.17) (2022-01-24)
 
 ### Bug Fixes
