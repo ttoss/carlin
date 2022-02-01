@@ -402,9 +402,8 @@ export const getCicdTemplate = ({
       },
     };
 
-    resources[
-      REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID
-    ] = getRepositoryImageBuilder();
+    resources[REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID] =
+      getRepositoryImageBuilder();
   })();
 
   const createApiResources = () => {
@@ -473,7 +472,7 @@ export const getCicdTemplate = ({
                 },
                 {
                   Effect: 'Allow',
-                  Action: ['ecs:RunTask'],
+                  Action: ['ecs:RunTask', 'ecs:DescribeTasks'],
                   Resource: [
                     {
                       Ref: REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
@@ -499,7 +498,8 @@ export const getCicdTemplate = ({
                       `arn:aws:s3:::\${BucketName}/${triggerPipelinesObjectKeyPrefix}*`,
                       {
                         BucketName: {
-                          'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+                          'Fn::ImportValue':
+                            BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
                         },
                       },
                     ],
@@ -590,7 +590,8 @@ export const getCicdTemplate = ({
             BASE_STACK_BUCKET_NAME: {
               'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
             },
-            TRIGGER_PIPELINES_OBJECT_KEY_PREFIX: triggerPipelinesObjectKeyPrefix,
+            TRIGGER_PIPELINES_OBJECT_KEY_PREFIX:
+              triggerPipelinesObjectKeyPrefix,
             PIPELINES_JSON: JSON.stringify(pipelines),
             ...executeEcsTaskVariables,
           },
@@ -620,29 +621,28 @@ export const getCicdTemplate = ({
     /**
      * Used to start the container.
      */
-    resources[
-      REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID
-    ] = {
-      Type: 'AWS::IAM::Role',
-      Properties: {
-        AssumeRolePolicyDocument: {
-          Version: '2012-10-17',
-          Statement: [
-            {
-              Effect: 'Allow',
-              Principal: {
-                Service: 'ecs-tasks.amazonaws.com',
+    resources[REPOSITORY_TASKS_ECS_TASK_DEFINITION_EXECUTION_ROLE_LOGICAL_ID] =
+      {
+        Type: 'AWS::IAM::Role',
+        Properties: {
+          AssumeRolePolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: {
+                  Service: 'ecs-tasks.amazonaws.com',
+                },
+                Action: 'sts:AssumeRole',
               },
-              Action: 'sts:AssumeRole',
-            },
+            ],
+          },
+          ManagedPolicyArns: [
+            'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
           ],
+          Path: getIamPath(),
         },
-        ManagedPolicyArns: [
-          'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
-        ],
-        Path: getIamPath(),
-      },
-    };
+      };
 
     /**
      * Used inside de container execution.
@@ -853,7 +853,8 @@ export const getCicdTemplate = ({
                       `arn:aws:s3:::\${BucketName}/${triggerPipelinesObjectKeyPrefix}*`,
                       {
                         BucketName: {
-                          'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+                          'Fn::ImportValue':
+                            BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
                         },
                       },
                     ],
@@ -867,7 +868,8 @@ export const getCicdTemplate = ({
                       `arn:aws:s3:::\${BucketName}`,
                       {
                         BucketName: {
-                          'Fn::ImportValue': BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
+                          'Fn::ImportValue':
+                            BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
                         },
                       },
                     ],
