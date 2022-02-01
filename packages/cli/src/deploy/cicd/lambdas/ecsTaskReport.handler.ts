@@ -66,21 +66,23 @@ export const getEcsTaskTags = async ({
 }: {
   ecsTaskArn: string;
 }) => {
-  const cluster = getEcsTaskCluster({ ecsTaskArn });
+  try {
+    const cluster = getEcsTaskCluster({ ecsTaskArn });
 
-  const taskId = getEcsTaskId({ ecsTaskArn });
+    const { tasks } = await ecs
+      .describeTasks({ cluster, include: ['TAGS'], tasks: [ecsTaskArn] })
+      .promise();
 
-  const { tasks } = await ecs
-    .describeTasks({ cluster, include: ['TAGS'], tasks: [taskId] })
-    .promise();
+    const task = tasks?.[0];
 
-  const task = tasks?.[0];
+    if (!task) {
+      return undefined;
+    }
 
-  if (!task) {
+    return task.tags;
+  } catch {
     return undefined;
   }
-
-  return task.tags;
 };
 
 /**
