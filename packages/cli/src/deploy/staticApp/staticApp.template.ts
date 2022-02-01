@@ -892,6 +892,14 @@ const getCloudFrontTemplate = ({
   };
 
   if (acm) {
+    const acmRegex = /^arn:aws:acm:[-a-z0-9]+:\d{12}:certificate\/[-a-z0-9]+$/;
+
+    const acmCertificateArn = acmRegex.test(acm)
+      ? acm
+      : {
+          'Fn::ImportValue': acm,
+        };
+
     /**
      * Add ACM to CloudFront template.
      */
@@ -900,13 +908,11 @@ const getCloudFrontTemplate = ({
         .DistributionConfig,
       Aliases: aliases || { Ref: 'AWS::NoValue' },
       ViewerCertificate: {
-        AcmCertificateArn: /^arn:aws:acm:[-a-z0-9]+:\d{12}:certificate\/[-a-z0-9]+$/.test(
-          acm,
-        )
-          ? acm
-          : {
-              'Fn::ImportValue': acm,
-            },
+        AcmCertificateArn: acmCertificateArn,
+        /**
+         * AWS CloudFront recommendation.
+         */
+        MinimumProtocolVersion: 'TLSv1.2_2021',
         SslSupportMethod: 'sni-only',
       },
     };
