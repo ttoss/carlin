@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.20.1](https://github.com/ttoss/carlin/compare/v0.20.0...v0.20.1) (2022-02-01)
+
+### Bug Fixes
+
+- update actions iam ([4ff073f](https://github.com/ttoss/carlin/commit/4ff073f6067ca20994c9af892d0c4aa62c2c2b90))
+- update actions iam ([b5dd158](https://github.com/ttoss/carlin/commit/b5dd158ec992720e33b1c98baff495962a9e3481))
+
 # [0.20.0](https://github.com/ttoss/carlin/compare/v0.19.17...v0.20.0) (2022-02-01)
 
 ### Bug Fixes
