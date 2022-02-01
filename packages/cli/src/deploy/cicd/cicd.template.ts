@@ -472,7 +472,12 @@ export const getCicdTemplate = ({
                 },
                 {
                   Effect: 'Allow',
-                  Action: ['ecs:RunTask', 'ecs:DescribeTasks'],
+                  Action: ['ecs:DescribeTasks'],
+                  Resource: '*',
+                },
+                {
+                  Effect: 'Allow',
+                  Action: ['ecs:RunTask'],
                   Resource: [
                     {
                       Ref: REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID,
