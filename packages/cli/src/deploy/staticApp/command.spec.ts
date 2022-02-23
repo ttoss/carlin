@@ -74,8 +74,6 @@ describe('handling methods', () => {
       acm: faker.random.word(),
       aliases: [faker.random.word()],
       cloudfront: true,
-      csp: {},
-      gtmId: faker.random.word(),
       spa: true,
     };
 
@@ -92,8 +90,6 @@ describe('handling methods', () => {
       acm: faker.random.word(),
       aliases: [faker.random.word()],
       cloudfront: true,
-      csp: {},
-      gtmId: faker.random.word(),
       spa: true,
     };
 
@@ -138,12 +134,6 @@ describe('should set cloudfront', () => {
       },
       {
         spa: true,
-      },
-      {
-        csp: {},
-      },
-      {
-        gtmId: faker.random.word(),
       },
       {
         acm: 'some string',

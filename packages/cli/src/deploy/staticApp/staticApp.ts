@@ -15,7 +15,7 @@ import {
 } from '../s3';
 import { handleDeployError, handleDeployInitialization } from '../utils';
 
-import { getStaticAppTemplate, CSP } from './staticApp.template';
+import { getStaticAppTemplate } from './staticApp.template';
 
 const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
@@ -201,7 +201,7 @@ export const invalidateCloudFront = async ({
         logPrefix,
         `CloudFront Distribution ID ${distributionId} invalidated with success.`,
       );
-    } catch (err) {
+    } catch (err: any) {
       log.error(
         logPrefix,
         `Error while trying to invalidate CloudFront distribution ${distributionId}.`,
@@ -229,8 +229,6 @@ export const deployStaticApp = async ({
   aliases,
   buildFolder,
   cloudfront,
-  gtmId,
-  csp,
   spa,
   hostedZoneName,
   region,
@@ -241,8 +239,6 @@ export const deployStaticApp = async ({
   aliases?: string[];
   buildFolder?: string;
   cloudfront?: boolean;
-  gtmId?: string;
-  csp?: CSP;
   spa?: boolean;
   hostedZoneName?: string;
   region: string;
@@ -258,8 +254,6 @@ export const deployStaticApp = async ({
       acm,
       aliases,
       cloudfront,
-      gtmId,
-      csp,
       spa,
       hostedZoneName,
       region,
@@ -301,7 +295,7 @@ export const deployStaticApp = async ({
 
       await uploadBuiltAppToS3({ buildFolder, bucket: newBucket, cloudfront });
     }
-  } catch (error) {
+  } catch (error: any) {
     handleDeployError({ error, logPrefix });
   }
 };

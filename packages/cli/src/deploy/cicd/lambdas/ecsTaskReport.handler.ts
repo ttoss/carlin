@@ -75,15 +75,23 @@ export const getEcsTaskTags = async ({
 
     const task = tasks?.[0];
 
+    console.log({ tasks, cluster, ecsTaskArn });
+
     if (!task) {
       return undefined;
     }
 
     return task.tags;
-  } catch {
+  } catch (error) {
+    console.error(error);
     return undefined;
   }
 };
+
+getEcsTaskTags({
+  ecsTaskArn:
+    'arn:aws:ecs:us-east-1:483684946879:task/CarlinCicdCarlinMonorepo-RepositoryTasksECSCluster-1J6saGT91hCr/f70d559c47804d6383df170712d3e455',
+}).then();
 
 /**
  * - MainTagFound: means that the main has a tag, so the main pipeline should
