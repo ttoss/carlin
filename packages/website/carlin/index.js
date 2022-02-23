@@ -1,8 +1,6 @@
+/* eslint-disable global-require */
 const fs = require('fs');
 const yaml = require('js-yaml');
-
-/* eslint-disable global-require */
-const config = require('carlin/dist/config');
 
 const cli = require('carlin/dist/cli').default;
 
@@ -13,10 +11,7 @@ const {
 const { defaultTemplatePaths } = require('carlin/dist/deploy/cloudFormation');
 
 const {
-  generateCspString,
-  getDefaultCsp,
   getStaticAppTemplate,
-  updateCspObject,
 } = require('carlin/dist/deploy/staticApp/staticApp.template');
 
 const {
@@ -47,36 +42,6 @@ const cliApi = async (cmd) =>
       resolve(output);
     });
   });
-
-const getStaticAppCsp = () => {
-  const cspWithReplace = {
-    'default-src': ['https', 'replace'],
-    'script-src': ["'self'", 'replace'],
-    'connect-src': ['https://my.api.com/', 'replace'],
-  };
-
-  const cspWithoutReplace = {
-    'default-src': 'https',
-    'script-src': "'self'",
-    'connect-src': 'https://my.api.com/',
-  };
-
-  return {
-    staticAppCspStringDefault: generateCspString().replace(/; /g, ';\n'),
-    staticAppCspStringWithoutReplace: generateCspString({
-      csp: updateCspObject({
-        csp: cspWithoutReplace,
-        currentCsp: getDefaultCsp(),
-      }),
-    }).replace(/; /g, ';\n'),
-    staticAppCspStringWithReplace: generateCspString({
-      csp: updateCspObject({
-        csp: cspWithReplace,
-        currentCsp: getDefaultCsp(),
-      }),
-    }).replace(/; /g, ';\n'),
-  };
-};
 
 module.exports = () => {
   return {
@@ -116,10 +81,6 @@ module.exports = () => {
             'removeOldVersions',
           ],
           destroyComment: ['deploy/cloudFormation.js', 'destroy'],
-          publishLambdaVersionZipFileComment: [
-            'deploy/staticApp/staticApp.template.js',
-            'PUBLISH_LAMBDA_VERSION_ZIP_FILE',
-          ],
           readObjectFileComment: ['utils/readObjectFile.js', 'readObjectFile'],
           assignSecurityHeadersComment: [
             'deploy/staticApp/staticApp.template.js',
@@ -160,20 +121,6 @@ module.exports = () => {
             'CAUTION!!!',
           )[1],
         ),
-        staticAppLambdaEdgeOriginRequestDescriptionComment: toHtml(
-          getComment([
-            'deploy/staticApp/staticApp.template.js',
-            'getLambdaEdgeOriginRequestZipFile',
-          ]).split('## Algorithm')[0],
-        ),
-        staticAppLambdaEdgeOriginRequestAlgorithmComment: toHtml(
-          getComment([
-            'deploy/staticApp/staticApp.template.js',
-            'getLambdaEdgeOriginRequestZipFile',
-          ]).split('## Algorithm')[1],
-        ),
-
-        ...getStaticAppCsp(),
 
         deployExamples: require('carlin/dist/deploy/command').examples,
 
@@ -193,18 +140,13 @@ module.exports = () => {
         deployOptions: require('carlin/dist/deploy/command').options,
         deployStaticAppOptions: require('carlin/dist/deploy/staticApp/command')
           .options,
-        deployLambdaLayerOptions: require('carlin/dist/deploy/lambdaLayer/command')
-          .options,
+        deployLambdaLayerOptions:
+          require('carlin/dist/deploy/lambdaLayer/command').options,
 
         baseStackTemplate,
         staticAppOnlyS3Template: getStaticAppTemplate({}),
         staticAppCloudFrontTemplate: getStaticAppTemplate({
           cloudfront: true,
-        }),
-        staticAppGtmIdTemplate: getStaticAppTemplate({
-          region: config.AWS_DEFAULT_REGION,
-          cloudfront: true,
-          gtmId: 'GTM-XXXX',
         }),
         carlinCicdConfig: fs
           .readFileSync('../../cicd/carlin.ts', 'utf-8')
@@ -217,11 +159,12 @@ module.exports = () => {
               cicdTemplate.Resources[ECR_REPOSITORY_LOGICAL_ID],
           };
         })(),
-        carlinCicdRepositoryImageBuilderBuildSpec: getRepositoryImageBuilder()
-          .Properties.Source.BuildSpec,
-        carlinCicdRepositoryImageBuilderDockerfile: getRepositoryImageBuilder().Properties.Environment.EnvironmentVariables.find(
-          ({ Name }) => Name === 'DOCKERFILE',
-        ).Value['Fn::Sub'],
+        carlinCicdRepositoryImageBuilderBuildSpec:
+          getRepositoryImageBuilder().Properties.Source.BuildSpec,
+        carlinCicdRepositoryImageBuilderDockerfile:
+          getRepositoryImageBuilder().Properties.Environment.EnvironmentVariables.find(
+            ({ Name }) => Name === 'DOCKERFILE',
+          ).Value['Fn::Sub'],
         carlinCicdRepositoryEcsTaskDefinition: getCicdTemplate({ s3 })
           .Resources[REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID].Properties,
         testsCoverageThreshold: yaml.dump(testsCoverageThreshold),

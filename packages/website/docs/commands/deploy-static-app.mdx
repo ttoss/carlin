@@ -9,18 +9,10 @@ import InnerHTML from '../../src/components/InnerHTML';
 import OptionAliasesInline from '../../src/components/OptionAliasesInline';
 import Template from '../../src/components/Template';
 
-import { assignSecurityHeadersComment } from '../../.docusaurus/carlin/default/assignSecurityHeadersComment';
 import { deployStaticAppComment } from '../../.docusaurus/carlin/default/deployStaticAppComment';
 import { deployStaticAppOptions } from '../../.docusaurus/carlin/default/deployStaticAppOptions';
-import { publishLambdaVersionZipFileComment } from '../../.docusaurus/carlin/default/publishLambdaVersionZipFileComment';
 import { removeOldVersionsComment } from '../../.docusaurus/carlin/default/removeOldVersionsComment';
-import { staticAppCspStringWithoutReplace } from '../../.docusaurus/carlin/default/staticAppCspStringWithoutReplace';
-import { staticAppCspStringWithReplace } from '../../.docusaurus/carlin/default/staticAppCspStringWithReplace';
-import { staticAppCspStringDefault } from '../../.docusaurus/carlin/default/staticAppCspStringDefault';
 import { staticAppCloudFrontTemplate } from '../../.docusaurus/carlin/default/staticAppCloudFrontTemplate';
-import { staticAppGtmIdTemplate } from '../../.docusaurus/carlin/default/staticAppGtmIdTemplate';
-import { staticAppLambdaEdgeOriginRequestAlgorithmComment } from '../../.docusaurus/carlin/default/staticAppLambdaEdgeOriginRequestAlgorithmComment';
-import { staticAppLambdaEdgeOriginRequestDescriptionComment } from '../../.docusaurus/carlin/default/staticAppLambdaEdgeOriginRequestDescriptionComment';
 import { staticAppOnlyS3Template } from '../../.docusaurus/carlin/default/staticAppOnlyS3Template';
 
 export const OriginPath = () => {
@@ -56,10 +48,6 @@ to the required version.
 
 <InnerHTML html={removeOldVersionsComment} />
 
-## Security
-
-<InnerHTML html={assignSecurityHeadersComment} />
-
 ## Configurations
 
 The differences among all deployments occurs at the template level. Each option adds a piece of instructions on the final CloudFormation template, that we'll present to you.
@@ -87,12 +75,6 @@ This kind of deployment is good to use to deploy an application to the QA team v
 ```
 carlin deploy static-app --cloudfront
 ```
-
-:::info
-
-<InnerHTML html={publishLambdaVersionZipFileComment} />
-
-:::
 
 #### CloudFormation Template
 
@@ -132,70 +114,3 @@ aliases:
   - www1.mydomain.com
   - www2.mydomain.com
 ```
-
-### Google Tag Manager
-
-```
-carlin deploy static-app --gtm-id GTM-XXXX
-```
-
-<InnerHTML html={staticAppLambdaEdgeOriginRequestDescriptionComment} />
-
-#### Lamdba@Edge Origin Request Code and Algorithm
-
-:::note Algorithm
-
-<Algorithm algorithm={staticAppLambdaEdgeOriginRequestAlgorithmComment} />
-
-:::
-
-<CodeBlock className="javascript">
-  {
-    staticAppGtmIdTemplate.Resources.LambdaEdgeOriginRequest.Properties.Code
-      .ZipFile
-  }
-</CodeBlock>
-
-### Content Security Policy
-
-By default, the algorithm adds these [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) headers to the deployment:
-
-<CodeBlock className="txt">{staticAppCspStringDefault}</CodeBlock>
-
-#### Disabling CSP
-
-If you want to remove the default CSP headers, you can use the <OptionAliasesInline options={deployStaticAppOptions} option="csp" to="/docs/api-reference/deploy-static-app#csp" /> flag as `false`.
-
-```
-carlin deploy static-app --csp false
-```
-
-#### Appending CSP
-
-If you want to append directives to the default CSP, you can pass a object to the <OptionAliasesInline options={deployStaticAppOptions} option="csp" to="/docs/api-reference/deploy-static-app#csp" /> flag with the values you want to append.
-
-```yaml title="carlin.yml"
-csp:
-  'default-src': 'https'
-  'script-src': "'self'"
-  'connect-src': 'https://my.api.com/'
-```
-
-Whose result is:
-
-<CodeBlock className="txt">{staticAppCspStringWithoutReplace}</CodeBlock>
-
-#### Replacing CSP
-
-If you want to replace directives to the default CSP, you can pass a object to the <OptionAliasesInline options={deployStaticAppOptions} option="csp" to="/docs/api-reference/deploy-static-app#csp" /> flag with the values you want to replace in an array `["value", "replace"]`.
-
-```yaml title="carlin.yml"
-csp:
-  'default-src': ['https', 'replace'],
-  'script-src': ["'self'", 'replace'],
-  'connect-src': ['https://my.api.com/', 'replace'],
-```
-
-Whose result is:
-
-<CodeBlock className="txt">{staticAppCspStringWithReplace}</CodeBlock>
