@@ -34,21 +34,6 @@ export const options = {
     require: false,
     type: 'boolean',
   },
-  csp: {
-    coerce: (value: any) => {
-      if (value === 'false') {
-        return false;
-      }
-
-      return value;
-    },
-    describe: 'CSP headers to be added to Lambda@Edge origin response.',
-  },
-  'gtm-id': {
-    describe: 'Id of the GTM container.',
-    require: false,
-    type: 'string',
-  },
   'hosted-zone-name': {
     required: false,
     describe: `Is the name of a Route 53 hosted zone. If this value is provided, ${NAME} creates the subdomains defined on \`--aliases\` option. E.g. if you have a hosted zone named "sub.domain.com", the value provided may be "sub.domain.com".`,
