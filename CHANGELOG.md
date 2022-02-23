@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.20.3](https://github.com/ttoss/carlin/compare/v0.20.2...v0.20.3) (2022-02-23)
+
+### Bug Fixes
+
+- remove Date.now mock ([9661fae](https://github.com/ttoss/carlin/commit/9661fae404dbcd00f5827228d98138bc4d6747c3))
+- remove Lambda@Edge" ([#38](https://github.com/ttoss/carlin/issues/38)) ([12a0e8c](https://github.com/ttoss/carlin/commit/12a0e8c6690feb73bea3ae561d0837d95242e58d))
+- tests fs mocks ([a00350a](https://github.com/ttoss/carlin/commit/a00350a68886236f9f438968b871ec6f784c189a))
+
 ## [0.20.2](https://github.com/ttoss/carlin/compare/v0.20.1...v0.20.2) (2022-02-01)
 
 ### Bug Fixes
