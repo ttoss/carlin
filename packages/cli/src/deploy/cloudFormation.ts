@@ -204,10 +204,7 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
   const buckets: string[] = [];
 
   await (async function getBuckets({ nextToken }: { nextToken?: string }) {
-    const {
-      NextToken,
-      StackResourceSummaries,
-    } = await cloudFormationV2()
+    const { NextToken, StackResourceSummaries } = await cloudFormationV2()
       .listStackResources({ StackName: stackName, NextToken: nextToken })
       .promise();
 

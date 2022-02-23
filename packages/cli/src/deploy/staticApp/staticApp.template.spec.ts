@@ -5,10 +5,6 @@ import * as faker from 'faker';
 
 const region = faker.random.word();
 
-/**
- * Mock to snapshots don't fail.
- */
-Date.now = jest.fn(() => 1487076708000);
 const PACKAGE_VERSION = '10.40.23';
 
 jest.mock('../../utils', () => ({
