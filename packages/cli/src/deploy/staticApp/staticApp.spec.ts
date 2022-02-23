@@ -2,13 +2,7 @@
 
 import { DescribeStackResourceCommand } from '@aws-sdk/client-cloudformation';
 import * as faker from 'faker';
-import * as fs from 'fs';
-
-// const readFileSyncMock = jest.fn();
-
-// jest.mock('fs', () => ({
-//   readFileSync: readFileSyncMock,
-// }));
+import fs from 'fs';
 
 import { AWS_DEFAULT_REGION } from '../../config';
 
@@ -54,7 +48,7 @@ jest.mock('@aws-sdk/client-cloudformation', () => ({
   })),
 }));
 
-jest.mock('fs');
+// jest.mock('fs');
 
 jest.mock('../cloudFormation.core', () => ({
   ...(jest.requireActual('../cloudFormation.core') as any),

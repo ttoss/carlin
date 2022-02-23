@@ -8,6 +8,7 @@ const existsSyncMock = jest.fn((input) => {
 });
 
 jest.mock('fs', () => ({
+  ...(jest.requireActual('fs') as any),
   existsSync: existsSyncMock,
 }));
 

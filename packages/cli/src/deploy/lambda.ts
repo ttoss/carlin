@@ -95,7 +95,7 @@ export const deployLambdaLayers = async ({
     )}] was found. Creating other layers...`,
   );
 
-  const { dependencies } = (() => {
+  const { dependencies = {} } = (() => {
     try {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       return require(path.resolve(process.cwd(), 'package.json')) || {};
