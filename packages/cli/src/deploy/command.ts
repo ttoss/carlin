@@ -216,7 +216,6 @@ export const deployCommand: CommandModule<
     if (destroy) {
       destroyCloudFormation();
     } else {
-      console.log(rest);
       deployCloudFormation(rest as any);
     }
   },
