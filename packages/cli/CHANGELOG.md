@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.20.5](https://github.com/ttoss/carlin/compare/v0.20.4...v0.20.5) (2022-02-24)
+
+### Bug Fixes
+
+- case error ([#43](https://github.com/ttoss/carlin/issues/43)) ([95be09c](https://github.com/ttoss/carlin/commit/95be09cfe3e0f15b6b22dc37267cb43b1f58e9a0))
+
 ## [0.20.4](https://github.com/ttoss/carlin/compare/v0.20.3...v0.20.4) (2022-02-24)
 
 **Note:** Version bump only for package carlin
