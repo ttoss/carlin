@@ -19,6 +19,14 @@ export const getProjectName = () => {
 
   const name = getPackageName();
 
+  /**
+   * This case happens when user executes `carlin` outside of project.
+   * Even commands like `carlin --help` raise an error.
+   */
+  if (!name) {
+    return '';
+  }
+
   try {
     return pascalCase(name.split(/[@/]/)[1]);
   } catch (err) {
