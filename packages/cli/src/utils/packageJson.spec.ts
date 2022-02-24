@@ -1,8 +1,6 @@
 import faker from 'faker';
 import { readFileSync } from 'fs';
 
-import { getPackageName } from './packageJson';
-
 const name = `@${faker.random.word()}/${faker.random.word()}`;
 
 jest.mock('find-up', () => ({
@@ -12,6 +10,9 @@ jest.mock('find-up', () => ({
 jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
+
+// eslint-disable-next-line import/first
+import { getPackageName } from './packageJson';
 
 beforeAll(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

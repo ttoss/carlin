@@ -1,4 +1,4 @@
-import * as findUp from 'find-up';
+import findUp from 'find-up';
 import fs from 'fs';
 
 const readPackageJson = () => {
