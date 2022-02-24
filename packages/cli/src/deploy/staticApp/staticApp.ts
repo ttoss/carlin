@@ -139,7 +139,7 @@ const removeOldVersions = async ({ bucket }: { bucket: string }) => {
     const versions = CommonPrefixes?.map(({ Prefix }) =>
       Prefix?.replace('/', ''),
     )
-      .filter((version) => !!version)
+      .filter((version) => semver.valid(version))
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       .sort((a, b) => (semver.gt(a!, b!) ? -1 : 1));
 
@@ -233,7 +233,6 @@ export const deployStaticApp = async ({
   hostedZoneName,
   region,
   skipUpload,
-  invalidate = false,
 }: {
   acm?: string;
   aliases?: string[];
@@ -243,7 +242,6 @@ export const deployStaticApp = async ({
   hostedZoneName?: string;
   region: string;
   skipUpload?: boolean;
-  invalidate?: boolean;
 }) => {
   try {
     const { stackName } = await handleDeployInitialization({ logPrefix });
@@ -272,9 +270,7 @@ export const deployStaticApp = async ({
 
       const { Outputs } = await deploy({ params, template });
 
-      if (invalidate) {
-        await invalidateCloudFront({ outputs: Outputs });
-      }
+      await invalidateCloudFront({ outputs: Outputs });
 
       if (!skipUpload) {
         await removeOldVersions({ bucket });

@@ -3,3 +3,4 @@
 yarn lerna run "build" --stream
 yarn lerna run "test" --stream
 yarn lerna version --yes
+yarn lerna run "deploy" --stream
