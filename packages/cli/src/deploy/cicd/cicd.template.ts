@@ -5,6 +5,7 @@ import {
   CloudFormationTemplate,
   getIamPath,
   getProjectName,
+  getEnvironment,
 } from '../../utils';
 
 import {
@@ -14,6 +15,8 @@ import {
   BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
   BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
 } from '../baseStack/config';
+
+import { getCicdConfig, CicdCommandOptions } from './command.options';
 
 import type { Pipeline } from './pipelines';
 import {
@@ -75,6 +78,9 @@ export const PIPELINES_TAG_LOGICAL_ID = 'PipelinesTagCodePipeline';
 
 export const PIPELINES_HANDLER_LAMBDA_FUNCTION_LOGICAL_ID =
   'PipelinesHandlerLambdaFunction';
+
+export const IMAGE_UPDATER_SCHEDULE_SERVERLESS_FUNCTION_LOGICAL_ID =
+  'ImageUpdaterScheduleServerlessFunction';
 
 /**
  * An [AWS CodeBuild](https://aws.amazon.com/codebuild/) project is created
@@ -340,6 +346,19 @@ export const getCicdTemplate = ({
 
   resources[ECR_REPOSITORY_LOGICAL_ID] = getEcrRepositoryResource();
 
+  const commonFunctionProperties = {
+    CodeUri: {
+      Bucket: s3.bucket,
+      Key: s3.key,
+      Version: s3.versionId,
+    },
+    Role: {
+      'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
+    },
+    Runtime: 'nodejs14.x',
+    Timeout: 60,
+  };
+
   /**
    * CodeBuild
    */
@@ -404,6 +423,37 @@ export const getCicdTemplate = ({
 
     resources[REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID] =
       getRepositoryImageBuilder();
+
+    const cicdConfig: CicdCommandOptions & { environment: any } = {
+      ...getCicdConfig(),
+      'ssh-key': '/root/.ssh/id_rsa',
+      environment: getEnvironment(),
+    };
+
+    resources[IMAGE_UPDATER_SCHEDULE_SERVERLESS_FUNCTION_LOGICAL_ID] = {
+      Type: 'AWS::Serverless::Function',
+      Properties: {
+        ...commonFunctionProperties,
+        Events: {
+          Schedule: {
+            Type: 'Schedule',
+            Properties: {
+              Schedule: 'rate(7 days)',
+            },
+          },
+        },
+        Environment: {
+          Variables: {
+            [PROCESS_ENV_REPOSITORY_IMAGE_CODE_BUILD_PROJECT_NAME]: {
+              Ref: REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
+            },
+            CICD_CONFIG: JSON.stringify(cicdConfig),
+            ...executeEcsTaskVariables,
+          },
+        },
+        Handler: 'index.imageUpdaterScheduleHandler',
+      },
+    };
   })();
 
   const createApiResources = () => {
@@ -515,19 +565,6 @@ export const getCicdTemplate = ({
           },
         ],
       },
-    };
-
-    const commonFunctionProperties = {
-      CodeUri: {
-        Bucket: s3.bucket,
-        Key: s3.key,
-        Version: s3.versionId,
-      },
-      Role: {
-        'Fn::GetAtt': [FUNCTION_IAM_ROLE_LOGICAL_ID, 'Arn'],
-      },
-      Runtime: 'nodejs14.x',
-      Timeout: 60,
     };
 
     /**

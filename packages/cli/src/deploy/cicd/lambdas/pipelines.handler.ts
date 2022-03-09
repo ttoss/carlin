@@ -11,9 +11,10 @@ import { putApprovalResultManualTask } from './putApprovalResultManualTask';
 const codepipeline = new CodePipeline();
 
 const getUserParameters = (event: CodePipelineEvent) => {
-  const [pipeline, stage] = event[
-    'CodePipeline.job'
-  ].data.actionConfiguration.configuration.UserParameters.split('&');
+  const [pipeline, stage] =
+    event[
+      'CodePipeline.job'
+    ].data.actionConfiguration.configuration.UserParameters.split('&');
 
   return { pipeline: pipeline as Pipeline, stage };
 };
@@ -27,9 +28,8 @@ export const getJobDetails = async (event: CodePipelineEvent) => {
     credentials: event['CodePipeline.job'].data.artifactCredentials,
   });
 
-  const { bucketName, objectKey } = event[
-    'CodePipeline.job'
-  ].data.inputArtifacts[0].location.s3Location;
+  const { bucketName, objectKey } =
+    event['CodePipeline.job'].data.inputArtifacts[0].location.s3Location;
 
   const { Body } = await s3
     .getObject({ Bucket: bucketName, Key: objectKey })

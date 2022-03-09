@@ -128,7 +128,7 @@ const getBaseTemplate = ({
 
 const getCloudFrontTemplate = ({
   acm,
-  aliases,
+  aliases = [],
   cloudfront,
   spa,
   hostedZoneName,
