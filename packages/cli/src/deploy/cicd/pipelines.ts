@@ -32,7 +32,9 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
   'git pull origin main',
   'git rev-parse HEAD',
   `export CARLIN_BRANCH=${branch}`,
-  `sh ${getCommandFileDir('closed-pr')} || true`,
+  `[ -f "${getCommandFileDir('closed-pr')}" ] || sh ${getCommandFileDir(
+    'closed-pr',
+  )}`,
 ];
 
 export const getMainCommands = () => [

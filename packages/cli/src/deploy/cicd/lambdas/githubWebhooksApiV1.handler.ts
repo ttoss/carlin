@@ -118,8 +118,8 @@ webhooks.on(['pull_request.closed'], async ({ payload }) => {
    * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
    */
   await executeTasks({
-    cpu: '256',
-    memory: '512',
+    cpu: '512',
+    memory: '2048',
     commands: [
       shConditionalCommands({
         conditionalCommands: getClosedPrCommands({

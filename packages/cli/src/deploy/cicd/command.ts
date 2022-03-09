@@ -1,5 +1,4 @@
 /* eslint-disable no-param-reassign */
-import { camelCase } from 'change-case';
 import fs from 'fs';
 import log from 'npmlog';
 import { CommandModule, InferredOptionTypes } from 'yargs';
@@ -7,8 +6,9 @@ import { CommandModule, InferredOptionTypes } from 'yargs';
 import { NAME } from '../../config';
 import { addGroupToOptions } from '../../utils';
 
-import { pipelines } from './pipelines';
 import { deployCicd } from './deployCicd';
+
+import { options } from './command.options';
 
 const logPrefix = 'deploy-cicd';
 
@@ -16,56 +16,6 @@ const logPrefix = 'deploy-cicd';
  * Created to allow mocking.
  */
 export const readSSHKey = (dir: string) => fs.readFileSync(dir, 'utf-8');
-
-export const options = {
-  cpu: {
-    type: 'string',
-  },
-  memory: {
-    type: 'string',
-  },
-  pipelines: {
-    choices: pipelines,
-    coerce: (values: string[]) => values.map((value) => camelCase(value)),
-    default: [],
-    description: 'Pipelines that will be implemented with the CICD stack.',
-    type: 'array',
-  },
-  'update-repository': {
-    alias: ['ur'],
-    description: 'Determine if the repository image will be updated.',
-    default: true,
-    type: 'boolean',
-  },
-  'ssh-key': {
-    demandOption: true,
-    type: 'string',
-  },
-  'ssh-url': {
-    demandOption: true,
-    type: 'string',
-  },
-  'slack-webhook-url': {
-    type: 'string',
-  },
-  /**
-   * This option has the format:
-   *
-   * ```ts
-   * Array<{
-   *  name: string,
-   *  value: string,
-   * }>
-   * ```
-   */
-  'task-environment': {
-    alias: ['te'],
-    default: [],
-    describe:
-      'A list of environment variables that will be passed to the ECS container task.',
-    type: 'array',
-  },
-} as const;
 
 export const deployCicdCommand: CommandModule<
   any,
