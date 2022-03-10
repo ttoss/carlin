@@ -51,20 +51,18 @@ others but GitHub, so this configuration is for GitHub.
 
 ### Pipelines
 
-Currently, the CI/CD stack supports three pipelines: `pr`, `main` and `tag`. Each pipeline is triggered in a stage of the development
-flow explained above.
+The CI/CD stack currently supports three pipelines: `pr`, `main` and `tag`. The system triggers each pipeline in different stages of the development
+flow, as explained below:
 
-- `pr`: This pipeline is triggered when a pull request is opened.
-- `main`: This pipeline is triggered when a new commit is pushed to the branch `main`.
+- `pr`: This pipeline is triggered when a pull request is opened or updated. Together, the `closed-pr` pipeline starts when a pull request is closed **and** if the file `commands/closed-pr` exists.
+- `main`: This pipeline is triggered when a new commit is pushed to the branch `main`, except pushes that contain new tags, generally releases.
 - `tag`: This pipeline is triggered when a new tag is created.
 
-The commands that will be executed should be defined in the files `commands/[pipeline]` and the pipeline must be added to the `pipelines`
-configuration file. For example, if you want to execute the commands `npm run build`, `npm run test` and `carlin deploy`
+The commands that will be executed should be defined in the files `commands/[pipeline]`, and the pipeline must be added to the `pipelines`
+`carlin`'s confiCurrently, the CI/CD stack supports three pipelinesguration file. For example, if you want to execute the commands `npm run build`, `npm run test`, and `carlin deploy`
 in the `pr` pipeline, you should create the file `commands/pr` file with the following content:
 
 ```sh title="commands/pr"
-#!/bin/bash
-
 npm run build
 npm run test
 carlin deploy
@@ -108,17 +106,83 @@ Don't forget to create the commands files for each declared pipeline.
 
 ::::
 
+#### Usage with Lerna
+
+In a project using [Lerna](https://lerna.js.org/) monorepo, two environments (Sandbox and Production), and `carlin` to deploy, you can create this configuration:
+
+##### package.json
+
+The main advantage of creating these scripts on `package.json` is because you can execute then easily in your local machine.
+
+```json title=package.json
+"scripts": {
+  "build": "lerna run build",
+  "test": "lerna run test",
+  "deploy": "lerna run deploy",
+  "destroy": "lerna run deploy -- --destroy",
+  "version": "lerna version --yes"
+}
+```
+
+##### pr
+
+Build, test and deploy on ephemeral/testing environments for the modified packages only when a pull request is opened or updated.
+
+```sh title=cicd/commands/pr
+
+# Apply lint only on the modified files.
+git diff --name-only HEAD..main | grep -E "\\.(j|t)sx?$" | xargs npx eslint --no-error-on-unmatched-pattern
+yarn build
+yarn test
+yarn deploy --since=main
+```
+
+##### closed-pr
+
+Clear the testing environment when a pull request is closed.
+
+```sh title=cicd/commands/closed-pr
+yarn destroy
+```
+
+##### main
+
+Build, test, deploy on `Staging` environment and version the project to triggers `tag` pipeline.
+
+```sh title=cicd/commands/main
+export REACT_APP_ENVIRONMENT=Staging
+
+yarn build
+yarn test
+yarn deploy
+yarn version
+```
+
+##### tag
+
+Build, test, and deploy on `Production` environment.
+
+```sh title=cicd/commands/tag
+export REACT_APP_ENVIRONMENT=Production
+
+yarn build
+yarn test
+yarn deploy
+```
+
 ### Creating The CI/CD Stack
 
 1. Execute
 
-   ```
-   carlin deploy cicd
-   ```
+```
+
+carlin deploy cicd
+
+```
 
 1. The CI/CD stack will be created, whose template is:
 
-   <Template json={cicdTemplate} />
+<Template json={cicdTemplate} />
 
 The next section will explain all resources created by the CI/CD stack.
 
@@ -142,9 +206,9 @@ You can test the created image in your local environment following theses steps:
 
 1. Perform a Docker login running the command if you're using [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html):
 
-   ```sh
-   aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-   ```
+```sh
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+```
 
 1. Pull the image:
 
