@@ -4,15 +4,16 @@
   "private": true,
   "description": "",
   "scripts": {
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "deploy": "lerna run deploy",
+    "version": "lerna version --yes",
     "list-packages": "lerna ls",
     "list-updates": "npx ncu && lerna exec -- npx ncu",
     "update-all": "npx ncu -u && lerna exec -- npx ncu -u",
     "reinstall": "yarn run remove-all-node-modules && yarn",
     "remove-all-node-modules": "npx lerna exec -- rm -rf node_modules && rm -rf node_modules && rm -f yarn.lock",
     "publish": "lerna publish && lerna run deploy --scope carlin-website",
-    "version": "lerna version",
-    "test": "lerna run test",
-    "deploy": "lerna run deploy",
     "prepare": "husky install"
   },
   "repository": {
