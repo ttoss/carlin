@@ -1,7 +1,7 @@
 {
   "name": "carlin-website",
   "license": "GPL-3.0",
-  "version": "0.21.1",
+  "version": "0.21.2",
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
