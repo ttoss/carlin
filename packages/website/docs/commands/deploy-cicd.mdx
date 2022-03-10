@@ -132,9 +132,9 @@ Build, test and deploy on ephemeral/testing environments for the modified packag
 
 # Apply lint only on the modified files.
 git diff --name-only HEAD..main | grep -E "\\.(j|t)sx?$" | xargs npx eslint --no-error-on-unmatched-pattern
-yarn build
-yarn test
-yarn deploy --since=main
+yarn run build
+yarn run test
+yarn run deploy --since=main
 ```
 
 ##### closed-pr
@@ -142,7 +142,7 @@ yarn deploy --since=main
 Clear the testing environment when a pull request is closed.
 
 ```sh title=cicd/commands/closed-pr
-yarn destroy
+yarn run destroy
 ```
 
 ##### main
@@ -152,10 +152,10 @@ Build, test, deploy on `Staging` environment and version the project to triggers
 ```sh title=cicd/commands/main
 export REACT_APP_ENVIRONMENT=Staging
 
-yarn build
-yarn test
-yarn deploy
-yarn version
+yarn run build
+yarn run test
+yarn run deploy
+yarn run version
 ```
 
 ##### tag
@@ -165,9 +165,9 @@ Build, test, and deploy on `Production` environment.
 ```sh title=cicd/commands/tag
 export REACT_APP_ENVIRONMENT=Production
 
-yarn build
-yarn test
-yarn deploy
+yarn run build
+yarn run test
+yarn run deploy
 ```
 
 ### Creating The CI/CD Stack

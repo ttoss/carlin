@@ -1,5 +1,5 @@
-yarn build
-yarn test
-yarn version
+yarn run build
+yarn run test
+yarn run version
 export CARLIN_ENVIRONMENT=Production
-yarn deploy
+yarn run deploy
