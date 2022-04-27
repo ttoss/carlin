@@ -32,9 +32,12 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
   'git pull origin main',
   'git rev-parse HEAD',
   `export CARLIN_BRANCH=${branch}`,
+  /**
+   * Exit without error if `closed-pr` does not exist.
+   */
   `[ -f "${getCommandFileDir('closed-pr')}" ] && sh ${getCommandFileDir(
     'closed-pr',
-  )}`,
+  )} || echo 'closed-pr command not found'; exit 0`,
 ];
 
 export const getMainCommands = () => [
