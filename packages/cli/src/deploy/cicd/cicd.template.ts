@@ -128,7 +128,7 @@ export const getRepositoryImageBuilder = () => ({
               'RUN apt-get install -y jq',
 
               // Install Node.js
-              'RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -',
+              'RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -',
               'RUN apt-get install -y nodejs',
 
               // Clean cache
