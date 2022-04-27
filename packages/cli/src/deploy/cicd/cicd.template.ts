@@ -127,15 +127,15 @@ export const getRepositoryImageBuilder = () => ({
               'RUN apt-get install -y git',
               'RUN apt-get install -y jq',
 
-              // Install Node.js
-              'RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -',
-              'RUN apt-get install -y nodejs',
+              // Install Node.js https://stackoverflow.com/a/60137919/8786986
+              'SHELL ["/bin/bash", "--login", "-i", "-c"]',
+              'RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash',
+              'RUN source /root/.bashrc && nvm install --lts && nvm use --lts',
+              // Install Yarn
+              'RUN npm install -g yarn',
 
               // Clean cache
               'RUN apt-get clean',
-
-              // Install Yarn
-              'RUN npm install -g yarn',
 
               // Install carlin CLI
               'RUN yarn global add carlin',
@@ -166,6 +166,8 @@ export const getRepositoryImageBuilder = () => ({
 
               // Used in case of yarn.lock is modified.
               'RUN git checkout -- yarn.lock',
+
+              'SHELL ["/bin/bash", "--login", "-c"]',
             ].join('\n'),
           },
         },
