@@ -115,7 +115,7 @@ export const getRepositoryImageBuilder = () => ({
           Name: 'DOCKERFILE',
           Value: {
             'Fn::Sub': [
-              'FROM public.ecr.aws/ubuntu/ubuntu:20.10_stable',
+              'FROM public.ecr.aws/ubuntu/ubuntu:20.04_stable',
 
               // https://stackoverflow.com/a/59693182/8786986
               'ENV DEBIAN_FRONTEND noninteractive',
