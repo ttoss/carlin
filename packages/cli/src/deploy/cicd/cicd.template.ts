@@ -166,8 +166,6 @@ export const getRepositoryImageBuilder = () => ({
 
               // Used in case of yarn.lock is modified.
               'RUN git checkout -- yarn.lock',
-
-              'SHELL ["/bin/bash", "--login", "-c"]',
             ].join('\n'),
           },
         },
