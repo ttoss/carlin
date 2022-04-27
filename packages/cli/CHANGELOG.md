@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.3](https://github.com/ttoss/carlin/compare/v0.21.2...v0.21.3) (2022-04-27)
+
+### Bug Fixes
+
+- update nodejs version ([#49](https://github.com/ttoss/carlin/issues/49)) ([0c053b9](https://github.com/ttoss/carlin/commit/0c053b96b166fc8664d957c974310bc9503ab9fa))
+
 ## [0.21.2](https://github.com/ttoss/carlin/compare/v0.21.1...v0.21.2) (2022-03-10)
 
 **Note:** Version bump only for package carlin
