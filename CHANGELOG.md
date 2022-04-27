@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.4](https://github.com/ttoss/carlin/compare/v0.21.3...v0.21.4) (2022-04-27)
+
+### Bug Fixes
+
+- cicd Dockerfile commands ([6d1e67d](https://github.com/ttoss/carlin/commit/6d1e67d00d88adcb9a8a3adaea4036a6d424746b))
+- nodejs version ([#51](https://github.com/ttoss/carlin/issues/51)) ([3c536ae](https://github.com/ttoss/carlin/commit/3c536aee7d539b8f1da26f5190da93442e9721df))
+- ubuntu image dockerfile ([e5a0604](https://github.com/ttoss/carlin/commit/e5a06044e91f0d728d855acbf06098a37421f8b2))
+- update ubuntu image dockerfile ([b45df3f](https://github.com/ttoss/carlin/commit/b45df3f8ce4ef33ca1ce9bbbf8181a14aa5413c3))
+
 ## [0.21.3](https://github.com/ttoss/carlin/compare/v0.21.2...v0.21.3) (2022-04-27)
 
 ### Bug Fixes
