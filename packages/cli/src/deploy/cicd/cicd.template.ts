@@ -115,7 +115,7 @@ export const getRepositoryImageBuilder = () => ({
           Name: 'DOCKERFILE',
           Value: {
             'Fn::Sub': [
-              'FROM public.ecr.aws/ubuntu/ubuntu:latest',
+              'FROM public.ecr.aws/ubuntu/ubuntu:20.10_stable',
 
               // https://stackoverflow.com/a/59693182/8786986
               'ENV DEBIAN_FRONTEND noninteractive',
@@ -127,15 +127,15 @@ export const getRepositoryImageBuilder = () => ({
               'RUN apt-get install -y git',
               'RUN apt-get install -y jq',
 
-              // Install Node.js https://stackoverflow.com/a/60137919/8786986
-              'SHELL ["/bin/bash", "--login", "-i", "-c"]',
-              'RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash',
-              'RUN source /root/.bashrc && nvm install --lts && nvm use --lts',
-              // Install Yarn
-              'RUN npm install -g yarn',
+              // Install Node.js
+              'RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -',
+              'RUN apt-get install -y nodejs',
 
               // Clean cache
               'RUN apt-get clean',
+
+              // Install Yarn
+              'RUN npm install -g yarn',
 
               // Install carlin CLI
               'RUN yarn global add carlin',
