@@ -1,5 +1,6 @@
 yarn run build
 yarn run test
 yarn run version
+echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > .npmrc
 export CARLIN_ENVIRONMENT=Production
 yarn run deploy

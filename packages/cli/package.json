@@ -7,7 +7,6 @@
     "test": "jest",
     "build": "tsc",
     "prepare": "npm run test && npm run build",
-    "predeploy": "echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc",
     "deploy": "npm publish"
   },
   "repository": {
