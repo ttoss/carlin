@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.8](https://github.com/ttoss/carlin/compare/v0.21.7...v0.21.8) (2022-05-06)
+
+### Bug Fixes
+
+- lambda layer dependencies ([#54](https://github.com/ttoss/carlin/issues/54)) ([560f1ab](https://github.com/ttoss/carlin/commit/560f1abcd994de948dd7ed793ef5c6514f361805))
+
 ## [0.21.7](https://github.com/ttoss/carlin/compare/v0.21.6...v0.21.7) (2022-04-28)
 
 **Note:** Version bump only for package carlin-website
