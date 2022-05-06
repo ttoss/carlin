@@ -1,17 +1,15 @@
-import AdmZip from 'adm-zip';
-import { CodeBuild } from 'aws-sdk';
-import builtins from 'builtin-modules';
 import * as esbuild from 'esbuild';
+import { AWS_DEFAULT_REGION } from '../config';
+import { CodeBuild } from 'aws-sdk';
+import { deployLambdaLayer } from './lambdaLayer/deployLambdaLayer';
+import { getBaseStackResource } from './baseStack/getBaseStackResource';
+import { getPackageVersion, waitCodeBuildFinish } from '../utils';
+import { uploadFileToS3 } from './s3';
+import AdmZip from 'adm-zip';
+import builtins from 'builtin-modules';
 import fs from 'fs';
 import log from 'npmlog';
 import path from 'path';
-
-import { AWS_DEFAULT_REGION } from '../config';
-import { waitCodeBuildFinish, getPackageVersion } from '../utils';
-
-import { getBaseStackResource } from './baseStack/getBaseStackResource';
-import { deployLambdaLayer } from './lambdaLayer/deployLambdaLayer';
-import { uploadFileToS3 } from './s3';
 
 const codeBuild = new CodeBuild({ region: AWS_DEFAULT_REGION });
 
@@ -97,7 +95,6 @@ export const deployLambdaLayers = async ({
 
   const { dependencies = {} } = (() => {
     try {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
       return require(path.resolve(process.cwd(), 'package.json')) || {};
     } catch (err: any) {
       log.error(
@@ -110,8 +107,14 @@ export const deployLambdaLayers = async ({
   })();
 
   const packages = lambdaExternals.map((lambdaExternal) => {
-    const semver = dependencies[lambdaExternal].replace(/(~|\^)/g, '');
-    return `${lambdaExternal}@${semver}`;
+    try {
+      const semver = dependencies[lambdaExternal].replace(/(~|\^)/g, '');
+      return `${lambdaExternal}@${semver}`;
+    } catch {
+      throw new Error(
+        `Cannot find ${lambdaExternal} on package.json dependencies.`,
+      );
+    }
   });
 
   await deployLambdaLayer({ packages, deployIfExists: false });

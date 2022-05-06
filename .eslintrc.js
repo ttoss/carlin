@@ -1,3 +1,3 @@
 module.exports = {
-  extends: './config/eslintrc.base',
+  extends: '@ttoss/eslint-config',
 };
