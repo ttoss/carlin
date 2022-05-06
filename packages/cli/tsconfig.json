@@ -4,7 +4,8 @@
     "incremental": false, // Do not create tsconfig.tsbuildinfo
     "outDir": "dist",
     "noEmit": false,
-    "declaration": false
+    "declaration": false,
+    "downlevelIteration": true
   },
   "include": ["src"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]

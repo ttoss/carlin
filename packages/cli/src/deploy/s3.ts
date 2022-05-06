@@ -3,8 +3,8 @@
 import { S3 } from 'aws-sdk';
 import fs from 'fs';
 import glob from 'glob';
-import mime from 'mime-types';
 import log from 'npmlog';
+import mime from 'mime-types';
 import path from 'path';
 
 const logPrefix = 's3';
