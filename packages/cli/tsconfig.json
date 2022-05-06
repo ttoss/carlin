@@ -5,7 +5,9 @@
     "outDir": "dist",
     "noEmit": false,
     "declaration": false,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "target": "es2018",
+    "module": "commonjs"
   },
   "include": ["src"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]

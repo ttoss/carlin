@@ -1,4 +1,3 @@
-module.exports = {
-  '*.{js,jsx,ts,tsx}': 'eslint --fix',
-  '*.{md,mdx,html,json,yml,yaml}': 'prettier --write',
-};
+const { lintstagedConfig } = require('@ttoss/config');
+
+module.exports = lintstagedConfig();
