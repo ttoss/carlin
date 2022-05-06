@@ -1,5 +1,5 @@
 module.exports = {
-  extends: '../../config/eslintrc.react',
+  extends: '@ttoss/eslint-config',
   rules: {
     'no-use-before-define': 'off',
     'react/jsx-filename-extension': 'off',

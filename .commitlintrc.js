@@ -1,3 +1,3 @@
-module.exports = {
-  extends: ['@commitlint/config-conventional'],
-};
+const { commitlintConfig } = require('@ttoss/config');
+
+module.exports = commitlintConfig();
