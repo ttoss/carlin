@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.22.0](https://github.com/ttoss/carlin/compare/v0.21.8...v0.22.0) (2022-05-07)
+
+### Features
+
+- update jest and create generate env ([#55](https://github.com/ttoss/carlin/issues/55)) ([500452c](https://github.com/ttoss/carlin/commit/500452c4eccce964e61bf1e8c9cd161879df0b7d))
+
 ## [0.21.8](https://github.com/ttoss/carlin/compare/v0.21.7...v0.21.8) (2022-05-06)
 
 ### Bug Fixes
