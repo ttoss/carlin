@@ -1,24 +1,19 @@
-/* eslint-disable import/first */
-import faker from 'faker';
-import yargs from 'yargs';
-
-const deployCloudFormationMock = jest.fn();
-
-const destroyCloudFormationMock = jest.fn();
-
 jest.mock('./cloudFormation', () => ({
-  deployCloudFormation: deployCloudFormationMock,
-  destroyCloudFormation: destroyCloudFormationMock,
+  deployCloudFormation: jest.fn(),
+  destroyCloudFormation: jest.fn(),
 }));
 
-import { getEnvVar } from '../utils/environmentVariables';
-
-import { getStackName, setPreDefinedStackName } from './stackName';
+jest.mock('./readDockerfile');
 
 import * as commandModule from './command';
-
-import * as deployStaticAppModule from './staticApp/staticApp';
 import * as deployLambdaLayerModule from './lambdaLayer/deployLambdaLayer';
+import * as deployStaticAppModule from './staticApp/deployStaticApp';
+import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
+import { faker } from '@ttoss/test-utils/faker';
+import { getEnvVar } from '../utils/environmentVariables';
+import { getStackName, setPreDefinedStackName } from './stackName';
+import { readDockerfile } from './readDockerfile';
+import yargs from 'yargs';
 
 const cli = yargs.command(commandModule.deployCommand);
 
@@ -93,9 +88,7 @@ describe('stack name and cache', () => {
 
 describe('lambda-dockerfile', () => {
   test("should return empty string if Dockerfile doesn't exists", async () => {
-    (commandModule.readDockerfile as jest.Mock) = jest
-      .fn()
-      .mockReturnValue(new Error());
+    (readDockerfile as jest.Mock).mockReturnValue(new Error());
 
     const { lambdaDockerfile, lambdaImage } = await parse('', {});
 
@@ -106,14 +99,12 @@ describe('lambda-dockerfile', () => {
   test('should return Dockerfile if default exists', async () => {
     const dockerfile = faker.random.words();
 
-    (commandModule.readDockerfile as jest.Mock) = jest
-      .fn()
-      .mockReturnValue(dockerfile);
+    (readDockerfile as jest.Mock).mockReturnValue(dockerfile);
 
     const { lambdaDockerfile, lambdaImage } = await parse('deploy', {});
 
-    expect(commandModule.readDockerfile).toHaveBeenCalledWith(
-      commandModule.options['lambda-dockerfile'].default,
+    expect(readDockerfile).toHaveBeenCalledWith(
+      commandModule.options['lambda-dockerfile'].default
     );
 
     expect(lambdaDockerfile).toEqual(dockerfile);
@@ -124,7 +115,7 @@ describe('lambda-dockerfile', () => {
 describe('handlers', () => {
   test('should call deployCloudFormation', async () => {
     await parse('deploy');
-    expect(deployCloudFormationMock).toHaveBeenCalledTimes(1);
+    expect(deployCloudFormation).toHaveBeenCalledTimes(1);
   });
 
   test.each([
@@ -146,11 +137,11 @@ describe('handlers', () => {
     await parse(command);
 
     expect(mock).toHaveBeenCalledTimes(1);
-    expect(deployCloudFormationMock).not.toHaveBeenCalled();
+    expect(deployCloudFormation).not.toHaveBeenCalled();
   });
 
   test('should call destroyCloudFormation', async () => {
     await parse('deploy', { destroy: true });
-    expect(destroyCloudFormationMock).toHaveBeenCalled();
+    expect(destroyCloudFormation).toHaveBeenCalled();
   });
 });

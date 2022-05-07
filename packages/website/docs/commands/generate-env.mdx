@@ -1,0 +1,32 @@
+---
+title: generate-env
+---
+
+import InnerHTML from '../../src/components/InnerHTML';
+
+import { generateEnvComment } from '../../.docusaurus/carlin/default/generateEnvComment';
+
+## Overview
+
+```
+carlin generate-env
+```
+
+<InnerHTML html={generateEnvComment} />
+
+:::note Note
+
+You should include `.env` and `.env.production` in your repository as they define defaults.
+You should add `.env.local` to `.gitignore`.
+
+:::
+
+## Usage
+
+Create `.env` and `.env.production` files in your package and add the command to your `package.json` `prebuild` script:
+
+```js
+"scripts": {
+  "prebuild": "carlin generate-env"
+}
+```

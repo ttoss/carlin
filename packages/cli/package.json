@@ -28,47 +28,40 @@
   },
   "homepage": "https://github.com/ttoss/carlin#readme",
   "dependencies": {
-    "@aws-sdk/client-cloudformation": "^3.52.0",
-    "@octokit/webhooks": "^9.22.0",
+    "@aws-sdk/client-cloudformation": "^3.85.0",
+    "@octokit/webhooks": "^9.24.0",
     "@slack/webhook": "^6.1.0",
     "adm-zip": "^0.5.9",
-    "aws-sdk": "^2.1080.0",
+    "aws-sdk": "^2.1130.0",
     "builtin-modules": "^3.2.0",
     "change-case": "^4.1.2",
     "deep-equal": "^2.0.5",
     "deepmerge": "^4.2.2",
     "dotenv": "^16.0.0",
-    "esbuild": "^0.14.23",
+    "esbuild": "^0.14.38",
     "find-up": "^5.0.0",
-    "glob": "^7.2.0",
+    "glob": "^8.0.1",
     "js-yaml": "^4.1.0",
-    "mime-types": "^2.1.34",
-    "npmlog": "^6.0.1",
-    "prettier": "^2.5.1",
-    "semver": "^7.3.5",
-    "simple-git": "^3.2.6",
-    "ts-loader": "^9.2.6",
-    "ts-node": "^10.5.0",
-    "typescript": "^4.5.5",
-    "uglify-js": "^3.15.1",
-    "yargs": "^17.3.1"
+    "mime-types": "^2.1.35",
+    "npmlog": "^6.0.2",
+    "prettier": "^2.6.2",
+    "semver": "^7.3.7",
+    "simple-git": "^3.7.1",
+    "uglify-js": "^3.15.4",
+    "yargs": "^17.4.1"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.4.34",
-    "@types/aws-lambda": "^8.10.92",
+    "@types/adm-zip": "^0.5.0",
+    "@types/aws-lambda": "^8.10.95",
     "@types/deep-equal": "^1.0.1",
-    "@types/faker": "^5",
     "@types/glob": "^7.2.0",
     "@types/js-yaml": "^4.0.5",
     "@types/mime-types": "^2.1.1",
-    "@types/node": "^17.0.21",
+    "@types/node": "^17.0.31",
     "@types/npmlog": "^4.1.4",
     "@types/semver": "^7.3.9",
-    "@types/uglify-js": "^3.13.1",
-    "@types/yargs": "^17.0.8",
-    "faker": "^5.5.3",
-    "jest": "^27.5.1",
-    "ts-jest": "^27.1.3"
+    "@types/uglify-js": "^3.13.2",
+    "@types/yargs": "^17.0.10"
   },
   "bin": {
     "carlin": "./bin/carlin"
@@ -76,5 +69,8 @@
   "files": [
     "bin/",
     "dist/"
-  ]
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
 }

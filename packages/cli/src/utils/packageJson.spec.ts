@@ -1,22 +1,20 @@
-import faker from 'faker';
-import { readFileSync } from 'fs';
-
-const name = `@${faker.random.word()}/${faker.random.word()}`;
-
 jest.mock('find-up', () => ({
-  sync: jest.fn().mockReturnValue(faker.random.word()),
+  sync: jest.fn().mockReturnValue('some/path'),
 }));
 
 jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
 
-// eslint-disable-next-line import/first
+import { faker } from '@ttoss/test-utils/faker';
 import { getPackageName } from './packageJson';
+import { readFileSync } from 'fs';
+
+const name = `@${faker.random.word()}/${faker.random.word()}`;
 
 beforeAll(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  (readFileSync as jest.Mock) = jest.fn().mockReturnValue({
+  (readFileSync as jest.Mock).mockReturnValue({
     toString: jest
       .fn()
       .mockReturnValue(`{ "name": "${name}", "version": "0.0.1" }`),

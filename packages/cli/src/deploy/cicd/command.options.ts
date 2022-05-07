@@ -1,8 +1,6 @@
-/* eslint-disable no-param-reassign */
 import { camelCase } from 'change-case';
-import yargs from 'yargs';
-
 import { pipelines } from './pipelines';
+import yargs from 'yargs';
 
 export const options = {
   cpu: {

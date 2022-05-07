@@ -1,7 +1,6 @@
-import { IncomingWebhook } from '@slack/webhook';
-import { Handler } from 'aws-lambda';
 import { ECS } from 'aws-sdk';
-
+import { Handler } from 'aws-lambda';
+import { IncomingWebhook } from '@slack/webhook';
 import { putApprovalResultManualTask } from './putApprovalResultManualTask';
 
 const ecs = new ECS({ apiVersion: '2014-11-13' });
@@ -51,11 +50,11 @@ export const getEcsTaskLogsUrl = ({ ecsTaskArn }: { ecsTaskArn: string }) => {
       'log-events',
       `ecs/${process.env.ECS_TASK_CONTAINER_NAME}/${ecsTaskId}`.replace(
         /\//g,
-        '%252F',
+        '%252F'
       ),
     ]
       .join('/')
-      .replace(/"/g, ''),
+      .replace(/"/g, '')
   );
 
   return ecsTaskLogsUrl.href;
@@ -75,15 +74,12 @@ export const getEcsTaskTags = async ({
 
     const task = tasks?.[0];
 
-    console.log({ tasks, cluster, ecsTaskArn });
-
     if (!task) {
       return undefined;
     }
 
     return task.tags;
   } catch (error) {
-    console.error(error);
     return undefined;
   }
 };
@@ -170,7 +166,7 @@ export const ecsTaskReportHandler: Handler<Event> = async ({
                 ecsTaskTags,
               },
               null,
-              2,
+              2
             )}\`\`\``,
           },
         },

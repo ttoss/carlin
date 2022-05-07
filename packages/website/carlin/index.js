@@ -33,8 +33,8 @@ const {
 const { getComment, getComments, toHtml } = require('./comments');
 
 const {
-  coverageThreshold: { global: testsCoverageThreshold },
-} = require('../../cli/jest.config');
+  global: testsCoverageThreshold,
+} = require('../../cli/jest.coverageThreshold');
 
 const cliApi = async (cmd) =>
   new Promise((resolve) => {
@@ -71,13 +71,16 @@ module.exports = () => {
             'deploy/baseStack/deployBaseStack.js',
             'deployBaseStack',
           ],
-          deployLambdaCodeComment: ['deploy/lambda.js', 'deployLambdaCode'],
+          deployLambdaCodeComment: [
+            'deploy/lambda/deployLambdaCode.js',
+            'deployLambdaCode',
+          ],
           deployStaticAppComment: [
-            'deploy/staticApp/staticApp.js',
+            'deploy/staticApp/deployStaticApp.js',
             'deployStaticApp',
           ],
           removeOldVersionsComment: [
-            'deploy/staticApp/staticApp.js',
+            'deploy/staticApp/removeOldVersions.js',
             'removeOldVersions',
           ],
           destroyComment: ['deploy/cloudFormation.js', 'destroy'],
@@ -110,16 +113,18 @@ module.exports = () => {
             'deploy/cicd/cicd.template.js',
             'getRepositoryImageBuilder',
           ],
+          generateEnvComment: ['generateEnv/generateEnv.js', 'generateEnv'],
         }),
+
         stackNameComment: toHtml(
           getComment(['deploy/stackName.js', 'getStackName']).split(
-            'CAUTION!!!',
-          )[0],
+            'CAUTION!!!'
+          )[0]
         ),
         stackNameWarningComment: toHtml(
           getComment(['deploy/stackName.js', 'getStackName']).split(
-            'CAUTION!!!',
-          )[1],
+            'CAUTION!!!'
+          )[1]
         ),
 
         deployExamples: require('carlin/dist/deploy/command').examples,
@@ -127,7 +132,7 @@ module.exports = () => {
         lambdaLayerBuildspec: getBuildSpec(),
         lambdaLayerBuildspecCommands: yaml.dump(
           yaml.load(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
-            .install.commands,
+            .install.commands
         ),
         lambdaLayerCodeBuildProjectTemplate: getLambdaLayerBuilderTemplate(),
         lambdaLayerTemplate: getLambdaLayerTemplate({
@@ -163,7 +168,7 @@ module.exports = () => {
           getRepositoryImageBuilder().Properties.Source.BuildSpec,
         carlinCicdRepositoryImageBuilderDockerfile:
           getRepositoryImageBuilder().Properties.Environment.EnvironmentVariables.find(
-            ({ Name }) => Name === 'DOCKERFILE',
+            ({ Name }) => Name === 'DOCKERFILE'
           ).Value['Fn::Sub'],
         carlinCicdRepositoryEcsTaskDefinition: getCicdTemplate({ s3 })
           .Resources[REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID].Properties,
@@ -176,7 +181,7 @@ module.exports = () => {
       Object.entries(content).forEach(async ([key, value]) => {
         await createData(
           `${key}.js`,
-          `module.exports.${key} = ${JSON.stringify(value, null, 2)}`,
+          `module.exports.${key} = ${JSON.stringify(value, null, 2)}`
         );
       });
     },

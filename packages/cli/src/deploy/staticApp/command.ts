@@ -1,13 +1,11 @@
 /* eslint-disable no-param-reassign */
-import AWS from 'aws-sdk';
+import { CLOUDFRONT_REGION, NAME } from '../../config';
 import { CommandModule, InferredOptionTypes } from 'yargs';
-
-import { NAME, CLOUDFRONT_REGION } from '../../config';
 import { addGroupToOptions } from '../../utils';
-
+import { defaultBuildFolders } from './findDefaultBuildFolder';
+import { deployStaticApp } from './deployStaticApp';
 import { destroyCloudFormation } from '../cloudFormation';
-
-import { deployStaticApp, defaultBuildFolders } from './staticApp';
+import AWS from 'aws-sdk';
 
 export const options = {
   acm: {
@@ -23,7 +21,7 @@ export const options = {
   },
   'build-folder': {
     describe: `The folder that will be uploaded. If not provided, it'll search for the folders "${defaultBuildFolders.join(
-      ', ',
+      ', '
     )}."`,
     type: 'string',
   },

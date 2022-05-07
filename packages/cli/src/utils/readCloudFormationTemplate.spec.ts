@@ -1,6 +1,10 @@
-/* eslint-disable import/first */
+jest.mock('fs', () => ({
+  readFileSync: jest.fn(),
+}));
 
-import * as faker from 'faker';
+import * as fs from 'fs';
+import { faker } from '@ttoss/test-utils/faker';
+import { readCloudFormationYamlTemplate } from './readCloudFormationTemplate';
 
 const subStringPath = 'some-path';
 
@@ -30,23 +34,19 @@ const templatePathToReturnUndefined = `${templatePath}${faker.random.word()}`;
 
 const defaultStringReturned = faker.random.word();
 
-const readFileSyncMock = jest.fn((t: string) => {
-  if (t === templatePath) {
-    return yamlTemplate;
-  }
+beforeAll(() => {
+  (fs.readFileSync as jest.Mock).mockImplementation((t: string) => {
+    if (t === templatePath) {
+      return yamlTemplate;
+    }
 
-  if (t === templatePathToReturnUndefined) {
-    return undefined;
-  }
+    if (t === templatePathToReturnUndefined) {
+      return undefined;
+    }
 
-  return defaultStringReturned;
+    return defaultStringReturned;
+  });
 });
-
-jest.mock('fs', () => ({
-  readFileSync: readFileSyncMock,
-}));
-
-import { readCloudFormationYamlTemplate } from './readCloudFormationTemplate';
 
 test('should read cloudformation template file', () => {
   expect(readCloudFormationYamlTemplate({ templatePath })).toEqual({
@@ -75,9 +75,9 @@ test('should read cloudformation template file', () => {
   /**
    * The second fsReadFileSync call is the SubString.
    */
-  expect(readFileSyncMock).toHaveBeenNthCalledWith(
+  expect(fs.readFileSync).toHaveBeenNthCalledWith(
     2,
-    expect.stringMatching(`/${subStringPath}`),
+    expect.stringMatching(`/${subStringPath}`)
   );
 });
 
@@ -85,12 +85,12 @@ test('cannot parse because template', () => {
   expect(() =>
     readCloudFormationYamlTemplate({
       templatePath: templatePathToReturnUndefined,
-    }),
+    })
   ).toThrow();
 
   expect(() =>
     readCloudFormationYamlTemplate({
       templatePath: `${defaultStringReturned}string`,
-    }),
+    })
   ).toThrow();
 });

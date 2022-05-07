@@ -1,16 +1,10 @@
-/* eslint-disable import/first */
-import { pascalCase } from 'change-case';
-import * as faker from 'faker';
-
-const getPackageNameMock = jest.fn();
-
-jest.mock('./packageJson', () => ({
-  getPackageName: getPackageNameMock,
-}));
+jest.mock('./packageJson');
 
 import { cache } from './environmentVariables';
-
+import { faker } from '@ttoss/test-utils/faker';
+import { getPackageName } from './packageJson';
 import { getProjectName } from './getProjectName';
+import { pascalCase } from 'change-case';
 
 afterEach(() => {
   cache.delete('PROJECT');
@@ -24,12 +18,14 @@ test('should return project name defined on cache', () => {
 
 test('should return the scope of the package name', () => {
   const scope = `${faker.random.word()}`;
-  getPackageNameMock.mockReturnValue(`@${scope}/${faker.random.word()}`);
+  (getPackageName as jest.Mock).mockReturnValue(
+    `@${scope}/${faker.random.word()}`
+  );
   expect(getProjectName()).toEqual(pascalCase(scope));
 });
 
 test('should return the package name', () => {
   const packageName = `${faker.random.word()}`;
-  getPackageNameMock.mockReturnValue(packageName);
+  (getPackageName as jest.Mock).mockReturnValue(packageName);
   expect(getProjectName()).toEqual(pascalCase(packageName));
 });

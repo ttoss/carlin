@@ -1,24 +1,18 @@
-/* eslint-disable import/first */
-
-const deployMock = jest.fn();
-
-jest.mock('../cloudFormation.core', () => ({
-  deploy: deployMock,
-}));
+jest.mock('../cloudFormation.core');
 
 import {
-  BASE_STACK_NAME,
   BASE_STACK_BUCKET_LOGICAL_NAME,
   BASE_STACK_LAMBDA_IMAGE_BUILDER_LOGICAL_NAME,
   BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME,
+  BASE_STACK_NAME,
 } from './config';
-
+import { deploy } from '../cloudFormation.core';
 import { deployBaseStack } from './deployBaseStack';
 
 test('should create base resources', async () => {
   await deployBaseStack();
 
-  expect(deployMock).toHaveBeenCalledWith({
+  expect(deploy).toHaveBeenCalledWith({
     template: expect.objectContaining({
       AWSTemplateFormatVersion: '2010-09-09',
       Resources: expect.objectContaining({

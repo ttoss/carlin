@@ -1,29 +1,27 @@
-/* eslint-disable no-eval */
-/* eslint-disable import/first */
+jest.mock('../../utils', () => {
+  const PACKAGE_VERSION = '10.40.23';
 
-import * as faker from 'faker';
-
-const region = faker.random.word();
-
-const PACKAGE_VERSION = '10.40.23';
-
-jest.mock('../../utils', () => ({
-  ...(jest.requireActual('../../utils') as any),
-  getPackageVersion: jest.fn().mockReturnValue(PACKAGE_VERSION),
-}));
+  return {
+    ...(jest.requireActual('../../utils') as any),
+    getPackageVersion: jest.fn().mockReturnValue(PACKAGE_VERSION),
+  };
+});
 
 import {
-  getStaticAppTemplate,
   CLOUDFRONT_DISTRIBUTION_LOGICAL_ID,
   ROUTE_53_RECORD_SET_GROUP_LOGICAL_ID,
+  getStaticAppTemplate,
 } from './staticApp.template';
+import { faker } from '@ttoss/test-utils/faker';
+
+const region = faker.random.word();
 
 test('should define default root object', () => {
   const template = getStaticAppTemplate({ region, cloudfront: true });
 
   expect(
     template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].Properties
-      .DistributionConfig.DefaultRootObject,
+      .DistributionConfig.DefaultRootObject
   ).toEqual('index.html');
 });
 
@@ -31,7 +29,7 @@ test('should not add CloudFront distribution', () => {
   const template = getStaticAppTemplate({ region, cloudfront: false });
 
   expect(
-    template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID],
+    template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID]
   ).toBeUndefined();
 });
 
@@ -45,11 +43,11 @@ test('should define Route53 RecordSetGroup', () => {
 
   expect(
     template.Resources[ROUTE_53_RECORD_SET_GROUP_LOGICAL_ID].Properties
-      .HostedZoneName,
+      .HostedZoneName
   ).toEqual('example.com.');
 
   expect(
     template.Resources[ROUTE_53_RECORD_SET_GROUP_LOGICAL_ID].Properties
-      .RecordSets[0].Type,
+      .RecordSets[0].Type
   ).toEqual('A');
 });

@@ -1,73 +1,27 @@
-/* eslint-disable import/first */
-import AWS from 'aws-sdk';
-import * as faker from 'faker';
-
-import { AWS_DEFAULT_REGION } from './config';
-
-import { cloudFormation } from './deploy/cloudFormation.core';
-
-/**
- * Not equal `AWS_DEFAULT_REGION`.
- */
-const region = 'us-east-2';
-
-const optionsFromConfigFiles = {
-  option: 'option',
-  optionEnv: 'optionEnv',
-  optionEnvArray: ['optionEnvArray1', 'optionEnvArray2'],
-  optionEnvObj: {
-    a: 'optionEnvObjA',
-    b: 2,
-  },
-  environments: {
-    OtherRegion: {
-      region: 'us-east-3',
-    },
-    Production: {
-      region,
-      optionEnv: 'optionEnvProduction',
-      optionEnvArray: [
-        'optionEnvArrayProduction1',
-        'optionEnvArrayProduction2',
-      ],
-      optionEnvObj: {
-        a: 'optionEnvObjProductionA',
-        b: 3,
-      },
-    },
-  },
-};
-
-jest.mock('deepmerge', () => ({
-  all: jest.fn().mockReturnValue(optionsFromConfigFiles),
-}));
-
-jest.mock('find-up', () => ({
-  sync: jest
-    .fn()
-    .mockReturnValueOnce('./some-dir')
-    .mockReturnValueOnce(undefined),
-}));
+/* eslint-disable no-var */
+import { optionsFromConfigFiles, parseCli } from '../testUtils';
 
 jest.mock('./deploy/baseStack/deployBaseStack', () => ({
   ...(jest.requireActual('./deploy/baseStack/deployBaseStack') as any),
   deployBaseStack: jest.fn(),
 }));
 
+import * as deepmerge from 'deepmerge';
+import { AWS_DEFAULT_REGION } from './config';
+import { cloudFormation } from './deploy/cloudFormation.core';
+import { deployBaseStack } from './deploy/baseStack/deployBaseStack';
+import { faker } from '@ttoss/test-utils/faker';
 import {
   getCurrentBranch,
-  getEnvironment,
   getEnvVar,
+  getEnvironment,
   getProjectName,
 } from './utils';
+import AWS from 'aws-sdk';
 
-import cli from './cli';
-
-import { deployBaseStack } from './deploy/baseStack/deployBaseStack';
-
-const parse = async (arg: any, context: any) => {
-  return cli().strict(false).parse(arg, context);
-};
+beforeAll(() => {
+  (deepmerge.all as jest.Mock).mockReturnValue(optionsFromConfigFiles);
+});
 
 describe('testing AWS region', () => {
   test.each([
@@ -76,15 +30,18 @@ describe('testing AWS region', () => {
      * necessary.
      */
     [`print-args -e=undefined`, AWS_DEFAULT_REGION],
-    [`print-args --region=${region}`, region],
-    [`print-args --environment=Production`, region],
+    [`print-args --region=some-region`, 'some-region'],
+    [
+      `print-args --environment=Production`,
+      optionsFromConfigFiles.environments.Production.region,
+    ],
     [
       `print-args -e=OtherRegion`,
       optionsFromConfigFiles.environments.OtherRegion.region,
     ],
-    [`print-args -e=OtherRegion --region=${region}`, region],
+    [`print-args -e=OtherRegion --region=some-region`, 'some-region'],
   ])('%#: %p', async (command, result) => {
-    const argv = await parse(command, {});
+    const argv = await parseCli(command, {});
     expect(argv.region).toEqual(result);
     expect(AWS.config.region).toEqual(result);
     expect(await cloudFormation().config.region()).toEqual(result);
@@ -98,29 +55,29 @@ describe('environment type', () => {
   });
 
   test('throw error if it is an object', () => {
-    expect(() =>
-      parse(`print-args`, {
+    return expect(() =>
+      parseCli(`print-args`, {
         environment: { obj: faker.random.word() },
-      }),
+      })
     ).rejects.toThrow();
   });
 
   test('throw error if it is an array', () => {
-    expect(() =>
-      parse(`print-args`, {
+    return expect(() =>
+      parseCli(`print-args`, {
         environment: [faker.random.word()],
-      }),
+      })
     ).rejects.toThrow();
   });
 
   test("don't throw error if it is a string", async () => {
     const environment = faker.random.word();
-    const argv = await parse(`print-args`, { environment });
+    const argv = await parseCli(`print-args`, { environment });
     expect(argv.environment).toEqual(environment);
   });
 
-  test("don't throw error if it is a string", async () => {
-    const argv = await parse(`print-args`, {});
+  test("don't throw error if it is a string and environment undefined", async () => {
+    const argv = await parseCli(`print-args`, {});
     expect(argv.environment).toBeUndefined();
   });
 });
@@ -149,6 +106,7 @@ describe('validating environment variables', () => {
     expect(argv.project).toEqual(project);
   };
 
+  // eslint-disable-next-line jest/expect-expect
   test('passing by options', async () => {
     const { branch, environment, project } = generateRandomVariables();
 
@@ -161,11 +119,12 @@ describe('validating environment variables', () => {
       `--project=${project}`,
     ].join(' ');
 
-    const argv = await parse(`print-args ${options}`, {});
+    const argv = await parseCli(`print-args ${options}`, {});
 
     await testExpects({ argv, branch, environment, project });
   });
 
+  // eslint-disable-next-line jest/expect-expect
   test('passing by process.env', async () => {
     const { branch, environment, project } = generateRandomVariables();
 
@@ -173,7 +132,7 @@ describe('validating environment variables', () => {
     process.env.CARLIN_ENVIRONMENT = environment;
     process.env.CARLIN_PROJECT = project;
 
-    const argv = await parse('print-args', {});
+    const argv = await parseCli('print-args', {});
 
     await testExpects({ argv, branch, environment, project });
   });
@@ -182,11 +141,13 @@ describe('validating environment variables', () => {
 describe('handle merge config correctly', () => {
   describe('Config merging errors when default values is present #16 https://github.com/ttoss/carlin/issues/16', () => {
     test('deploy base-stack --region should not be the default', async () => {
-      await parse('deploy base-stack', {
+      await parseCli('deploy base-stack', {
         environment: 'Production',
       });
       expect(deployBaseStack).toHaveBeenCalledWith(
-        expect.objectContaining({ region }),
+        expect.objectContaining({
+          region: optionsFromConfigFiles.environments.Production.region,
+        })
       );
     });
   });
@@ -195,28 +156,28 @@ describe('handle merge config correctly', () => {
     const options = {
       region: faker.random.word(),
     };
-    const argv = await parse('print-args', options);
+    const argv = await parseCli('print-args', options);
     expect(argv.environment).toBeUndefined();
     expect(argv).toMatchObject(options);
   });
 
   test('argv must have the environment option', async () => {
-    const argv = await parse('print-args', { environment: 'Production' });
+    const argv = await parseCli('print-args', { environment: 'Production' });
     expect(argv.environment).toBe('Production');
     expect(argv.optionEnv).toEqual(
-      optionsFromConfigFiles.environments.Production.optionEnv,
+      optionsFromConfigFiles.environments.Production.optionEnv
     );
     expect(argv.optionEnvArray).toEqual(
-      optionsFromConfigFiles.environments.Production.optionEnvArray,
+      optionsFromConfigFiles.environments.Production.optionEnvArray
     );
     expect(argv.optionEnvObj).toEqual(
-      optionsFromConfigFiles.environments.Production.optionEnvObj,
+      optionsFromConfigFiles.environments.Production.optionEnvObj
     );
   });
 
   test('argv must have the CLI optionEnv', async () => {
     const newOptionEnv = faker.random.word();
-    const argv = await parse('print-args', {
+    const argv = await parseCli('print-args', {
       environment: 'Production',
       optionEnv: newOptionEnv,
     });

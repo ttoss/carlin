@@ -1,21 +1,12 @@
-/* eslint-disable no-param-reassign */
-import fs from 'fs';
-import log from 'npmlog';
 import { CommandModule, InferredOptionTypes } from 'yargs';
-
 import { NAME } from '../../config';
 import { addGroupToOptions } from '../../utils';
-
 import { deployCicd } from './deployCicd';
-
 import { options } from './command.options';
+import { readSSHKey } from './readSSHKey';
+import log from 'npmlog';
 
 const logPrefix = 'deploy-cicd';
-
-/**
- * Created to allow mocking.
- */
-export const readSSHKey = (dir: string) => fs.readFileSync(dir, 'utf-8');
 
 export const deployCicdCommand: CommandModule<
   any,

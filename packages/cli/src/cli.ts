@@ -1,23 +1,21 @@
 /* eslint-disable no-param-reassign */
-import AWS from 'aws-sdk';
+import * as yargs from 'yargs';
+import { AWS_DEFAULT_REGION, NAME } from './config';
+import {
+  EnvironmentVariables,
+  addGroupToOptions,
+  readObjectFile,
+  setEnvVar,
+} from './utils';
 import { constantCase, paramCase } from 'change-case';
+import { deployCommand } from './deploy/command';
+import { ecsTaskReportCommand } from './deploy/cicd/ecsTaskReportCommand';
+import { generateEnvCommand } from './generateEnv/generateEnvCommand';
+import AWS from 'aws-sdk';
 import deepEqual from 'deep-equal';
 import deepMerge from 'deepmerge';
 import findUp from 'find-up';
 import path from 'path';
-import * as yargs from 'yargs';
-
-import { AWS_DEFAULT_REGION, NAME } from './config';
-
-import { deployCommand } from './deploy/command';
-import { ecsTaskReportCommand } from './deploy/cicd/ecsTaskReportCommand';
-
-import {
-  addGroupToOptions,
-  EnvironmentVariables,
-  setEnvVar,
-  readObjectFile,
-} from './utils';
 
 const coerceSetEnvVar = (env: EnvironmentVariables) => (value: any) => {
   if (value) {
@@ -126,7 +124,7 @@ const cli = () => {
    */
   const getConfig = () => {
     const names = ['js', 'yml', 'yaml', 'json', 'ts'].map(
-      (ext) => `${NAME}.${ext}`,
+      (ext) => `${NAME}.${ext}`
     );
     const paths = [];
     let currentPath = process.cwd();
@@ -230,8 +228,8 @@ const cli = () => {
         if (!['string', 'undefined'].includes(typeof environment)) {
           throw new Error(
             `environment type is invalid. The value: ${JSON.stringify(
-              environment,
-            )}`,
+              environment
+            )}`
           );
         }
       })
@@ -245,17 +243,19 @@ const cli = () => {
       .pkgConf(getPkgConfig())
       .config(getConfig())
       .config('config', (configPath: string) =>
-        readObjectFile({ path: configPath }),
+        readObjectFile({ path: configPath })
       )
       .command({
         command: 'print-args',
         describe: false,
+        // eslint-disable-next-line no-console
         handler: (argv) => console.log(JSON.stringify(argv, null, 2)),
       })
       .command(deployCommand)
       .command(ecsTaskReportCommand)
+      .command(generateEnvCommand)
       .epilogue(
-        'For more information, find our manual at https://carlin.ttoss.dev',
+        'For more information, find our manual at https://carlin.ttoss.dev'
       )
       .help()
   );

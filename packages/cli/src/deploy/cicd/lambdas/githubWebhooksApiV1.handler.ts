@@ -1,13 +1,11 @@
-import { Webhooks } from '@octokit/webhooks';
-import AdmZip from 'adm-zip';
+import { Pipeline, getClosedPrCommands, getPrCommands } from '../pipelines';
 import { ProxyHandler } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-
-import { getTriggerPipelinesObjectKey } from '../getTriggerPipelineObjectKey';
-import { Pipeline, getPrCommands, getClosedPrCommands } from '../pipelines';
-
+import { Webhooks } from '@octokit/webhooks';
 import { executeTasks, shConditionalCommands } from './executeTasks';
 import { getProcessEnvVariable } from './getProcessEnvVariable';
+import { getTriggerPipelinesObjectKey } from '../getTriggerPipelineObjectKey';
+import AdmZip from 'adm-zip';
 
 const s3 = new S3();
 
@@ -45,7 +43,7 @@ export const webhooks = new Webhooks({ secret: '123' });
 
 const getPipelines = () => {
   const pipelines: Pipeline[] = JSON.parse(
-    process.env.PIPELINES_JSON || JSON.stringify([]),
+    process.env.PIPELINES_JSON || JSON.stringify([])
   );
 
   return pipelines;
@@ -82,14 +80,6 @@ webhooks.on(
       return;
     }
 
-    console.log([
-      { key: 'Pipeline', value: 'pr' },
-      { key: 'PullRequest', value: payload.number.toString() },
-      { key: 'PullRequestUrl', value: payload.pull_request.url },
-      { key: 'Action', value: payload.action },
-      { key: 'Branch', value: payload.pull_request.head.ref },
-    ]);
-
     await executeTasks({
       commands: [
         shConditionalCommands({
@@ -106,7 +96,7 @@ webhooks.on(
         { key: 'Branch', value: payload.pull_request.head.ref },
       ],
     });
-  },
+  }
 );
 
 webhooks.on(['pull_request.closed'], async ({ payload }) => {
@@ -140,7 +130,7 @@ webhooks.on(['pull_request.closed'], async ({ payload }) => {
 
 export const githubWebhooksApiV1Handler: ProxyHandler = async (
   event,
-  context,
+  context
 ) => {
   try {
     /**
@@ -188,7 +178,6 @@ export const githubWebhooksApiV1Handler: ProxyHandler = async (
 
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };
   } catch (error: any) {
-    console.error(error);
     return { statusCode: error.status || 500, body: error.message };
   }
 };

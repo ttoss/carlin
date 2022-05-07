@@ -1,17 +1,14 @@
-import * as fs from 'fs';
-import log from 'npmlog';
-import * as path from 'path';
-import yargs, { CommandModule } from 'yargs';
-
+import { CommandModule, InferredOptionTypes } from 'yargs';
 import { addGroupToOptions, getAwsAccountId } from '../utils';
-
 import { deployBaseStackCommand } from './baseStack/command';
 import { deployCicdCommand } from './cicd/command';
 import { deployCloudFormation, destroyCloudFormation } from './cloudFormation';
-import { printStackOutputsAfterDeploy } from './cloudFormation.core';
 import { deployLambdaLayerCommand } from './lambdaLayer/command';
 import { deployStaticAppCommand } from './staticApp/command';
 import { getStackName, setPreDefinedStackName } from './stackName';
+import { printStackOutputsAfterDeploy } from './cloudFormation.core';
+import { readDockerfile } from './readDockerfile';
+import log from 'npmlog';
 
 const logPrefix = 'deploy';
 
@@ -20,7 +17,7 @@ const checkAwsAccountId = async (awsAccountId: string) => {
     const currentAwsAccountId = await getAwsAccountId();
     if (String(awsAccountId) !== String(currentAwsAccountId)) {
       throw new Error(
-        `AWS account id does not match. Current is "${currentAwsAccountId}" but the defined in configuration files is "${awsAccountId}".`,
+        `AWS account id does not match. Current is "${currentAwsAccountId}" but the defined in configuration files is "${awsAccountId}".`
       );
     }
   } catch (error: any) {
@@ -40,17 +37,6 @@ const describeDeployCommand: CommandModule = {
       log.info(logPrefix, 'Cannot describe stack. Message: %s', error.message);
     }
   },
-};
-
-/**
- * This method was created because fs.readFileSync cannot be mocked.
- */
-export const readDockerfile = (dockerfilePath: string) => {
-  try {
-    return fs.readFileSync(path.join(process.cwd(), dockerfilePath), 'utf8');
-  } catch {
-    return '';
-  }
 };
 
 export const options = {
@@ -139,7 +125,7 @@ export const examples: ReadonlyArray<[string, string?]> = [
 
 export const deployCommand: CommandModule<
   any,
-  yargs.InferredOptionTypes<typeof options>
+  InferredOptionTypes<typeof options>
 > = {
   command: 'deploy [deploy]',
   describe: 'Deploy cloud resources.',
@@ -180,13 +166,13 @@ export const deployCommand: CommandModule<
           if (defaultAwsAccountId || envAwsAccountId) {
             await checkAwsAccountId(defaultAwsAccountId || envAwsAccountId);
           }
-        },
+        }
       )
       .middleware(({ skipDeploy }) => {
         if (skipDeploy) {
           log.warn(
             logPrefix,
-            "Skip deploy flag is true, then the deploy command wasn't executed.",
+            "Skip deploy flag is true, then the deploy command wasn't executed."
           );
           process.exit(0);
         }
@@ -207,7 +193,7 @@ export const deployCommand: CommandModule<
     });
 
     commands.forEach((command) =>
-      yargsBuilder.command(command as yargs.CommandModule),
+      yargsBuilder.command(command as CommandModule)
     );
 
     return yargsBuilder;

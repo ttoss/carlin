@@ -1,7 +1,6 @@
-import { pascalCase } from 'change-case';
-
 import { getEnvVar } from './environmentVariables';
 import { getPackageName } from './packageJson';
+import { pascalCase } from 'change-case';
 
 /**
  * This variable is used to determine the name of the whole project. If the
