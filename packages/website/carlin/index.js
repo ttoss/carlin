@@ -33,8 +33,8 @@ const {
 const { getComment, getComments, toHtml } = require('./comments');
 
 const {
-  coverageThreshold: { global: testsCoverageThreshold },
-} = require('../../cli/jest.config');
+  global: testsCoverageThreshold,
+} = require('../../cli/jest.coverageThreshold');
 
 const cliApi = async (cmd) =>
   new Promise((resolve) => {
@@ -71,13 +71,16 @@ module.exports = () => {
             'deploy/baseStack/deployBaseStack.js',
             'deployBaseStack',
           ],
-          deployLambdaCodeComment: ['deploy/lambda.js', 'deployLambdaCode'],
+          deployLambdaCodeComment: [
+            'deploy/lambda/deployLambdaCode.js',
+            'deployLambdaCode',
+          ],
           deployStaticAppComment: [
-            'deploy/staticApp/staticApp.js',
+            'deploy/staticApp/deployStaticApp.js',
             'deployStaticApp',
           ],
           removeOldVersionsComment: [
-            'deploy/staticApp/staticApp.js',
+            'deploy/staticApp/removeOldVersions.js',
             'removeOldVersions',
           ],
           destroyComment: ['deploy/cloudFormation.js', 'destroy'],
