@@ -1,3 +1,4 @@
 import { getEnvVar } from './environmentVariables';
 
-export const getEnvironment = () => getEnvVar('ENVIRONMENT');
+export const getEnvironment = (): string | undefined =>
+  getEnvVar('ENVIRONMENT');

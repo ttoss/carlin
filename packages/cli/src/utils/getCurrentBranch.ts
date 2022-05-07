@@ -1,6 +1,5 @@
-import git from 'simple-git';
-
 import { getEnvVar } from './environmentVariables';
+import git from 'simple-git';
 
 export const BRANCH_UNDEFINED = '';
 

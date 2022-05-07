@@ -1,4 +1,6 @@
-module.exports = {
+import { jestConfig } from '@ttoss/config';
+
+const config = jestConfig({
   collectCoverage: true,
   coverageThreshold: {
     global: {
@@ -8,8 +10,7 @@ module.exports = {
       statements: 63,
     },
   },
-  preset: 'ts-jest',
   setupFiles: ['<rootDir>/setupTests.js'],
-  silent: true,
-  timers: 'fake',
-};
+});
+
+export default config;

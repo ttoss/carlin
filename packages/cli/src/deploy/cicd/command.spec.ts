@@ -1,14 +1,12 @@
-/* eslint-disable import/first */
-import faker from 'faker';
-import yargs from 'yargs';
+jest.mock('./deployCicd');
 
-const deployCicdMock = jest.fn();
-
-jest.mock('./deployCicd', () => ({
-  deployCicd: deployCicdMock,
-}));
+jest.mock('./readSSHKey');
 
 import * as commandModule from './command';
+import { deployCicd } from './deployCicd';
+import { faker } from '@ttoss/test-utils/faker';
+import { readSSHKey } from './readSSHKey';
+import yargs from 'yargs';
 
 const cli = yargs.command(commandModule.deployCicdCommand);
 
@@ -28,17 +26,15 @@ test('should call deployCicd with ssh args', async () => {
   const readSSHKeyMockedValue = faker.random.word();
   const sshUrl = faker.random.word();
 
-  (commandModule.readSSHKey as jest.Mock) = jest
-    .fn()
-    .mockReturnValue(readSSHKeyMockedValue);
+  (readSSHKey as jest.Mock).mockReturnValueOnce(readSSHKeyMockedValue);
 
   const argv = await parse(`cicd --ssh-key=${sshKey} --ssh-url=${sshUrl}`);
 
   expect(argv).toEqual(expect.objectContaining({ sshKey, sshUrl }));
-  expect(deployCicdMock).toHaveBeenCalledWith(
+  expect(deployCicd).toHaveBeenCalledWith(
     expect.objectContaining({
       sshKey: readSSHKeyMockedValue,
       sshUrl,
-    }),
+    })
   );
 });

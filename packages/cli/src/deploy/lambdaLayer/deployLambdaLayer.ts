@@ -1,15 +1,11 @@
-import log from 'npmlog';
-
-import { CodeBuild } from 'aws-sdk';
-import { pascalCase } from 'change-case';
-
-import { NAME } from '../../config';
-
-import { getBaseStackResource } from '../baseStack/getBaseStackResource';
-import { deploy, doesStackExist } from '../cloudFormation.core';
-import { handleDeployError } from '../utils';
-
 import { CloudFormationTemplate, waitCodeBuildFinish } from '../../utils';
+import { CodeBuild } from 'aws-sdk';
+import { NAME } from '../../config';
+import { deploy, doesStackExist } from '../cloudFormation.core';
+import { getBaseStackResource } from '../baseStack/getBaseStackResource';
+import { handleDeployError } from '../utils';
+import { pascalCase } from 'change-case';
+import log from 'npmlog';
 
 const logPrefix = 'lambda-layer';
 
@@ -116,7 +112,7 @@ export const getLambdaLayerTemplate = ({
  */
 export const getPackageLambdaLayerStackName = (packageName: string) => {
   return pascalCase(
-    `${NAME} LambdaLayer ${packageName.replace(/\./g, 'dot')}`,
+    `${NAME} LambdaLayer ${packageName.replace(/\./g, 'dot')}`
   ).replace(/_/g, '');
 };
 
@@ -130,7 +126,7 @@ const getPackagesThatAreNotDeployed = async ({
       packages.map(async (packageName) => {
         const stackName = getPackageLambdaLayerStackName(packageName);
         return (await doesStackExist({ stackName })) ? '' : packageName;
-      }),
+      })
     )
   ).filter((packageName) => !!packageName);
 };
@@ -152,12 +148,12 @@ export const deployLambdaLayer = async ({
     }
 
     const codeBuildProjectName = await getBaseStackResource(
-      'BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME',
+      'BASE_STACK_LAMBDA_LAYER_BUILDER_LOGICAL_NAME'
     );
 
     if (!codeBuildProjectName) {
       throw new Error(
-        "Cannot deploy lambda-layer because AWS CodeBuild project doesn't exist.",
+        "Cannot deploy lambda-layer because AWS CodeBuild project doesn't exist."
       );
     }
 
@@ -186,8 +182,8 @@ export const deployLambdaLayer = async ({
 
     await Promise.all(
       packagesToBeDeployed.map((packageName) =>
-        deployLambdaLayerSinglePackage(packageName),
-      ),
+        deployLambdaLayerSinglePackage(packageName)
+      )
     );
   } catch (error: any) {
     handleDeployError({ error, logPrefix });

@@ -1,8 +1,7 @@
-import * as faker from 'faker';
-
+import { faker } from '@ttoss/test-utils/faker';
 import { getJobDetailsFilename } from './pipelines.handler';
 
-test('test getJobDetailsFilename', () => {
+test('getJobDetailsFilename', () => {
   const jobId = faker.datatype.uuid();
   expect(getJobDetailsFilename(jobId)).toEqual(`/tmp/${jobId}.zip`);
 });

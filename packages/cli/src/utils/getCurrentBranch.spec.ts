@@ -1,22 +1,23 @@
-/* eslint-disable import/first */
-import faker from 'faker';
+jest.mock('simple-git', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
+import { BRANCH_UNDEFINED, getCurrentBranch } from './getCurrentBranch';
+import { cache, setEnvVar } from './environmentVariables';
+import { faker } from '@ttoss/test-utils/faker';
+import simpleGit from 'simple-git';
 
 const branch = faker.random.word();
 
 const branchMock = jest.fn().mockResolvedValue({ current: branch });
 
-jest.mock('simple-git', () => ({
-  __esModule: true,
-  default: jest.fn().mockReturnValue({
-    branch: branchMock,
-  }),
-}));
-
-import { cache, setEnvVar } from './environmentVariables';
-import { getCurrentBranch, BRANCH_UNDEFINED } from './getCurrentBranch';
-
 beforeEach(() => {
   cache.delete('BRANCH');
+
+  (simpleGit as jest.Mock).mockReturnValue({
+    branch: branchMock,
+  });
 });
 
 test('should return branch from simple-git', () => {

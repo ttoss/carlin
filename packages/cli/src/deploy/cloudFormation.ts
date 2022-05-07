@@ -1,15 +1,10 @@
 import { CloudFormation } from 'aws-sdk';
-import fs from 'fs';
-import log from 'npmlog';
-import path from 'path';
-
 import {
   CloudFormationTemplate,
   getEnvironment,
   readCloudFormationYamlTemplate,
   readObjectFile,
 } from '../utils';
-
 import {
   canDestroyStack,
   cloudFormationV2,
@@ -17,17 +12,20 @@ import {
   deploy,
   doesStackExist,
 } from './cloudFormation.core';
-import { deployLambdaCode } from './lambda';
+import { deployLambdaCode } from './lambda/deployLambdaCode';
 import { emptyS3Directory } from './s3';
 import { getStackName } from './stackName';
-import { handleDeployInitialization, handleDeployError } from './utils';
+import { handleDeployError, handleDeployInitialization } from './utils';
+import fs from 'fs';
+import log from 'npmlog';
+import path from 'path';
 
 const logPrefix = 'cloudformation';
 log.addLevel('event', 10000, { fg: 'yellow' });
 log.addLevel('output', 10000, { fg: 'blue' });
 
 export const defaultTemplatePaths = ['ts', 'js', 'yaml', 'yml', 'json'].map(
-  (extension) => `./cloudformation.${extension}`,
+  (extension) => `./cloudformation.${extension}`
 );
 
 const findAndReadCloudFormationTemplate = ({
@@ -181,7 +179,7 @@ export const deployCloudFormation = async ({
             {
               ParameterKey: 'LambdaS3Version',
               ParameterValue: versionId,
-            },
+            }
           );
         }
       }
@@ -217,7 +215,7 @@ const emptyStackBuckets = async ({ stackName }: { stackName: string }) => {
         if (ResourceType === 'AWS::S3::Bucket' && PhysicalResourceId) {
           buckets.push(PhysicalResourceId);
         }
-      },
+      }
     );
   })({});
 
@@ -237,7 +235,7 @@ const destroy = async ({ stackName }: { stackName: string }) => {
   if (environment) {
     log.info(
       logPrefix,
-      `Cannot destroy stack when environment (${environment}) is defined.`,
+      `Cannot destroy stack when environment (${environment}) is defined.`
     );
     return;
   }

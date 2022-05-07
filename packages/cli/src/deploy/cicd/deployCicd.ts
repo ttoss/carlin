@@ -1,20 +1,16 @@
 import * as fs from 'fs';
-import log from 'npmlog';
 import * as path from 'path';
-
-import { waitCodeBuildFinish, startCodeBuildBuild } from '../../utils';
-
-import { deploy, getStackOutput } from '../cloudFormation.core';
-import { handleDeployError, handleDeployInitialization } from '../utils';
-
-import { deployLambdaCode } from '../lambda';
-
-import type { Pipeline } from './pipelines';
 import {
   REPOSITORY_IMAGE_CODE_BUILD_PROJECT_LOGICAL_ID,
   getCicdTemplate,
 } from './cicd.template';
+import { deploy, getStackOutput } from '../cloudFormation.core';
+import { deployLambdaCode } from '../lambda/deployLambdaCode';
 import { getCicdStackName } from './getCicdStackName';
+import { handleDeployError, handleDeployInitialization } from '../utils';
+import { startCodeBuildBuild, waitCodeBuildFinish } from '../../utils';
+import log from 'npmlog';
+import type { Pipeline } from './pipelines';
 
 const logPrefix = 'cicd';
 
@@ -52,7 +48,7 @@ const deployCicdLambdas = async ({ stackName }: { stackName: string }) => {
 
   if (!s3 || !s3.bucket) {
     throw new Error(
-      'Cannot retrieve bucket in which Lambda code was deployed.',
+      'Cannot retrieve bucket in which Lambda code was deployed.'
     );
   }
 

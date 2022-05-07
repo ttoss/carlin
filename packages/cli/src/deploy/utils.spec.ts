@@ -1,8 +1,6 @@
-import * as faker from 'faker';
-
-import { handleDeployError, handleDeployInitialization } from './utils';
-
 import { cache } from '../utils/environmentVariables';
+import { faker } from '@ttoss/test-utils/faker';
+import { handleDeployError, handleDeployInitialization } from './utils';
 
 const logPrefix = faker.random.word();
 
@@ -31,7 +29,7 @@ describe('testing handleDeployInitialization', () => {
   test('return stack name without predefined stack name', async () => {
     const response = await handleDeployInitialization({ logPrefix });
     expect(response).toEqual(
-      expect.objectContaining({ stackName: expect.any(String) }),
+      expect.objectContaining({ stackName: expect.any(String) })
     );
     expect(response.stackName).not.toEqual(stackName);
   });

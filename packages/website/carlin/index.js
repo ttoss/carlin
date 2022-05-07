@@ -110,16 +110,18 @@ module.exports = () => {
             'deploy/cicd/cicd.template.js',
             'getRepositoryImageBuilder',
           ],
+          generateEnvComment: ['generateEnv/generateEnv.js', 'generateEnv'],
         }),
+
         stackNameComment: toHtml(
           getComment(['deploy/stackName.js', 'getStackName']).split(
-            'CAUTION!!!',
-          )[0],
+            'CAUTION!!!'
+          )[0]
         ),
         stackNameWarningComment: toHtml(
           getComment(['deploy/stackName.js', 'getStackName']).split(
-            'CAUTION!!!',
-          )[1],
+            'CAUTION!!!'
+          )[1]
         ),
 
         deployExamples: require('carlin/dist/deploy/command').examples,
@@ -127,7 +129,7 @@ module.exports = () => {
         lambdaLayerBuildspec: getBuildSpec(),
         lambdaLayerBuildspecCommands: yaml.dump(
           yaml.load(getBuildSpec({ packageName: 'PACKAGE@X.Y.Z' })).phases
-            .install.commands,
+            .install.commands
         ),
         lambdaLayerCodeBuildProjectTemplate: getLambdaLayerBuilderTemplate(),
         lambdaLayerTemplate: getLambdaLayerTemplate({
@@ -163,7 +165,7 @@ module.exports = () => {
           getRepositoryImageBuilder().Properties.Source.BuildSpec,
         carlinCicdRepositoryImageBuilderDockerfile:
           getRepositoryImageBuilder().Properties.Environment.EnvironmentVariables.find(
-            ({ Name }) => Name === 'DOCKERFILE',
+            ({ Name }) => Name === 'DOCKERFILE'
           ).Value['Fn::Sub'],
         carlinCicdRepositoryEcsTaskDefinition: getCicdTemplate({ s3 })
           .Resources[REPOSITORY_ECS_TASK_DEFINITION_LOGICAL_ID].Properties,
@@ -176,7 +178,7 @@ module.exports = () => {
       Object.entries(content).forEach(async ([key, value]) => {
         await createData(
           `${key}.js`,
-          `module.exports.${key} = ${JSON.stringify(value, null, 2)}`,
+          `module.exports.${key} = ${JSON.stringify(value, null, 2)}`
         );
       });
     },

@@ -1,11 +1,10 @@
-import * as faker from 'faker';
-
 import {
-  cache,
-  setEnvVar,
-  getEnvVar,
   EnvironmentVariables,
+  cache,
+  getEnvVar,
+  setEnvVar,
 } from './environmentVariables';
+import { faker } from '@ttoss/test-utils/faker';
 
 test('basic cache routines', () => {
   const key = faker.random.word();
@@ -20,13 +19,15 @@ test('basic cache routines', () => {
 });
 
 test.each(
-  ([
-    'BRANCH',
-    'ENVIRONMENT',
-    'PROJECT',
-    'REGION',
-    'STACK_NAME',
-  ] as EnvironmentVariables[]).map((env) => [env]),
+  (
+    [
+      'BRANCH',
+      'ENVIRONMENT',
+      'PROJECT',
+      'REGION',
+      'STACK_NAME',
+    ] as EnvironmentVariables[]
+  ).map((env) => [env])
 )('%s', (key) => {
   const value = faker.random.word();
 

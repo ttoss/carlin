@@ -1,21 +1,21 @@
-/* eslint-disable import/first */
-
-const putObjectMock = jest.fn().mockReturnValue({ promise: jest.fn() });
+// const putObjectMock = jest.fn().mockReturnValue({ promise: jest.fn() });
 
 jest.mock('aws-sdk', () => ({
   ECS: jest.fn(),
   S3: jest.fn().mockReturnValue({
-    putObject: putObjectMock,
+    putObject: jest.fn().mockReturnValue({ promise: jest.fn() }),
   }),
 }));
 
-const executeTasksMock = jest.fn();
+// const executeTasksMock = jest.fn();
 
 jest.mock('./executeTasks', () => ({
-  executeTasks: executeTasksMock,
+  executeTasks: jest.fn(),
   shConditionalCommands: jest.fn(),
 }));
 
+import { S3 } from 'aws-sdk';
+import { executeTasks } from './executeTasks';
 import {
   githubWebhooksApiV1Handler,
   webhooks,
@@ -35,6 +35,8 @@ const xGitHubEvent = 'xGitHubEvent';
 const xHubSignature = 'xHubSignature';
 
 const webhooksReceiveMock = jest.spyOn(webhooks, 'receive');
+
+const s3 = new S3();
 
 beforeEach(() => {
   delete process.env.PIPELINES_JSON;
@@ -67,10 +69,10 @@ test.each([['opened'], ['reopened'], ['synchronize']])(
       }),
     });
 
-    expect(executeTasksMock).toHaveBeenCalledTimes(1);
+    expect(executeTasks).toHaveBeenCalledTimes(1);
 
     expect(response).toMatchObject({ body: '{"ok":true}', statusCode: 200 });
-  },
+  }
 );
 
 test('should execute main handler only one time per webhook', async () => {
@@ -99,15 +101,15 @@ test('should execute main handler only one time per webhook', async () => {
     body: JSON.stringify({ ref: 'refs/heads/main' }),
   });
 
-  expect(putObjectMock).toHaveBeenCalledWith(
+  expect(s3.putObject).toHaveBeenCalledWith(
     expect.objectContaining({
       Body: expect.any(Buffer),
       Bucket: 'base-stack',
       Key: 'some/prefix/main.zip',
-    }),
+    })
   );
 
-  expect(putObjectMock).toHaveBeenCalledTimes(1);
+  expect(s3.putObject().promise).toHaveBeenCalledTimes(1);
 });
 
 test('should call S3 putObject for tag', async () => {
@@ -126,15 +128,15 @@ test('should call S3 putObject for tag', async () => {
     body: JSON.stringify(body),
   });
 
-  expect(putObjectMock).toHaveBeenCalledWith(
+  expect(s3.putObject).toHaveBeenCalledWith(
     expect.objectContaining({
       Body: expect.any(Buffer),
       Bucket: 'base-stack',
       Key: 'some/prefix/main.zip',
-    }),
+    })
   );
 
-  expect(putObjectMock).toHaveBeenCalledTimes(1);
+  expect(s3.putObject().promise).toHaveBeenCalledTimes(1);
 
   expect(response).toMatchObject({ body: '{"ok":true}', statusCode: 200 });
 });
@@ -155,15 +157,15 @@ test('should call S3 putObject for main', async () => {
     body: JSON.stringify(body),
   });
 
-  expect(putObjectMock).toHaveBeenCalledWith(
+  expect(s3.putObject).toHaveBeenCalledWith(
     expect.objectContaining({
       Body: expect.any(Buffer),
       Bucket: 'base-stack',
       Key: 'some/prefix/tag.zip',
-    }),
+    })
   );
 
-  expect(putObjectMock).toHaveBeenCalledTimes(1);
+  expect(s3.putObject().promise).toHaveBeenCalledTimes(1);
 
   expect(response).toMatchObject({ body: '{"ok":true}', statusCode: 200 });
 });
@@ -191,7 +193,7 @@ test('should throw process.env.BASE_STACK_BUCKET_NAME is not defined', async () 
 
   expect(response.statusCode).toBe(500);
   expect(response.body).toContain(
-    'process.env.BASE_STACK_BUCKET_NAME is not defined.',
+    'process.env.BASE_STACK_BUCKET_NAME is not defined.'
   );
 });
 
@@ -217,7 +219,7 @@ test('should throw process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX is not define
 
   expect(response.statusCode).toBe(500);
   expect(response.body).toContain(
-    'process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX is not defined',
+    'process.env.TRIGGER_PIPELINES_OBJECT_KEY_PREFIX is not defined'
   );
 });
 

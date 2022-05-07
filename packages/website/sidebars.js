@@ -7,6 +7,7 @@ module.exports = {
       'commands/deploy-static-app',
       'commands/deploy-lambda-layer',
       'commands/deploy-cicd',
+      'commands/generate-env',
     ],
   },
   api: {

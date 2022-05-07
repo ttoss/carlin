@@ -1,16 +1,12 @@
-import deepmerge from 'deepmerge';
-
-import { CloudFormationTemplate } from '../../utils';
-
-import { deploy } from '../cloudFormation.core';
-import { handleDeployError, handleDeployInitialization } from '../utils';
-
 import { BASE_STACK_NAME } from './config';
-
+import { CloudFormationTemplate } from '../../utils';
+import { deploy } from '../cloudFormation.core';
 import { getBucketTemplate } from './getBucket.template';
 import { getLambdaImageBuilderTemplate } from './getLambdaImageBuilder.template';
 import { getLambdaLayerBuilderTemplate } from './getLambdaLayerBuilder.template';
 import { getVpcTemplate } from './getVpc.template';
+import { handleDeployError, handleDeployInitialization } from '../utils';
+import deepmerge from 'deepmerge';
 
 const logPrefix = 'base-stack';
 

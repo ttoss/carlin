@@ -1,24 +1,14 @@
-/* eslint-disable import/first */
-import AWS from 'aws-sdk';
-import faker from 'faker';
-import yargs from 'yargs';
+jest.mock('../cloudFormation');
+
+jest.mock('./deployStaticApp');
 
 import { CLOUDFRONT_REGION } from '../../config';
-
-const destroyCloudFormationMock = jest.fn();
-
-jest.mock('../cloudFormation', () => ({
-  destroyCloudFormation: destroyCloudFormationMock,
-}));
-
-const deployStaticAppMock = jest.fn();
-
-jest.mock('./staticApp', () => ({
-  ...(jest.requireActual('./staticApp') as any),
-  deployStaticApp: deployStaticAppMock,
-}));
-
+import { deployStaticApp } from './deployStaticApp';
 import { deployStaticAppCommand } from './command';
+import { destroyCloudFormation } from '../cloudFormation';
+import { faker } from '@ttoss/test-utils/faker';
+import AWS from 'aws-sdk';
+import yargs from 'yargs';
 
 const cli = yargs.command(deployStaticAppCommand);
 
@@ -49,8 +39,8 @@ describe('region should be us-east-1', () => {
     const argv = await parse({});
     expect(argv.region).toEqual(CLOUDFRONT_REGION);
     expect(AWS.config.region).toEqual(CLOUDFRONT_REGION);
-    expect(deployStaticAppMock).toHaveBeenCalledWith(
-      expect.objectContaining({ region: CLOUDFRONT_REGION }),
+    expect(deployStaticApp).toHaveBeenCalledWith(
+      expect.objectContaining({ region: CLOUDFRONT_REGION })
     );
   });
 });
@@ -63,7 +53,7 @@ describe('aliases implies acm', () => {
   test('should not throw because amc and alias are defined', () => {
     const options = { acm: 'some-acm', aliases: ['some alias'] };
     return expect(parse(options)).resolves.toEqual(
-      expect.objectContaining(options),
+      expect.objectContaining(options)
     );
   });
 });
@@ -79,8 +69,8 @@ describe('handling methods', () => {
 
     await parse(options);
 
-    expect(deployStaticAppMock).toHaveBeenCalledWith(
-      expect.objectContaining(options),
+    expect(deployStaticApp).toHaveBeenCalledWith(
+      expect.objectContaining(options)
     );
   });
 
@@ -95,7 +85,7 @@ describe('handling methods', () => {
 
     await parse(options);
 
-    expect(destroyCloudFormationMock).toHaveBeenCalled();
+    expect(destroyCloudFormation).toHaveBeenCalled();
   });
 });
 
@@ -105,7 +95,7 @@ describe('should set cloudfront', () => {
       optionsArray.map(async (options) => {
         const { cloudfront } = await parse(options);
         return cloudfront;
-      }),
+      })
     );
 
     return results.every((value) => value === every);

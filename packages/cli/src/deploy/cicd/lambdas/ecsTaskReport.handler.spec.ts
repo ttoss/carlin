@@ -1,5 +1,4 @@
-import * as faker from 'faker';
-
+import { faker } from '@ttoss/test-utils/faker';
 import { getEcsTaskLogsUrl } from './ecsTaskReport.handler';
 
 const region = 'us-east-1';
@@ -38,7 +37,7 @@ describe('testing getEcsTaskLogsUrl', () => {
     process.env.ECS_TASK_CONTAINER_NAME = ecsTaskContainerName;
     process.env.ECS_TASK_LOGS_LOG_GROUP = ecsTaskLogsLogGroup;
     expect(getEcsTaskLogsUrl({ ecsTaskArn })).toEqual(
-      `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${ecsTaskLogsLogGroup}/log-events/ecs%252F${ecsTaskContainerName}%252F${taskId}`,
+      `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${ecsTaskLogsLogGroup}/log-events/ecs%252F${ecsTaskContainerName}%252F${taskId}`
     );
   });
 
@@ -46,7 +45,7 @@ describe('testing getEcsTaskLogsUrl', () => {
     process.env.ECS_TASK_CONTAINER_NAME = ecsTaskContainerName;
     process.env.ECS_TASK_LOGS_LOG_GROUP = ecsTaskLogsLogGroup;
     expect(getEcsTaskLogsUrl({ ecsTaskArn: `${ecsTaskArn}"` })).toEqual(
-      `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${ecsTaskLogsLogGroup}/log-events/ecs%252F${ecsTaskContainerName}%252F${taskId}`,
+      `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${ecsTaskLogsLogGroup}/log-events/ecs%252F${ecsTaskContainerName}%252F${taskId}`
     );
   });
 });

@@ -1,12 +1,9 @@
-/* eslint-disable no-template-curly-in-string */
-
 import {
   CloudFormationTemplate,
-  Resource,
   Output,
+  Resource,
   getPackageVersion,
 } from '../../utils';
-
 import { getOriginShieldRegion } from './getOriginShieldRegion';
 
 const PACKAGE_VERSION = getPackageVersion();
@@ -338,7 +335,7 @@ const getCloudFrontTemplate = ({
         Value: `https://${alias}`,
       },
     }),
-    {},
+    {}
   );
 
   /**

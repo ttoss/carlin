@@ -30,9 +30,10 @@
   "devDependencies": {
     "@ttoss/config": "^1.15.2",
     "@ttoss/eslint-config": "^1.15.2",
-    "@types/jest": "^27.4.1",
+    "@ttoss/test-utils": "^1.15.2",
+    "@types/jest": "^27.5.0",
     "husky": "^7.0.4",
-    "jest": "^27.5.1",
+    "jest": "^28.1.0",
     "lerna": "^4.0.0",
     "npm-check-updates": "^12.4.0",
     "ts-jest": "^27.1.3",

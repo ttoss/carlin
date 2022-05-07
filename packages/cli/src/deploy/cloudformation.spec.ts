@@ -1,9 +1,11 @@
-/* eslint-disable import/first */
-import * as faker from 'faker';
-
+/* eslint-disable no-var */
 import { CloudFormationTemplate } from '../utils/cloudFormationTemplate';
+import { deploy } from './cloudFormation.core';
+import { deployLambdaCode } from './lambda/deployLambdaCode';
+import { faker } from '@ttoss/test-utils/faker';
+import { getStackName } from './stackName';
 
-const workingCloudFormationTemplate: CloudFormationTemplate = {
+const mockWorkingCloudFormationTemplate: CloudFormationTemplate = {
   AWSTemplateFormatVersion: '2010-09-09',
   Resources: {
     SomeResource: {
@@ -13,43 +15,41 @@ const workingCloudFormationTemplate: CloudFormationTemplate = {
   },
 };
 
-const cloudFormationMock = jest.fn().mockReturnValue({
-  validateTemplate: jest.fn(({ TemplateBody }: any) => {
-    return {
-      promise: () => {
-        if (
-          TemplateBody ===
-          JSON.stringify(workingCloudFormationTemplate, null, 2)
-        ) {
-          return Promise.resolve();
-        }
-
-        return Promise.reject();
-      },
-    };
-  }),
-});
-
-const deployMock = jest.fn();
-
 jest.mock('./cloudFormation.core', () => ({
-  deploy: deployMock,
-  cloudFormationV2: cloudFormationMock,
+  deploy: jest.fn(),
+  cloudFormationV2: jest.fn().mockReturnValue({
+    validateTemplate: jest.fn(({ TemplateBody }: any) => {
+      return {
+        promise: () => {
+          if (
+            TemplateBody ===
+            JSON.stringify(mockWorkingCloudFormationTemplate, null, 2)
+          ) {
+            return Promise.resolve();
+          }
+
+          return Promise.reject();
+        },
+      };
+    }),
+  }),
 }));
 
-const deployLambdaCodeMock = jest.fn();
-
-jest.mock('./lambda', () => ({
-  deployLambdaCode: deployLambdaCodeMock,
+jest.mock('./lambda/deployLambdaCode', () => ({
+  deployLambdaCode: jest.fn(),
 }));
-
-const stackName = faker.random.word();
 
 jest.mock('./stackName', () => ({
-  getStackName: jest.fn().mockResolvedValue(stackName),
+  getStackName: jest.fn(),
 }));
 
 import { deployCloudFormation } from './cloudFormation';
+
+const mockStackName = faker.random.word();
+
+beforeAll(() => {
+  (getStackName as jest.Mock).mockReturnValue(mockStackName);
+});
 
 describe('testing deployCloudFormation method', () => {
   const lambdaInput = faker.random.word();
@@ -57,19 +57,19 @@ describe('testing deployCloudFormation method', () => {
   const lambdaExternals = [...new Array(5)].map(() => faker.random.word());
 
   test('return working cloudformation template if passed via template', async () => {
-    deployLambdaCodeMock.mockResolvedValueOnce(undefined);
+    (deployLambdaCode as jest.Mock).mockResolvedValueOnce(undefined);
 
     await deployCloudFormation({
       lambdaInput,
-      template: workingCloudFormationTemplate,
+      template: mockWorkingCloudFormationTemplate,
     });
 
-    expect(deployMock).toHaveBeenCalledWith({
+    expect(deploy).toHaveBeenCalledWith({
       params: {
         Parameters: [],
-        StackName: stackName,
+        StackName: mockStackName,
       },
-      template: workingCloudFormationTemplate,
+      template: mockWorkingCloudFormationTemplate,
     });
   });
 
@@ -80,22 +80,24 @@ describe('testing deployCloudFormation method', () => {
       versionId: faker.random.word(),
     };
 
-    deployLambdaCodeMock.mockResolvedValueOnce(deployLambdaCodeResponse);
+    (deployLambdaCode as jest.Mock).mockResolvedValueOnce(
+      deployLambdaCodeResponse
+    );
 
     await deployCloudFormation({
       lambdaInput,
       lambdaExternals,
-      template: workingCloudFormationTemplate,
+      template: mockWorkingCloudFormationTemplate,
     });
 
-    expect(deployLambdaCodeMock).toHaveBeenCalledWith({
+    expect(deployLambdaCode).toHaveBeenCalledWith({
       lambdaExternals,
       lambdaImage: undefined,
       lambdaInput,
-      stackName,
+      stackName: mockStackName,
     });
 
-    expect(deployMock).toHaveBeenCalledWith({
+    expect(deploy).toHaveBeenCalledWith({
       params: {
         Parameters: [
           {
@@ -115,10 +117,10 @@ describe('testing deployCloudFormation method', () => {
             ParameterValue: deployLambdaCodeResponse.versionId,
           },
         ],
-        StackName: stackName,
+        StackName: mockStackName,
       },
       template: {
-        ...workingCloudFormationTemplate,
+        ...mockWorkingCloudFormationTemplate,
         Parameters: {
           LambdaS3Bucket: {
             Type: 'String',
@@ -142,23 +144,25 @@ describe('testing deployCloudFormation method', () => {
       imageUri: faker.random.word(),
     };
 
-    deployLambdaCodeMock.mockResolvedValueOnce(deployLambdaCodeResponse);
+    (deployLambdaCode as jest.Mock).mockResolvedValueOnce(
+      deployLambdaCodeResponse
+    );
 
     await deployCloudFormation({
       lambdaImage: true,
       lambdaInput,
       lambdaExternals,
-      template: workingCloudFormationTemplate,
+      template: mockWorkingCloudFormationTemplate,
     });
 
-    expect(deployLambdaCodeMock).toHaveBeenCalledWith({
+    expect(deployLambdaCode).toHaveBeenCalledWith({
       lambdaExternals,
       lambdaImage: true,
       lambdaInput,
-      stackName,
+      stackName: mockStackName,
     });
 
-    expect(deployMock).toHaveBeenCalledWith({
+    expect(deploy).toHaveBeenCalledWith({
       params: {
         Parameters: [
           {
@@ -166,10 +170,10 @@ describe('testing deployCloudFormation method', () => {
             ParameterValue: deployLambdaCodeResponse.imageUri,
           },
         ],
-        StackName: stackName,
+        StackName: mockStackName,
       },
       template: {
-        ...workingCloudFormationTemplate,
+        ...mockWorkingCloudFormationTemplate,
         Parameters: {
           LambdaImageUri: {
             Type: 'String',
