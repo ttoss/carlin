@@ -8,9 +8,9 @@
     "dev": "docusaurus start",
     "build-carlin": "yarn workspace carlin build",
     "prebuild": "yarn run build-carlin",
-    "build": "docusaurus build",
+    "build": "echo docusaurus build",
     "swizzle": "docusaurus swizzle",
-    "deploy": "carlin deploy static-app",
+    "deploy": "echo carlin deploy static-app",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear"
   },
