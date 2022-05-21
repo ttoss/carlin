@@ -1,13 +1,3 @@
-import { pascalCase } from 'change-case';
-import yaml from 'js-yaml';
-
-import {
-  CloudFormationTemplate,
-  getIamPath,
-  getProjectName,
-  getEnvironment,
-} from '../../utils';
-
 import {
   BASE_STACK_BUCKET_NAME_EXPORTED_NAME,
   BASE_STACK_VPC_DEFAULT_SECURITY_GROUP_EXPORTED_NAME,
@@ -15,16 +5,22 @@ import {
   BASE_STACK_VPC_PUBLIC_SUBNET_1_EXPORTED_NAME,
   BASE_STACK_VPC_PUBLIC_SUBNET_2_EXPORTED_NAME,
 } from '../baseStack/config';
-
-import { getCicdConfig, CicdCommandOptions } from './command.options';
-
-import type { Pipeline } from './pipelines';
+import { CicdCommandOptions, getCicdConfig } from './command.options';
+import {
+  CloudFormationTemplate,
+  getEnvironment,
+  getIamPath,
+  getProjectName,
+} from '../../utils';
 import {
   ECS_TASK_DEFAULT_CPU,
   ECS_TASK_DEFAULT_MEMORY,
   PIPELINE_ECS_TASK_EXECUTION_MANUAL_APPROVAL_ACTION_NAME,
   PIPELINE_ECS_TASK_EXECUTION_STAGE_NAME,
 } from './config';
+import { pascalCase } from 'change-case';
+import yaml from 'js-yaml';
+import type { Pipeline } from './pipelines';
 
 import { getTriggerPipelinesObjectKey } from './getTriggerPipelineObjectKey';
 
@@ -338,7 +334,7 @@ export const getCicdTemplate = ({
             ],
           },
           null,
-          2,
+          2
         ),
       },
     },

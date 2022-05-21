@@ -15,7 +15,7 @@ export const getPrCommands = ({ branch }: { branch: string }) => [
    * Update to the most recent main branch to Lerna performs the diff properly.
    */
   'git pull origin main',
-  `git checkout ${branch}`,
+  `git checkout ${branch} || echo 'branch not found, probably deleted'; exit 0`,
   `git pull origin ${branch}`,
   'git rev-parse HEAD',
   'git status',
@@ -36,7 +36,7 @@ export const getClosedPrCommands = ({ branch }: { branch: string }) => [
    * Exit without error if `closed-pr` does not exist.
    */
   `[ -f "${getCommandFileDir('closed-pr')}" ] && sh ${getCommandFileDir(
-    'closed-pr',
+    'closed-pr'
   )} || echo 'closed-pr command not found'; exit 0`,
 ];
 

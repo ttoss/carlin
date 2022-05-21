@@ -1,10 +1,8 @@
 import { ECS } from 'aws-sdk';
-
 import { getProcessEnvVariable } from './getProcessEnvVariable';
-
 import type { Status } from './ecsTaskReport.handler';
 
-const ecs = new ECS({ apiVersion: '2014-11-13' });
+const ecs = new ECS({ apiVersion: '2014-11-13', maxRetries: 3 });
 
 const compileCommands = (commands: string[]) => {
   return commands.map((c) => c.replace(/;$/, '')).join(' && ');
