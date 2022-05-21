@@ -50,7 +50,8 @@ export const getMainCommands = () => [
   /**
    * Reporting `MainTagFound` before exiting the process. This command blocks
    * the process if tag was found. If we don't do this, the loop would never
-   * end.
+   * end because `main` command can create a tag, that would trigger this
+   * pipeline again.
    */
   'if git describe --exact-match; then echo "Tag found" && carlin cicd-ecs-task-report --status=MainTagFound && exit 0; fi',
   'yarn',

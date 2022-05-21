@@ -115,3 +115,4 @@ package-lock.json
 github-app/
 .npmrc
 .carlin/
+.vscode
