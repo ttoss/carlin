@@ -16,13 +16,30 @@ import { faker } from '@ttoss/test-utils/faker';
 
 const region = faker.random.word();
 
-test('should define default root object', () => {
-  const template = getStaticAppTemplate({ region, cloudfront: true });
+test('should define default root object for spa', () => {
+  const template = getStaticAppTemplate({
+    region,
+    cloudfront: true,
+    spa: true,
+  });
 
   expect(
     template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].Properties
       .DistributionConfig.DefaultRootObject
   ).toEqual('index.html');
+});
+
+test('should define default root object as undefined for not spa', () => {
+  const template = getStaticAppTemplate({
+    region,
+    cloudfront: true,
+    spa: false,
+  });
+
+  expect(
+    template.Resources[CLOUDFRONT_DISTRIBUTION_LOGICAL_ID].Properties
+      .DistributionConfig.DefaultRootObject
+  ).toEqual(undefined);
 });
 
 test('should not add CloudFront distribution', () => {

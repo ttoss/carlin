@@ -1,12 +1,13 @@
 import { ScheduledHandler } from 'aws-lambda';
-
 import { executeTasks } from './executeTasks';
 
+/**
+ * Update CI/CD resources with the newest carlin and repository image.
+ */
 export const imageUpdaterScheduleHandler: ScheduledHandler = async () => {
   const cicdConfig = process.env.CICD_CONFIG;
 
   if (!cicdConfig) {
-    console.log('No CICD config found.');
     return;
   }
 
@@ -23,7 +24,7 @@ export const imageUpdaterScheduleHandler: ScheduledHandler = async () => {
     `carlin deploy cicd -c carlin.json`,
   ];
 
-  const response = await executeTasks({
+  await executeTasks({
     commands,
     cpu: '512',
     memory: '2048',
@@ -34,6 +35,4 @@ export const imageUpdaterScheduleHandler: ScheduledHandler = async () => {
       },
     ],
   });
-
-  console.log(JSON.stringify(response, null, 2));
 };

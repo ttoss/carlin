@@ -12,19 +12,16 @@ const STATIC_APP_BUCKET_LOGICAL_ID = 'StaticBucket';
 
 const CLOUDFRONT_DISTRIBUTION_ID = 'CloudFrontDistributionId';
 
-const CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID =
-  'CloudFrontDistributionOriginAccessIdentity';
-
 export const CLOUDFRONT_DISTRIBUTION_LOGICAL_ID = 'CloudFrontDistribution';
 
 export const ROUTE_53_RECORD_SET_GROUP_LOGICAL_ID = 'Route53RecordSetGroup';
 
 /**
- * Name: Managed-CachingOptimized
- * ID: 658327ea-f89d-4fab-a63d-7e88639e58f6
+ * Name: Managed-CachingDisabled
+ * ID: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
  * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
  */
-const CACHE_POLICY_ID = '658327ea-f89d-4fab-a63d-7e88639e58f6';
+const CACHE_POLICY_ID = '4135ea2d-6df8-44a3-9df3-4b5a84be39ad';
 
 /**
  * Name: Managed-CORS-S3Origin
@@ -41,7 +38,6 @@ const ORIGIN_REQUEST_POLICY_ID = '88a5eaf4-2fd4-4709-b370-b4c650ea3fcf';
 const ORIGIN_RESPONSE_POLICY_ID = 'eaab4381-ed33-4a86-88ca-d9558dc6cd63';
 
 const getBaseTemplate = ({
-  cloudfront,
   spa,
 }: {
   cloudfront?: boolean;
@@ -66,7 +62,7 @@ const getBaseTemplate = ({
           },
           WebsiteConfiguration: {
             IndexDocument: `index.html`,
-            ErrorDocument: `${spa ? 'index' : '404'}.html`,
+            ErrorDocument: spa ? 'index.html' : '404/index.html',
           },
         },
       },
@@ -79,6 +75,7 @@ const getBaseTemplate = ({
               {
                 Action: ['s3:GetObject'],
                 Effect: 'Allow',
+                Principal: '*',
                 Resource: {
                   'Fn::Join': [
                     '',
@@ -89,23 +86,6 @@ const getBaseTemplate = ({
                     ],
                   ],
                 },
-                Principal: cloudfront
-                  ? /**
-                     * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
-                     */
-                    {
-                      AWS: {
-                        'Fn::Sub': [
-                          'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OAI}',
-                          {
-                            OAI: {
-                              Ref: CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID,
-                            },
-                          },
-                        ],
-                      },
-                    }
-                  : '*',
               },
             ],
           },
@@ -141,19 +121,6 @@ const getCloudFrontTemplate = ({
   const template = { ...getBaseTemplate({ cloudfront, spa }) };
 
   const cloudFrontResources: { [key: string]: Resource } = {
-    [CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID]: {
-      Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity',
-      Properties: {
-        CloudFrontOriginAccessIdentityConfig: {
-          Comment: {
-            'Fn::Sub': [
-              'CloudFront Distribution Origin Access Identity for ${Project} project.',
-              { Project: { Ref: 'Project' } },
-            ],
-          },
-        },
-      },
-    },
     [CLOUDFRONT_DISTRIBUTION_LOGICAL_ID]: {
       Type: 'AWS::CloudFront::Distribution',
       Properties: {
@@ -178,17 +145,17 @@ const getCloudFrontTemplate = ({
               ErrorCachingMinTTL: 0,
               ErrorCode: errorCode,
               ResponseCode: 404,
-              ResponsePagePath: '/404.html',
+              ResponsePagePath: '/404',
             };
           }),
           DefaultCacheBehavior: {
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
             Compress: true,
+            CachedMethods: ['GET', 'HEAD', 'OPTIONS'],
             /**
              * Caching OPTIONS. Related to OriginRequestPolicyId property.
              * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/header-caching.html#header-caching-web-cors
              */
-            CachedMethods: ['GET', 'HEAD', 'OPTIONS'],
             OriginRequestPolicyId: ORIGIN_REQUEST_POLICY_ID,
             /**
              * CachePolicyId property:
@@ -199,20 +166,34 @@ const getCloudFrontTemplate = ({
             TargetOriginId: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
             ViewerProtocolPolicy: 'redirect-to-https',
           },
-          DefaultRootObject: 'index.html',
+          DefaultRootObject: spa ? 'index.html' : undefined,
           Enabled: true,
           HttpVersion: 'http2',
           Origins: [
             {
+              CustomOriginConfig: {
+                OriginProtocolPolicy: 'http-only',
+              },
               /**
-               * Amazon S3 bucket – awsexamplebucket.s3.us-west-2.amazonaws.com
-               * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesDomainName
+               * https://github.com/aws/aws-cdk/issues/1882#issuecomment-629141467
                */
               DomainName: {
-                'Fn::GetAtt': `${STATIC_APP_BUCKET_LOGICAL_ID}.RegionalDomainName`,
+                'Fn::Select': [
+                  1,
+                  {
+                    'Fn::Split': [
+                      '//',
+                      {
+                        'Fn::GetAtt': [
+                          STATIC_APP_BUCKET_LOGICAL_ID,
+                          'WebsiteURL',
+                        ],
+                      },
+                    ],
+                  },
+                ],
               },
               Id: { Ref: STATIC_APP_BUCKET_LOGICAL_ID },
-              OriginPath: `/${PACKAGE_VERSION}`,
               /**
                * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html#choose-origin-shield-region
                */
@@ -222,20 +203,6 @@ const getCloudFrontTemplate = ({
                   OriginShieldRegion: getOriginShieldRegion(region),
                 },
               }),
-              S3OriginConfig: {
-                OriginAccessIdentity: {
-                  'Fn::Join': [
-                    '/',
-                    [
-                      'origin-access-identity',
-                      'cloudfront',
-                      {
-                        Ref: CLOUDFRONT_DISTRIBUTION_ORIGIN_ACCESS_IDENTITY_LOGICAL_ID,
-                      },
-                    ],
-                  ],
-                },
-              },
             },
           ],
         },
