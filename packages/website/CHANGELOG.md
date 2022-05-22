@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.22.2](https://github.com/ttoss/carlin/compare/v0.22.1...v0.22.2) (2022-05-22)
+
+### Bug Fixes
+
+- subfolders redirect ([#60](https://github.com/ttoss/carlin/issues/60)) ([92de986](https://github.com/ttoss/carlin/commit/92de986cfdfc3dfa72a7f0a784867d83e2759f93))
+
 ## [0.22.1](https://github.com/ttoss/carlin/compare/v0.22.0...v0.22.1) (2022-05-21)
 
 **Note:** Version bump only for package carlin-website
