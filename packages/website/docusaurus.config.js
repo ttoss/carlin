@@ -5,11 +5,37 @@ module.exports = {
   tagline: 'A Cloud Deployment Framework',
   url: 'https://carlin.ttoss.dev',
   baseUrl: '/',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
+
   organizationName: 'ttoss',
   projectName: 'carlin',
+
+  plugins: [path.resolve(__dirname, 'carlin')],
+
+  presets: [
+    [
+      'classic',
+      {
+        docs: {
+          sidebarPath: require.resolve('./sidebars.js'),
+          // Please change this to your repo.
+          editUrl: 'https://github.com/ttoss/carlin/edit/main/packages/website',
+        },
+        // blog: {
+        //   showReadingTime: true,
+        //   // Please change this to your repo.
+        //   editUrl:
+        //     'https://github.com/facebook/docusaurus/edit/master/website/blog/',
+        // },
+        theme: {
+          customCss: require.resolve('./src/css/custom.css'),
+        },
+      },
+    ],
+  ],
+
   themeConfig: {
     navbar: {
       title: 'carlin',
@@ -21,15 +47,15 @@ module.exports = {
         {
           type: 'doc',
           position: 'left',
-          docId: 'overview',
+          docId: 'docs/overview',
           label: 'Docs',
         },
-        {
-          type: 'doc',
-          position: 'left',
-          docId: 'api-reference/deploy',
-          label: 'API',
-        },
+        // {
+        //   type: 'doc',
+        //   position: 'left',
+        //   docId: 'api/api',
+        //   label: 'API',
+        // },
         {
           href: 'https://github.com/ttoss/carlin',
           label: 'GitHub',
@@ -43,14 +69,14 @@ module.exports = {
         {
           title: 'Docs',
           items: [
-            {
-              label: 'Deploy',
-              to: 'docs/Commands/deploy',
-            },
-            {
-              label: 'API',
-              to: 'docs/api-reference/deploy',
-            },
+            // {
+            //   label: 'Deploy',
+            //   to: 'docs/Commands/deploy',
+            // },
+            // {
+            //   label: 'API',
+            //   to: 'api/api',
+            // },
           ],
         },
         // {
@@ -88,26 +114,4 @@ module.exports = {
     },
     // sidebarCollapsible: false,
   },
-  plugins: [path.resolve(__dirname, 'carlin')],
-  presets: [
-    [
-      '@docusaurus/preset-classic',
-      {
-        docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
-          editUrl: 'https://github.com/ttoss/carlin/edit/main/packages/website',
-        },
-        // blog: {
-        //   showReadingTime: true,
-        //   // Please change this to your repo.
-        //   editUrl:
-        //     'https://github.com/facebook/docusaurus/edit/master/website/blog/',
-        // },
-        theme: {
-          customCss: require.resolve('./src/css/custom.css'),
-        },
-      },
-    ],
-  ],
 };

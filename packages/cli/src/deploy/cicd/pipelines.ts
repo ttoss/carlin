@@ -15,7 +15,7 @@ export const getPrCommands = ({ branch }: { branch: string }) => [
    * Update to the most recent main branch to Lerna performs the diff properly.
    */
   'git pull origin main',
-  `git checkout ${branch} || echo 'branch not found, probably deleted'; exit 0`,
+  `git checkout ${branch} || (echo 'branch not found, probably deleted'; exit 0)`,
   `git pull origin ${branch}`,
   'git rev-parse HEAD',
   'git status',

@@ -41,5 +41,8 @@
   },
   "workspaces": [
     "packages/**/*"
-  ]
+  ],
+  "resolutions": {
+    "**/terser-webpack-plugin": "^1.4.3"
+  }
 }

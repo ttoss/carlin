@@ -13,7 +13,7 @@ test('set +x', () => {
 
   expect(pipelinesModule.getPrCommands({ branch })).toMatchObject(
     expect.arrayContaining([
-      `git checkout ${branch} || echo 'branch not found, probably deleted'; exit 0`,
+      `git checkout ${branch} || (echo 'branch not found, probably deleted'; exit 0)`,
     ])
   );
 
