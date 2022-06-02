@@ -1,14 +1,14 @@
-import Carlin from '../src/components/Carlin';
-import InnerHTML from '../src/components/InnerHTML';
-import OptionAliasesInline from '../src/components/OptionAliasesInline';
-import OptionHeader from '../src/components/OptionHeader';
+import Carlin from '../../../src/components/Carlin';
+import InnerHTML from '../../../src/components/InnerHTML';
+import OptionAliasesInline from '../../../src/components/OptionAliasesInline';
+import OptionHeader from '../../../src/components/OptionHeader';
 
-import { cliEnvComment } from '../.docusaurus/carlin/default/cliEnvComment';
-import { cliOptions } from '../.docusaurus/carlin/default/cliOptions';
-import { cliGetConfigComment } from '../.docusaurus/carlin/default/cliGetConfigComment';
-import { cliGetPkgConfigComment } from '../.docusaurus/carlin/default/cliGetPkgConfigComment';
-import { getCurrentBranchComment } from '../.docusaurus/carlin/default/getCurrentBranchComment';
-import { getProjectNameComment } from '../.docusaurus/carlin/default/getProjectNameComment';
+import { cliEnvComment } from '../../../.docusaurus/carlin/default/cliEnvComment';
+import { cliOptions } from '../../../.docusaurus/carlin/default/cliOptions';
+import { cliGetConfigComment } from '../../../.docusaurus/carlin/default/cliGetConfigComment';
+import { cliGetPkgConfigComment } from '../../../.docusaurus/carlin/default/cliGetPkgConfigComment';
+import { getCurrentBranchComment } from '../../../.docusaurus/carlin/default/getCurrentBranchComment';
+import { getProjectNameComment } from '../../../.docusaurus/carlin/default/getProjectNameComment';
 
 ## Common Options
 
@@ -60,7 +60,7 @@ This way, the algorithm will ignore deployments without an environment or other 
 
 **carlin** was projected to work with environments. As we've been building a lot of Apps, we realized that we commonly have some environments, like production and staging. The difference between these environments was some options values that we passed to the deploy command. To handle these options, we've created the <OptionAliasesInline option="environments" options={cliOptions} /> option. It receives an object whose keys are the environment name and the values are an object containing the command options.
 
-Besides <OptionAliasesInline option="environments" options={cliOptions} />, if we provide the option <OptionAliasesInline option="environment" options={cliOptions} to="/docs/CLI#environment" />, **carlin** searches if such environment exists inside environments object and assign the values to the command. For instance, suppose that we have the `carlin.yml` below.
+Besides <OptionAliasesInline option="environments" options={cliOptions} />, if we provide the option <OptionAliasesInline option="environment" options={cliOptions} to="#environment" />, **carlin** searches if such environment exists inside environments object and assign the values to the command. For instance, suppose that we have the `carlin.yml` below.
 
 ```yaml title="carlin.yml"
 region: us-east-1

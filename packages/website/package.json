@@ -8,23 +8,23 @@
     "dev": "docusaurus start",
     "build-carlin": "yarn workspace carlin build",
     "prebuild": "yarn run build-carlin",
-    "build": "echo docusaurus build",
+    "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "echo carlin deploy static-app",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-beta.20",
-    "@docusaurus/module-type-aliases": "^2.0.0-beta.20",
-    "@docusaurus/preset-classic": "^2.0.0-beta.20",
+    "@docusaurus/core": "^2.0.0-beta.21",
+    "@docusaurus/preset-classic": "^2.0.0-beta.21",
     "@mdx-js/react": "^1.6.22",
-    "clsx": "^1.1.1",
     "jsdoc-api": "^7.1.1",
     "markdown-to-jsx": "^7.1.6",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "unified": "^10.1.1"
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^2.0.0-beta.21"
   },
   "browserslist": {
     "production": [

@@ -1,5 +1,6 @@
 ---
 title: Installation
+sidebar_position: 1
 ---
 
 You can install **carlin** with NPM or Yarn 🚀

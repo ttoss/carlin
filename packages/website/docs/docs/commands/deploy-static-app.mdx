@@ -2,29 +2,18 @@
 title: deploy static-app
 ---
 
-import Algorithm from '../../src/components/Algorithm';
-import Carlin from '../../src/components/Carlin';
-import CodeBlock from '../../src/components/CodeBlock';
-import InnerHTML from '../../src/components/InnerHTML';
-import OptionAliasesInline from '../../src/components/OptionAliasesInline';
-import Template from '../../src/components/Template';
+import Algorithm from '../../../src/components/Algorithm';
+import Carlin from '../../../src/components/Carlin';
+import CodeBlock from '../../../src/components/CodeBlock';
+import InnerHTML from '../../../src/components/InnerHTML';
+import OptionAliasesInline from '../../../src/components/OptionAliasesInline';
+import Template from '../../../src/components/Template';
 
-import { deployStaticAppComment } from '../../.docusaurus/carlin/default/deployStaticAppComment';
-import { deployStaticAppOptions } from '../../.docusaurus/carlin/default/deployStaticAppOptions';
-import { removeOldVersionsComment } from '../../.docusaurus/carlin/default/removeOldVersionsComment';
-import { staticAppCloudFrontTemplate } from '../../.docusaurus/carlin/default/staticAppCloudFrontTemplate';
-import { staticAppOnlyS3Template } from '../../.docusaurus/carlin/default/staticAppOnlyS3Template';
-
-export const OriginPath = () => {
-  return (
-    <code>
-      {staticAppCloudFrontTemplate.Resources.CloudFrontDistribution.Properties.DistributionConfig.Origins[0].OriginPath.replace(
-        '/',
-        ''
-      )}
-    </code>
-  );
-};
+import { deployStaticAppComment } from '../../../.docusaurus/carlin/default/deployStaticAppComment';
+import { deployStaticAppOptions } from '../../../.docusaurus/carlin/default/deployStaticAppOptions';
+import { removeOldVersionsComment } from '../../../.docusaurus/carlin/default/removeOldVersionsComment';
+import { staticAppCloudFrontTemplate } from '../../../.docusaurus/carlin/default/staticAppCloudFrontTemplate';
+import { staticAppOnlyS3Template } from '../../../.docusaurus/carlin/default/staticAppOnlyS3Template';
 
 ## Overview
 
@@ -39,14 +28,6 @@ This command deploys static apps to [AWS](https://aws.amazon.com/) using [Amazon
 <Algorithm algorithm={deployStaticAppComment} />
 
 :::
-
-## Versioning
-
-For every [CloudFront deployment](#CloudFront), <Carlin /> uses the current version of the package as key on S3 bucket. For instance, if the version of the package is <OriginPath />, the App files will be uploaded inside <OriginPath /> folder on bucket.
-This feature comes in hand when you need to rollback a version. In this case, you just need to change the [CloudFront Origin Path](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesOriginPath)
-to the required version.
-
-<InnerHTML html={removeOldVersionsComment} />
 
 ## Configurations
 
@@ -91,7 +72,7 @@ The main differences between [Only S3](#only-s3) and [CloudFront](#cloudfront) t
   }
 />
 
-- It creates `CloudFrontDistribution` that uses the bucket and the [version](#versioning) (<OriginPath />) as origin.
+- It creates `CloudFrontDistribution` that uses the bucket.
 
 <Template
   json={staticAppCloudFrontTemplate.Resources.CloudFrontDistribution.Properties}
