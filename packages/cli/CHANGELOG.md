@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.22.4](https://github.com/ttoss/carlin/compare/v0.22.3...v0.22.4) (2022-06-15)
+
+### Bug Fixes
+
+- add ts-node as dependency ([444c2c8](https://github.com/ttoss/carlin/commit/444c2c83d15528a232825232d38a0ece731c4786))
+
 ## [0.22.3](https://github.com/ttoss/carlin/compare/v0.22.2...v0.22.3) (2022-06-02)
 
 ### Bug Fixes
